@@ -1,0 +1,131 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantum-oracle-sketching"
+dynamic = ["version"]
+description = "Quantum Oracle Sketching: exponential quantum advantage in processing massive classical data"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Haimeng Zhao", email = "haimeng@caltech.edu"},
+    {name = "Alexander Zlokapa"},
+    {name = "Hsin-Yuan Huang", email = "hhuang@oratomic.com"},
+]
+keywords = [
+    "quantum computing",
+    "machine learning",
+    "quantum machine learning",
+    "quantum algorithms",
+    "sketching",
+    "QSVT",
+    "JAX",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = [
+    "jax>=0.4.30",
+    "jaxlib>=0.4.30",
+    "numpy>=1.26.0",
+    "pyqsp>=0.2.0",
+    "matplotlib>=3.8.0",
+    "scikit-learn>=1.4.0",
+    "scipy>=1.12.0",
+    "tqdm>=4.66.0",
+    "scvelo>=0.3.3",
+    "ucimlrepo>=0.0.7",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",
+    "black>=24.0.0",
+    "ruff>=0.3.0",
+    "mypy>=1.8.0",
+    "jupyterlab>=4.0.0",
+    "ipykernel>=6.29.0",
+]
+docs = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/quantum-frontiers/quantum-oracle-sketching"
+Documentation = "https://quantum-oracle-sketching.readthedocs.io"
+Repository = "https://github.com/quantum-frontiers/quantum-oracle-sketching"
+"Bug Tracker" = "https://github.com/quantum-frontiers/quantum-oracle-sketching/issues"
+"Paper (arXiv)" = "https://arxiv.org/abs/2604.07639"
+
+[tool.hatch.version]
+path = "src/qos/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/qos"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",   # pycodestyle errors
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = ["E501"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::DeprecationWarning:jax.*",
+    "ignore::UserWarning:matplotlib.*",
+]
+
+[tool.coverage.run]
+source = ["src/qos"]
+omit = ["*/tests/*", "*/examples/*"]
+
+[tool.coverage.report]
+precision = 2
+skip_covered = false
+show_missing = true
