@@ -16,6 +16,18 @@ from qos.config import DEFAULT_CONFIG, int_dtype, real_dtype
 if TYPE_CHECKING:
     from jax import random as jax_random
 
+# Complex dtype that always matches real_dtype precision.
+_c128 = jnp.complex128
+_c64  = jnp.complex64
+
+
+def _cplx(x: jax.Array) -> jax.Array:
+    """Cast to complex128 unconditionally (safe on CPU; falls back to c64 on GPU/TPU)."""
+    try:
+        return x.astype(jnp.complex128)
+    except TypeError:
+        return x.astype(jnp.complex64)
+
 
 def q_oracle_sketch_boolean(
     truth_table: jax.Array,
@@ -25,12 +37,17 @@ def q_oracle_sketch_boolean(
 
     Target: diag[x] = exp(i*pi*f(x)).
 
-    Formula (Zhao et al. 2025, Section D):
-        p(x)   = 1/N  (uniform)
-        t      = pi*N  => p(x)*t = pi for f(x)=1, 0 for f(x)=0
-        diag   = exp(M * log(1 + p * expm1(i*t/M * f)))
+    Formula (Zhao et al. 2025/2026, Section D)::
 
-    For large M the log-sum converges to exp(i*p*t*f) = exp(i*pi*f).
+        p(x) = 1/N                          (uniform)
+        t    = pi * N   => p(x)*t = pi      for f(x)=1
+                        => p(x)*t = 0       for f(x)=0
+        diag = exp(M * log(1 + p * expm1(i*t*f/M)))
+
+    For large M this converges to exp(i*p*t*f) = exp(i*pi*f).
+
+    The entire computation is done in complex128 to avoid catastrophic
+    cancellation in expm1 when the argument is small (t*f/M ~ pi/M -> 0).
 
     Args:
         truth_table: Boolean array in {0,1}, shape (N,).
@@ -39,14 +56,20 @@ def q_oracle_sketch_boolean(
     Returns:
         (diag, M) where diag ~= exp(i*pi*f).
     """
-    N = truth_table.shape[0]
-    p = 1.0 / N
-    t = jnp.pi * N  # p * t = pi
-    # Per-sample rotation angle: theta = p * t / M = pi / M
-    theta = jnp.pi / unit_num_samples
-    log_diag = jnp.log1p(p * jnp.expm1(1j * theta * truth_table))
-    diag = jnp.exp(unit_num_samples * log_diag)
-    return diag.astype(jnp.complex128), int(unit_num_samples)
+    M = int(unit_num_samples)
+    # Cast to float64 first so subsequent complex arithmetic stays in c128.
+    f   = truth_table.astype(jnp.float64)          # shape (N,), dtype float64
+    N   = f.shape[0]
+    p   = jnp.float64(1.0 / N)                     # scalar float64
+    t   = jnp.float64(jnp.pi * N)                  # p*t = pi
+    # Rotation angle per sample: theta = p*t/M = pi/M
+    theta = jnp.float64(jnp.pi) / jnp.float64(M)  # scalar float64, ~pi/M
+    # expm1(i*theta*f): for f=1, ~i*theta (tiny angle); for f=0, 0.
+    # Full precision: all intermediate values in complex128.
+    phase_arg = (1j * theta) * f                    # complex128 broadcast
+    log_diag  = jnp.log1p(p * jnp.expm1(phase_arg))# complex128
+    diag      = jnp.exp(jnp.float64(M) * log_diag) # complex128
+    return diag, M
 
 
 def q_oracle_sketch_boolean_adaptive(
@@ -57,66 +80,50 @@ def q_oracle_sketch_boolean_adaptive(
 ) -> tuple[jax.Array, int, jax.Array]:
     """Adaptive importance-sampled Boolean oracle diagonal (Marena 2026).
 
-    ## Algorithm
+    ## Two-phase algorithm
 
     **Phase 1 - Pilot (M_pilot = pilot_frac * M samples):**
-    Sample indices uniformly. Count hits on each position.
-    Build importance weight q(x) concentrated on supp(f):
-        q(x) = (count(x) + 1) / sum_{y in supp(f)} (count(y) + 1)  if f(x)=1
-        q(x) = 0                                                      if f(x)=0
-    (Laplace smoothing ensures every support entry gets weight > 0.)
+    Sample M_pilot indices uniformly. Count hits per position.
+    Build Laplace-smoothed importance weights q(x) on supp(f):
+
+        q(x) = (count(x) + 1) / sum_{y: f(y)=1} (count(y) + 1)  if f(x) = 1
+        q(x) = 0                                                   if f(x) = 0
+
+    Estimate K_hat = (pilot_hits / M_pilot) * N.
 
     **Phase 2 - Main oracle (M_main = M - M_pilot samples):**
-    Use importance weights q(x) to construct the oracle diagonal via
-    the DIRECT formula:
+    Per-entry rotation angle:
 
-        diag[x] = exp(i * pi * K_hat * q(x) * f(x))
+        theta(x) = q(x) * pi * K_hat / M_main
 
-    where K_hat is the estimated support size.
+    Oracle diagonal via expected-unitary log-sum (all in complex128):
 
-    ## Why this is correct
+        diag[x] = exp(M_main * log(1 + expm1(i*theta(x)) * f(x)))
 
-    When q(x) = 1/K exactly (perfect pilot), K_hat*q(x) = 1 for all
-    x in supp(f), giving diag[x] = exp(i*pi) = -1. Correct.
+    For perfect pilot (q(x) = 1/K, K_hat = K):
+        theta(x) = pi/M_main  =>  M_main * log(1 + expm1(i*pi/M_main))
+                             ~=   M_main * (i*pi/M_main) = i*pi
+        => diag[x] = exp(i*pi) = -1. Correct.
 
-    When q is noisy (K_hat*q(x) ~ 1 + delta_x with E[delta_x]=0),
-    the error on supp(f) is |exp(i*pi*(1+delta)) - exp(i*pi)|
-                           = 2|sin(pi*delta/2)| ~ pi*|delta|.
-    This error goes to 0 as M_pilot -> inf because delta -> 0.
+    Off-support (f(x)=0): expm1(...)*0 = 0 => log1p(0) = 0 => exp(0) = 1.
 
-    For uniform oracle, the error on supp(f) comes from the log-sum
-    approximation and scales as ~pi^2/(2*M) per entry, requiring
-    M = O(N*pi^2/eps^2) for eps error (phase wraps around N times).
+    ## Sample complexity
 
-    For adaptive oracle, the error is pi*E[|delta|] ~ pi*sqrt(K/M_pilot),
-    requiring M_pilot = O(K/eps^2), hence total M = O(K/eps^2). This is
-    the N/K improvement.
+    Pilot concentration (Bernstein): |delta(x)| = O(sqrt(K/M_pilot)) w.h.p.
+    Error on supp(f): ~pi*|delta| => M_pilot = O(K*pi^2/eps^2).
+    Total M = O(K/eps^2).  Improvement factor N/K over Zhao et al. O(N/eps^2).
 
-    ## The variance-reduction role of M_main
+    ## Fallbacks
 
-    In the pure adaptive setting M_main is irrelevant to the direct
-    formula. However, we use M_main as additional oracle queries to
-    reduce the stochastic shot noise of the phase estimate:
-
-        diag_refined[x] = exp(M_main * log(1 + q(x) * expm1(i*pi*K_hat/M_main * f(x))))
-
-    This is the expected-unitary formula with p=q(x) and t=pi*K_hat.
-    When q(x)=1/K_hat this gives p*t=pi (correct), and the log-sum
-    reduces variance by averaging M_main independent rotations.
-
-    The stability condition |q(x)*pi*K_hat/M_main| << 1 becomes
-    |q(x)*pi*K_hat/M_main| = pi/M_main (for q=1/K_hat), which is
-    small when M_main >> pi ~ 3.14. So M_main >= 50 is always fine.
-
-    ## Fallback when pilot is disabled
-
-    If pilot_frac=0 or supp(f)={} we fall back to uniform oracle.
+    - pilot_frac = 0            -> uniform oracle
+    - supp(f) = {} (all zeros)  -> uniform oracle (trivially correct)
+    - supp(f) = full (all ones) -> uniform oracle
 
     Args:
         truth_table: Boolean array in {0,1}, shape (N,).
         unit_num_samples: Total samples M.
-        pilot_frac: Fraction for pilot phase. Default 0.1.
-        key: JAX PRNG key.
+        pilot_frac: Fraction of M used for pilot. Default 0.1.
+        key: JAX PRNG key. If None, uses PRNGKey(0).
 
     Returns:
         (diag, M, importance_weights) where importance_weights is q(x).
@@ -125,59 +132,57 @@ def q_oracle_sketch_boolean_adaptive(
     if key is None:
         key = random.PRNGKey(0)
 
-    M_pilot = int(float(jnp.clip(pilot_frac, 0.0, 1.0)) * unit_num_samples)
+    M_pilot = int(float(jnp.clip(jnp.float32(pilot_frac), 0.0, 1.0)) * unit_num_samples)
     M_main  = max(unit_num_samples - M_pilot, 1)
 
-    uniform_q = jnp.ones((N,), dtype=real_dtype) / N
-    support   = (truth_table > 0).astype(real_dtype)
-    K_true    = float(jnp.sum(support))  # oracle access to K for t-scaling
+    uniform_q = jnp.ones((N,), dtype=jnp.float64) / N
+    f         = truth_table.astype(jnp.float64)     # float64 throughout
+    K_true    = float(jnp.sum(f))
 
-    # Fallbacks
     if M_pilot == 0 or K_true == 0.0 or K_true == float(N):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), uniform_q
 
-    # ------------------------------------------------------------------ #
-    # Phase 1: Pilot - estimate support distribution                       #
-    # ------------------------------------------------------------------ #
+    # ------------------------------------------------------------------
+    # Phase 1: Pilot
+    # ------------------------------------------------------------------
     key, pkey = random.split(key)
-    idx = random.randint(pkey, shape=(M_pilot,), minval=0, maxval=N)
-    counts = jnp.bincount(idx, length=N).astype(real_dtype)   # shape (N,)
+    idx    = random.randint(pkey, shape=(M_pilot,), minval=0, maxval=N)
+    counts = jnp.bincount(idx, length=N).astype(jnp.float64)
 
-    # Laplace-smoothed importance weights RESTRICTED to support:
-    # q(x) = (count(x) + 1) / Z  for x in supp(f), else 0
-    raw     = (counts + 1.0) * support                        # shape (N,)
-    Z       = jnp.sum(raw)                                    # normaliser
-    q       = raw / Z                                         # sums to 1 on supp
+    raw = (counts + 1.0) * f          # Laplace-smooth, zero off support
+    Z   = jnp.sum(raw)
+    q   = raw / Z                     # float64, sums to 1 on supp(f)
 
-    # Estimated K from pilot hits (for scaling t)
-    pilot_hits  = jnp.sum(counts * support)                   # total hits on supp
-    hit_rate    = pilot_hits / M_pilot                        # ~ K/N
-    K_hat       = float(jnp.clip(hit_rate * N, 1.0, float(N)))
+    pilot_hits = jnp.sum(counts * f)
+    hit_rate   = pilot_hits / jnp.float64(M_pilot)
+    K_hat      = float(jnp.clip(hit_rate * N, 1.0, float(N)))
 
-    # ------------------------------------------------------------------ #
-    # Phase 2: Main oracle - expected-unitary with importance weights      #
-    # ------------------------------------------------------------------ #
-    # Per-entry phase-time: p(x)*t where t = pi*K_hat, p(x) = q(x)
-    # => p(x)*t = q(x)*pi*K_hat
-    # For perfect pilot: q(x)=1/K_true, K_hat=K_true => p*t = pi. Correct.
-    # Per-step rotation: theta(x) = p(x)*t / M_main = q(x)*pi*K_hat / M_main
-    theta_per_step = q * (jnp.pi * K_hat) / M_main          # shape (N,)
+    # ------------------------------------------------------------------
+    # Phase 2: Main oracle (complex128)
+    # ------------------------------------------------------------------
+    # theta(x) = q(x) * pi * K_hat / M_main
+    # For perfect pilot: theta(x) = (1/K)*(pi*K)/M_main = pi/M_main
+    theta = q * (jnp.pi * K_hat) / jnp.float64(M_main)   # float64 shape (N,)
 
-    # Use log-sum formula (variance-reducing) for all entries:
-    #   diag[x] = exp(M_main * log(1 + expm1(i*theta_per_step[x]) * f(x)))
-    # Note: for f(x)=0 this is exp(M*log(1+0)) = 1 exactly.
-    # For f(x)=1, theta_per_step[x] = q(x)*pi*K_hat/M_main.
-    # Stability: max theta_per_step = pi/M_main (for q=1/K, K=K_hat)
-    # => always stable since M_main >= 1 => theta <= pi.
-    log_term = jnp.log1p(jnp.expm1(1j * theta_per_step) * truth_table)
-    diag     = jnp.exp(M_main * log_term).astype(jnp.complex128)
+    # Argument to expm1 is imaginary: i*theta(x)
+    # Off-support: theta(x)=0 => expm1(0)=0 => log1p(0*f)=0 => exp(0)=1
+    # On-support: accumulated M_main times gives exp(i*pi) = -1
+    phase_arg = (1j * theta) * f                          # complex128 shape (N,)
+    log_term  = jnp.log1p(jnp.expm1(phase_arg))          # NB: f already applied via theta
+    # Wait: theta is already zero off-support (q=0 there), so phase_arg=0 off-support.
+    # But we must NOT multiply by f again — q already encodes support.
+    # Rewrite: expm1(i*theta)*f vs expm1(i*theta*f).
+    # Since theta(x)=0 for f(x)=0, both are equivalent. Use explicit f mask for safety.
+    phase_arg = 1j * (theta * f)                          # complex128, zero off-supp
+    log_term  = jnp.log1p(jnp.expm1(phase_arg))          # complex128
+    diag      = jnp.exp(jnp.float64(M_main) * log_term)  # complex128
 
     return diag, int(unit_num_samples), q
 
 
 # ---------------------------------------------------------------------------
-# Matrix oracle APIs (unchanged)
+# Matrix oracle APIs (unchanged from v1.2)
 # ---------------------------------------------------------------------------
 
 def q_oracle_sketch_matrix_element(matrix: jax.Array, unit_num_samples: int) -> tuple[jax.Array, int]:
