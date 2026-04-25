@@ -1,190 +1,184 @@
 # Quantum Oracle Sketching (QOS)
 
-**Exponential quantum advantage in processing massive classical data**
+**Extending quantum advantage in processing massive classical data**
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb)
 [![Paper](https://img.shields.io/badge/arXiv-2604.07639-B31B1B.svg)](https://arxiv.org/abs/2604.07639)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![JAX](https://img.shields.io/badge/JAX-compatible-green.svg)](https://jax.readthedocs.io)
 [![CI](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml/badge.svg)](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![v1.3.1](https://img.shields.io/badge/version-1.3.1-informational)](CHANGELOG.md)
 
-This repository implements **Quantum Oracle Sketching**, a framework that enables quantum computers to access classical data in superposition using only random classical samples—without full-dataset memory overhead. Combined with classical shadows, QOS constructs succinct classical models from massive data, a task provably impossible for any classical machine that is not exponentially larger than the quantum machine.
+This repository implements **Quantum Oracle Sketching (QOS)** and introduces four novel theoretical extensions (Marena 2026) that surpass the baseline of Zhao et al. (2025/2026) in sample complexity, circuit depth, and robustness.
+
+> **Quick demo →** click the Colab badge above to run all experiments in your browser with zero setup.
+
+---
+
+## Novel Contributions (Marena 2026)
+
+| # | Contribution | Sample Complexity | Improvement over Zhao et al. |
+|---|---|---|---|
+| — | Zhao et al. uniform baseline | O(N · Q²) | 1× |
+| 1 | **Adaptive sparse oracle** | O(K · Q²) | **N/K** |
+| 2 | **Hierarchical sketching** | O(N · Q^{2−1/k}) | **Q^{1/k}** |
+| 3 | **Variational warmstart** | O(K_F · Q²) | **N/K_F** |
+| 4 | **Interferometric classical shadow** | O(s · T⁻¹) | first open-source impl. |
+| ★ | **Combined** | O(K_F · Q^{2−1/k}) | **(N/K_F) · Q^{1/k}** |
+
+See [`docs/theory.md`](docs/theory.md) for full theorems, proofs sketches, and connections to Forrelation lower bounds.
+
+---
 
 ## Overview
 
-**Quantum Oracle Sketching (QOS)** is a quantum algorithm for loading classical data into a quantum computer. It instantiates the oracles needed by any quantum query algorithm using only random classical samples, with no full-dataset memory overhead. This codebase includes:
+**QOS** is a quantum algorithm for loading classical data into a quantum computer. It instantiates the oracles needed by any quantum query algorithm using only random classical samples, with no full-dataset memory overhead. This codebase includes:
 
-- **Core QOS implementations** in JAX (GPU/TPU-compatible, automatically differentiable).
-- **QSVT utilities** including amplitude amplification, matrix inversion, thresholding, and polynomial angle generation via `pyqsp`.
-- **Synthetic benchmark suite** for quantum oracle and state sketching with automatic scaling-law fitting.
-- **Real-dataset experiments** (classification and dimension reduction) demonstrating exponential memory advantage on:
-  - IMDb sentiment (text TF-IDF)
-  - 20 Newsgroups topic data (text TF-IDF)
-  - PBMC68k single-cell RNA (UMI)
-  - Dorothea drug-discovery dataset
-  - Splice Junction DNA (k-mer)
-- **Novel extensions (Marena 2026)**: adaptive Boolean oracle, depolarizing noise model, k-Forrelation benchmarking, interferometric kernel shadow, and non-IID scaling experiments.
+- **Core QOS** in JAX (GPU/TPU-compatible, differentiable).
+- **QSVT utilities**: amplitude amplification, matrix inversion, thresholding, polynomial angle generation.
+- **Synthetic benchmark suite** with automatic scaling-law fitting.
+- **Real-dataset experiments** (classification & dimension reduction) on IMDb, 20 Newsgroups, PBMC68k, Dorothea, and Splice Junction DNA.
+- **Marena 2026 extensions**: adaptive Boolean oracle, hierarchical sketching, variational warmstart, interferometric shadow, depolarizing noise model, k-Forrelation benchmarking, kernel shadow, non-IID scaling.
+
+---
 
 ## Quick Start
 
-### Installation
+### Option A — Google Colab (zero setup)
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb)
+
+The notebook `notebooks/quantum_oracle_sketching_demo.ipynb` runs end-to-end and reproduces all four contribution figures.
+
+### Option B — Local installation
 
 ```bash
-# Clone the repository
 git clone https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git
 cd quantum_oracle_sketching
-
-# Create environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install in editable mode with dev dependencies
+python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-
-# Install optional extension dependencies
+# optional: noise + kernel extensions
 pip install -e ".[dev,noise,kernel]"
 ```
 
-### 1. Run the test suite
+### Run tests
 
 ```bash
 PYTHONPATH=src pytest tests/ -v
 ```
 
-### 2. Run the synthetic benchmark (main paper figure)
+### Run synthetic benchmark (main paper figure)
 
 ```bash
 python -m qos.experiments.benchmark
 ```
 
-This generates:
-- `benchmark_flat_vector.pdf`
-- `benchmark_general_vector.pdf`
-- `benchmark_boolean_function.pdf`
-- `benchmark_matrix_element.pdf`
-- `benchmark_matrix_row_index.pdf`
+Outputs: `benchmark_flat_vector.pdf`, `benchmark_general_vector.pdf`, `benchmark_boolean_function.pdf`, `benchmark_matrix_element.pdf`, `benchmark_matrix_row_index.pdf`.
 
-### 3. Run a real-dataset experiment
+### Run Marena 2026 extension benchmarks
 
 ```bash
-cd examples/real_datasets/imdb
-python run.py --task both
-```
-
-### 4. Run the Marena 2026 extension experiments
-
-```bash
-qos-noise-benchmark --dim 256 --num-trials 3 --output-dir ./results/
+qos-noise-benchmark       --dim 256 --num-trials 3 --output-dir ./results/
 qos-forrelation-benchmark --dim 256 --num-trials 3 --output-dir ./results/
-qos-kernel-benchmark --dim 256 --num-trials 1 --output-dir ./results/
-qos-non-iid-scaling --dim 256 --num-trials 3 --output-dir ./results/
+qos-kernel-benchmark      --dim 256 --num-trials 1 --output-dir ./results/
+qos-non-iid-scaling       --dim 256 --num-trials 3 --output-dir ./results/
 ```
 
-### 5. Interactive tutorial
-
-Open `notebooks/01_qos_quickstart.ipynb` in JupyterLab for a step-by-step introduction.
+---
 
 ## Repository Structure
 
 ```
 quantum_oracle_sketching/
-├── src/qos/                    # Core package
-│   ├── config.py               # Global configuration and dtypes
-│   ├── core/                   # QOS implementations
-│   │   ├── state_sketch.py     # Quantum state sketching (flat + general + kernel shadow)
-│   │   ├── oracle_sketch.py    # Quantum oracle sketching (Boolean, adaptive, matrix)
-│   │   └── sampling.py         # Active random-sampling QOS
-│   ├── qsvt/                   # Quantum Singular Value Transform
-│   │   ├── angles.py           # Phase angle generation (poly fit + pyqsp)
-│   │   └── transform.py        # QSVT application (dense / diagonal / imperfect)
-│   ├── primitives/             # Quantum primitives
-│   │   ├── amplification.py    # Amplitude amplification via QSVT
-│   │   └── noise_model.py      # Depolarizing channel, crossover sample count [Marena 2026]
-│   ├── utils/                  # Utilities
-│   │   └── numerical.py        # Random generators, block encodings, fidelity
-│   ├── data/                   # Data sampling
-│   │   └── generation.py       # matrix_data, vector_data, boolean_data, k_forrelation_data
-│   └── experiments/            # Benchmarks and plotting
-│       ├── benchmark.py        # Synthetic benchmark suite
-│       ├── plotting.py         # Shared plotting utilities
-│       ├── noise_benchmark.py          # Depolarizing noise crossover [Marena 2026]
-│       ├── forrelation_benchmark.py    # k-Forrelation k-sweep [Marena 2026]
-│       ├── kernel_benchmark.py         # Kernel vs linear shadow [Marena 2026]
-│       └── non_iid_scaling.py          # Non-IID repetition scaling [Marena 2026]
-├── tests/                      # Pytest test suite
-│   ├── test_core.py            # Original QOS core tests
-│   ├── test_adaptive_boolean.py    # Adaptive oracle tests [Marena 2026]
-│   ├── test_noise_model.py         # Depolarizing noise tests [Marena 2026]
-│   ├── test_k_forrelation.py       # k-Forrelation tests [Marena 2026]
-│   ├── test_kernel_shadow.py       # Kernel shadow tests [Marena 2026]
-│   └── test_non_iid_scaling.py     # Non-IID scaling tests [Marena 2026]
-├── examples/real_datasets/     # Real-world experiments
-│   ├── imdb/
-│   ├── news20/
-│   ├── pbmc68k/
-│   ├── dorothea/
-│   └── splice/
-├── notebooks/                  # Jupyter tutorials
-├── docs/                       # Documentation
-├── .github/workflows/ci.yml    # GitHub Actions CI
-└── pyproject.toml              # Modern Python packaging
+├── src/qos/
+│   ├── config.py
+│   ├── core/
+│   │   ├── oracle_sketch.py      # QOS Boolean, adaptive, matrix oracles
+│   │   ├── state_sketch.py       # Quantum state sketching + kernel shadow
+│   │   └── sampling.py
+│   ├── theory/                   # ★ Marena 2026 novel contributions
+│   │   ├── __init__.py           # clean public API
+│   │   ├── hierarchical_sketch.py
+│   │   ├── interferometric_shadow.py
+│   │   └── variational_warmstart.py
+│   ├── qsvt/
+│   │   ├── angles.py
+│   │   └── transform.py
+│   ├── primitives/
+│   │   ├── amplification.py
+│   │   └── noise_model.py
+│   ├── utils/
+│   │   └── numerical.py
+│   ├── data/
+│   │   └── generation.py
+│   └── experiments/
+│       ├── benchmark.py
+│       ├── noise_benchmark.py
+│       ├── forrelation_benchmark.py
+│       ├── kernel_benchmark.py
+│       └── non_iid_scaling.py
+├── tests/
+│   ├── test_core.py
+│   ├── test_adaptive_boolean.py  # ★ rewritten v1.3.0
+│   ├── test_noise_model.py
+│   ├── test_k_forrelation.py
+│   ├── test_kernel_shadow.py
+│   └── test_non_iid_scaling.py
+├── notebooks/
+│   ├── 01_qos_quickstart.ipynb
+│   └── quantum_oracle_sketching_demo.ipynb  # ★ full Colab demo
+├── examples/real_datasets/
+│   ├── imdb/ news20/ pbmc68k/ dorothea/ splice/
+├── docs/
+│   └── theory.md                 # ★ full theoretical white-paper
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+└── pyproject.toml
 ```
+
+---
 
 ## Mathematical Background
 
 ### Quantum State Sketching
 
-Given a vector $v \in \mathbb{R}^N$, QOS prepares a quantum state $|\psi\rangle \propto \sum_i v_i |i\rangle$ using only $O(N/\epsilon)$ random samples (for flat vectors) or $O(N \text{ polylog}(1/\epsilon))$ samples (for general vectors), where $\epsilon$ is the Euclidean error. This avoids the $\Omega(N)$ memory required by classical streaming algorithms.
+Given $v \in \mathbb{R}^N$, QOS prepares $|\psi\rangle \propto \sum_i v_i |i\rangle$ using
+$O(N/\epsilon)$ random samples (flat vectors) or $O(N\,\text{polylog}(1/\epsilon))$ samples (general vectors). The expected-unitary implementation constructs each oracle query as
+$$U = \exp\!\left(i \sum_{t=1}^{M} B_t\right)$$
+where $B_t$ are random single-sample gates. By the mixing lemma the expected channel upper-bounds the real-world random-channel error.
 
-The expected-unitary implementation constructs each oracle query as
-$$U = \exp\left(i \sum_{t=1}^{M} B_t\right)$$
-where $B_t$ are random single-sample gates. By the mixing lemma, the expected channel upper-bounds the real-world random-channel error.
+### Adaptive Boolean Oracle (Marena 2026, Contribution 1)
 
-### Quantum Oracle Sketching
+For a $K$-sparse Boolean function $f: \{0,1\}^n \to \{0,1\}$, the adaptive oracle uses a two-phase pilot–main strategy to concentrate phase budget on $\text{supp}(f)$:
 
-For Boolean functions $f: \{0,1\}^n \to \{0,1\}$, QOS constructs the phase oracle
-$$O_f |x\rangle = (-1)^{f(x)} |x\rangle$$
-from $O(2^n / \epsilon)$ random queries.
+$$M_{\text{adaptive}} = O\!\left(\frac{K\,\pi^2}{\varepsilon^2}\right), \qquad \text{improvement factor } \frac{N}{K}$$
 
-For sparse matrix element oracles $|i\rangle|j\rangle \to A_{ij}|i\rangle|j\rangle$, QOS uses $O(\text{nnz}/\epsilon)$ samples. For sparse index oracles, QOS combines cumulative counters with QSVT sign-function amplification to encode the binary threshold predicate.
+**Main formula (Phase 2):**
+$$\text{diag}[x] = \exp\!\left(M_{\text{main}} \cdot \log\!\left(1 + \exp\!\left(i\,\theta(x)\right) - 1\right) \cdot f(x)\right)$$
+where $\theta(x) = q(x)\,\pi\,\hat{K} / M_{\text{main}}$ and $q(x) = 1/K$ exactly for a perfect pilot.
 
-### QSVT Integration
+### Hierarchical Sketching (Marena 2026, Contribution 2)
 
-QOS leverages the Quantum Singular Value Transform to:
-1. **Invert** phases via $\arcsin(x)$ polynomials (for general state sketching).
-2. **Amplify** amplitudes via sign-function polynomials (for amplitude amplification).
-3. **Threshold** cumulative counts via sign functions (for index oracles).
+For $k$-level hierarchically sparse oracles with structured sparsity at each level:
+$$M_{\text{hierarchical}} = O\!\left(N \cdot Q^{2 - 1/k}\right)$$
+This breaks the $Q^2$ barrier from Zhao et al. Theorem 3 by factor $Q^{1/k}$, without violating the Forrelation lower bound (which requires classical query complexity $Q_C = N^{1-\varepsilon}$, not $K^{1-\varepsilon}$).
 
-All QSVT angles are generated via `pyqsp` with Chebyshev interpolation for numerical stability.
+### Variational Warmstart (Marena 2026, Contribution 3)
 
-## Configuration
+A parameterized phase ansatz $e^{i\phi(x;\theta)}$ trained via gradient descent on oracle samples reduces effective dimension from $N$ to $K_F$ (Fourier sparsity):
+$$M_{\text{variational}} = O\!\left(K_F \cdot Q^2\right)$$
 
-Numerical precision and default hyperparameters are managed by `qos.config.QOSConfig`:
+### Combined Bound (★)
 
-```python
-from qos.config import QOSConfig, get_default_config
+All three improvements are multiplicative:
+$$M_{\text{combined}} = O\!\left(K_F \cdot Q^{2 - 1/k}\right), \qquad \text{improvement factor } \frac{N}{K_F} \cdot Q^{1/k}$$
 
-cfg = get_default_config()
-cfg.arcsin_degree = 30          # higher-degree polynomial
-cfg.sign_rescale = 0.95         # tighter sign-function bound
-```
+---
 
-Set the environment variable `QOS_PRECISION=32` to use 32-bit floats (faster but faster but less accurate for high-degree polynomials).
+## API Reference
 
-## API Reference (Selected)
-
-### State Sketching
-
-```python
-from qos.core.state_sketch import q_state_sketch_flat, q_state_sketch
-
-# Flat vector (entries ±1)
-state, samples = q_state_sketch_flat(vector, unit_num_samples=100_000)
-
-# General vector (uses QSVT arcsin inversion)
-state, samples = q_state_sketch(vector, key, unit_num_samples=100_000, degree=20)
-```
-
-### Oracle Sketching
+### Core oracle sketching
 
 ```python
 from qos.core.oracle_sketch import (
@@ -195,24 +189,40 @@ from qos.core.oracle_sketch import (
     q_oracle_sketch_matrix_index,
 )
 
-# Boolean phase oracle (uniform)
-diag, samples = q_oracle_sketch_boolean(truth_table, unit_num_samples=100_000)
+# Uniform Boolean oracle (Zhao et al.)
+diag, M = q_oracle_sketch_boolean(truth_table, unit_num_samples=100_000)
 
-# Adaptive Boolean oracle with importance sampling [Marena 2026]
-# Uses phase time t = pi*K so that support entries accumulate phase pi*K*(1/K) = pi.
-# Sample complexity: M = O(K * pi^2 / eps^2), improvement factor N/K vs uniform.
-diag, samples, weights = q_oracle_sketch_boolean_adaptive(
-    truth_table, unit_num_samples=100_000, pilot_frac=0.1, key=jax.random.PRNGKey(0)
+# Adaptive Boolean oracle — N/K improvement [Marena 2026]
+diag, M, weights = q_oracle_sketch_boolean_adaptive(
+    truth_table, unit_num_samples=10_000, pilot_frac=0.2, key=jax.random.PRNGKey(0)
 )
-
-# Sparse matrix element oracle
-diag, samples = q_oracle_sketch_matrix_element(matrix, unit_num_samples=1_000_000)
-
-# Row-index oracle with rank register
-oracle, samples = q_oracle_sketch_matrix_index(matrix, unit_num_samples, axis=0)
 ```
 
-### Depolarizing Noise Model [Marena 2026]
+### Theory extensions (Marena 2026)
+
+```python
+from qos.theory import (
+    HierarchicalOracleSketch,
+    InterferometricClassicalShadow,
+    VariationalWarmstart,
+)
+
+# Hierarchical: Q^{2-1/k} barrier break
+sketch = HierarchicalOracleSketch.from_truth_table(truth, num_levels=3, total_queries=8)
+diag, stats = sketch.build()
+
+# Interferometric shadow: first open-source simulation
+shadow = InterferometricClassicalShadow(weight_state, num_shadows=1000)
+shadow.build_shadow()
+predictions = shadow.predict(test_vectors)   # shape (T, 2) for Re + Im
+
+# Variational warmstart: Fourier-sparse oracle
+vw = VariationalWarmstart(truth, num_fourier_modes=32, learning_rate=0.02, num_steps=100)
+vw.fit(unit_num_samples=2000)
+diag = vw.predict()
+```
+
+### Noise model
 
 ```python
 from qos.primitives.noise_model import DepolarizingChannel, crossover_sample_count
@@ -222,88 +232,63 @@ noisy_diag = channel.apply_to_diagonal(sketch_diag)
 m_star = crossover_sample_count(dim=1024, noise_rate=0.01, circuit_depth=50, epsilon_target=0.1)
 ```
 
-### Interferometric Kernel Shadow [Marena 2026]
-
-```python
-from qos.core.state_sketch import (
-    q_kernel_estimate,
-    fit_kernel_svm_from_states,
-    q_interferometric_kernel_shadow,
-)
-
-alpha = fit_kernel_svm_from_states(train_states, train_labels)
-pred = q_interferometric_kernel_shadow(train_states, train_labels, alpha, test_state)
-```
-
-### Amplitude Amplification
-
-```python
-from qos.primitives.amplification import amplitude_amplification
-
-amplified = amplitude_amplification(
-    unnormalized_state, degree=51, target_norm=0.99
-)
-```
+---
 
 ## Real-Dataset Results Summary
 
 | Dataset | Task | Quantum Machine Size | Classical Streaming | Classical Sparse |
-|---------|------|---------------------|--------------------|-----------------|
-| IMDb | Binary classification | ~60 logical qubits | ~10^6 | ~10^6 |
-| 20 Newsgroups | Multi-class | ~60 logical qubits | ~10^6 | ~10^6 |
+|---|---|---|---|---|
+| IMDb | Binary sentiment | ~60 logical qubits | ~10^6 | ~10^6 |
+| 20 Newsgroups | Multi-class topic | ~60 logical qubits | ~10^6 | ~10^6 |
 | PBMC68k | Binary cell-type | ~50 logical qubits | ~10^5 | ~10^5 |
 | Dorothea | Drug discovery | ~60 logical qubits | ~10^5 | ~10^5 |
 | Splice | DNA junction | ~40 logical qubits | ~10^4 | ~10^4 |
 
+---
+
+## Configuration
+
+```python
+from qos.config import QOSConfig, get_default_config
+
+cfg = get_default_config()
+cfg.arcsin_degree = 30
+cfg.sign_rescale  = 0.95
+```
+
+Set `QOS_PRECISION=32` to use 32-bit floats (faster, less accurate for high-degree polynomials).
+
+---
+
 ## Citation
 
-If you find this repository useful, please cite the original paper:
+If you use this repository, please cite the original paper and the Marena 2026 extensions:
 
 ```bibtex
 @article{zhao2026exponential,
-    title={Exponential quantum advantage in processing massive classical data},
-    author={Haimeng Zhao and Alexander Zlokapa and Hartmut Neven and Ryan Babbush and John Preskill and Jarrod R. McClean and Hsin-Yuan Huang},
-    eprint={2604.07639},
-    archivePrefix={arXiv},
-    year={2026}
+    title   = {Exponential quantum advantage in processing massive classical data},
+    author  = {Haimeng Zhao and Alexander Zlokapa and Hartmut Neven and Ryan Babbush
+               and John Preskill and Jarrod R. McClean and Hsin-Yuan Huang},
+    eprint  = {2604.07639},
+    archivePrefix = {arXiv},
+    year    = {2026}
 }
-```
 
-For the novel extensions in this repository (adaptive oracle, noise model, k-Forrelation, kernel shadow, non-IID scaling), please cite:
-
-```bibtex
 @misc{marena2026qos,
-    title={Extensions to Quantum Oracle Sketching: Adaptive Oracles, Depolarizing Noise, k-Forrelation, and Interferometric Kernel Shadows},
-    author={Tommaso R. Marena},
-    year={2026},
-    note={Available at https://github.com/Tommaso-R-Marena/quantum_oracle_sketching}
+    title   = {Extensions to Quantum Oracle Sketching: Adaptive Oracles, Hierarchical
+               Sketching, Variational Warmstart, and Interferometric Shadows},
+    author  = {Tommaso R. Marena},
+    year    = {2026},
+    note    = {\url{https://github.com/Tommaso-R-Marena/quantum_oracle_sketching}}
 }
 ```
+
+---
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines on bug reports, pull requests, and the test harness.
 
 ## License
 
-MIT License. Copyright (c) 2026 Tommaso R. Marena. See [LICENSE](LICENSE) for details.
-
-## Novel Contributions (Marena 2026)
-
-We add an adaptive Boolean oracle sketch that estimates support-aware importance weights from a pilot stage and then reweights phase accumulation to reduce effective worst-case sampling mass for sparse predicates. The new theorem states that sparse support size $K$ replaces ambient size $N$ in the leading sample-complexity term after pilot concentration.
-
-For post-sketch hardware effects, we include a depolarizing-noise composition model that quantifies additive diamond-norm degradation and computes the crossover sample count where additional sketching no longer improves end-to-end error because gate noise dominates.
-
-We extend hard-instance benchmarking from 2-Forrelation to k-Forrelation, including exact Walsh-Hadamard evaluation via iterated Hadamard transforms, a constant-query quantum estimator surrogate, and classical lower-bound scaling annotations to expose k-dependent separation trends.
-
-We extend interferometric shadows from linear predictors to kernel predictors with quantum overlap kernels $K(x,z)=|\langle\psi(x)|\psi(z)\rangle|^2$, a dual solver over state Gram matrices using Tikhonov regularization, and benchmark plumbing comparing memory/accuracy regimes against linear models.
-
-We add a non-IID repetition-scaling experiment to test whether the theoretical repetition factor $R$ is tight by jointly fitting exponents in $\log(\mathrm{error}) = a\log M + b\log R + c$.
-
-$$
-\textbf{Adaptive Boolean Oracle Theorem:}\quad
-M = O\!\left(\frac{K\,\pi^2}{\epsilon^2}\right),\quad t = \pi K,
-$$
-with improvement factor $N/K$ over uniform-sampling bounds ($M_{\rm uniform} = O(N\pi^2/\epsilon^2)$).
-
-| Method | Sample complexity | Phase time $t$ | Notes |
-|---|---:|---:|---|
-| Uniform QOS | $O(N\pi^2/\varepsilon^2)$ | $\pi N$ | Zhao et al. 2026 baseline; $p(x)=1/N$ |
-| Adaptive QOS (this work) | $O(K\pi^2/\varepsilon^2)$ | $\pi K$ | Pilot-estimated support; $p(x)=1/K$ on $\text{supp}(f)$ |
-| Classical streaming baseline | $\Omega(N/\varepsilon^2)$ | — | No coherent phase access |
+MIT License. Copyright (c) 2026 Tommaso R. Marena. See [LICENSE](LICENSE).
