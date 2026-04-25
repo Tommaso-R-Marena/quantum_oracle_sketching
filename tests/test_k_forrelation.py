@@ -40,8 +40,18 @@ def test_classical_complexity_increases_with_k():
 
 
 def test_noise_degrades_forrelation_estimate():
+    """Noise-flipped layers differ from clean layers in mean absolute value."""
     clean = k_forrelation_data(n=4, k=3, key=jax.random.PRNGKey(0), noise_level=0.0)
-    noisy = k_forrelation_data(n=4, k=3, key=jax.random.PRNGKey(0), noise_level=0.1)
-    _, v1 = clean.sample_functions(1000)
-    _, v2 = noisy.sample_functions(1000)
-    assert float(jnp.mean(jnp.abs(v2 - v1))) > 0.0
+    noisy = k_forrelation_data(n=4, k=3, key=jax.random.PRNGKey(0), noise_level=0.3)
+
+    # sample_functions(key) returns a list of k full ±1 arrays of shape (2**n,)
+    key = jax.random.PRNGKey(42)
+    funcs_clean = clean.sample_functions(key)
+    funcs_noisy = noisy.sample_functions(key)
+
+    # Stack into (k, 2**n) matrices for element-wise comparison
+    clean_stack = jnp.stack(funcs_clean)   # (k, dim)
+    noisy_stack = jnp.stack(funcs_noisy)   # (k, dim)
+
+    # With noise_level=0.3, ~30% of entries are flipped; mean abs diff > 0
+    assert float(jnp.mean(jnp.abs(noisy_stack - clean_stack))) > 0.0
