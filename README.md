@@ -235,3 +235,36 @@ If you find this repository useful, please cite our paper:
 ## License
 
 Apache 2.0
+
+## Novel Contributions (Marena 2026)
+
+We add an adaptive Boolean oracle sketch that estimates support-aware importance weights from a pilot stage and then reweights phase accumulation to reduce effective worst-case sampling mass for sparse predicates. The new theorem states that sparse support size \(K\) replaces ambient size \(N\) in the leading sample-complexity term after pilot concentration.
+
+For post-sketch hardware effects, we include a depolarizing-noise composition model that quantifies additive diamond-norm degradation and computes the crossover sample count where additional sketching no longer improves end-to-end error because gate noise dominates.
+
+We extend hard-instance benchmarking from 2-Forrelation to k-Forrelation, including exact Walsh-Hadamard evaluation, a constant-query quantum estimator surrogate, and classical lower-bound scaling annotations to expose k-dependent separation trends.
+
+We extend interferometric shadows from linear predictors to kernel predictors with quantum overlap kernels \(K(x,z)=|\langle\psi(x)|\psi(z)\rangle|^2\), a dual solver over state Gram matrices, and benchmark plumbing comparing memory/accuracy regimes against linear models.
+
+We add a non-IID repetition-scaling experiment to test whether the theoretical repetition factor \(R\) is tight by jointly fitting exponents in \(\log(\mathrm{error}) = a\log M + b\log R + c\).
+
+\[
+\textbf{Adaptive Boolean Oracle Theorem:}\quad
+M = O\!\left(\frac{K t^2}{\epsilon^2}\right),\quad t = \pi N/K,
+\]
+with improvement factor \(N/K\) over uniform-sampling bounds.
+
+| Method | Sample complexity (Boolean) | Notes |
+|---|---:|---|
+| Uniform QOS | \(O(N t^2/\epsilon^2)\) | Zhao et al. baseline |
+| Adaptive QOS (this work) | \(O(K t^2/\epsilon^2)\) | Pilot-estimated support weights |
+| Classical streaming baseline | \(\Omega(N/\epsilon^2)\) | No coherent phase access |
+
+Run the new experiments:
+
+```bash
+qos-noise-benchmark --dim 256 --num-trials 3 --output-dir ./results/
+qos-forrelation-benchmark --dim 256 --num-trials 3 --output-dir ./results/
+qos-kernel-benchmark --dim 256 --num-trials 1 --output-dir ./results/
+qos-non-iid-scaling --dim 256 --num-trials 3 --output-dir ./results/
+```
