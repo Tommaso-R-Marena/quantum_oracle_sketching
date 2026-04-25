@@ -1,2 +1,10 @@
-# Copyright (c) 2026 Tommaso R. Marena. MIT License.
-"""Theoretical analysis modules for QOS sample-complexity bounds."""
+"""Theory module: sample complexity bounds, hierarchical sketching, Forrelation geometry."""
+from qos.theory.hierarchical_sketch import HierarchicalOracleSketch
+from qos.theory.interferometric_shadow import InterferometricClassicalShadow
+from qos.theory.variational_warmstart import VariationalWarmstart
+
+__all__ = [
+    "HierarchicalOracleSketch",
+    "InterferometricClassicalShadow",
+    "VariationalWarmstart",
+]
