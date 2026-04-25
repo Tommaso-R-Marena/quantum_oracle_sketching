@@ -1,6 +1,6 @@
 """Quantum Oracle Sketching (QOS) package."""
 
-__version__ = "1.0.9"
+__version__ = "1.1.0"
 
 from qos import config
 from qos.core import oracle_sketch, sampling, state_sketch
