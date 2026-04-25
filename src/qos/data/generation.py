@@ -95,28 +95,36 @@ class k_forrelation_data:
         self.noise_level = noise_level
         self.dim = 2**n
 
-    def sample_functions(self, num_samples: int) -> tuple[jax.Array, jax.Array]:
-        """Sample random indices and Rademacher values from random function layers.
+    def sample_functions(self, key: jax.Array) -> list[jax.Array]:
+        """Sample k random Boolean function layers as full ±1 arrays.
 
         Args:
-            num_samples: Number of iid samples.
+            key: JAX PRNG key (NOT num_samples — each layer is a full array
+                 of shape (2**n,), not a sample stream).
 
         Returns:
-            Tuple ``(indices, values)`` each of shape ``(num_samples,)``.
+            List of k arrays each of shape ``(2**n,)`` with ±1 entries.
 
         Mathematical note:
-            Implements uniform access model used in Zhao et al. 2026 for
-            hard-predicate sampling interfaces.
+            Each layer f_i: {0,1}^n -> {-1, +1} is drawn uniformly at random.
+            The k-Forrelation value is the nested Hadamard inner product of
+            these k layers (Aaronson-Ambainis 2015).
         """
-        self.key, k1, k2, k3 = random.split(self.key, 4)
-        indices = random.randint(k1, shape=(num_samples,), minval=0, maxval=self.dim, dtype=int_dtype)
-        _ = random.randint(k2, shape=(num_samples,), minval=0, maxval=self.k, dtype=int_dtype)
-        values = random.choice(k3, jnp.array([-1.0, 1.0]), shape=(num_samples,))
+        keys = random.split(key, self.k)
+        funcs = [
+            random.choice(keys[i], jnp.array([-1.0, 1.0]), shape=(self.dim,))
+            for i in range(self.k)
+        ]
         if self.noise_level > 0:
-            self.key, kn = random.split(self.key)
-            flips = random.bernoulli(kn, p=self.noise_level, shape=(num_samples,))
-            values = jnp.where(flips, -values, values)
-        return indices, values
+            noise_keys = random.split(keys[-1], self.k)
+            funcs = [
+                jnp.where(
+                    random.bernoulli(noise_keys[i], p=self.noise_level, shape=(self.dim,)),
+                    -funcs[i], funcs[i]
+                )
+                for i in range(self.k)
+            ]
+        return funcs
 
     def compute_exact_forrelation(self, functions: list[jax.Array]) -> float:
         """Compute exact ``k``-Forrelation value using Walsh-Hadamard transforms.
@@ -129,12 +137,13 @@ class k_forrelation_data:
 
         Mathematical note:
             Uses repeated Hadamard action in the k-Forrelation definition.
+            Phi_k = (1/2^n) * f_1 . (H f_2 . (H f_3 ... (H f_k) ...))
+            where H is the unnormalized 2^n x 2^n Hadamard matrix.
         """
         assert len(functions) == self.k
-        hadamard = unnormalized_hadamard_transform(self.n)
         result = functions[-1].astype(real_dtype)
         for f in reversed(functions[:-1]):
-            result = hadamard @ result / self.dim
+            result = unnormalized_hadamard_transform(result) / self.dim
             result = f.astype(real_dtype) * result
         return float(jnp.mean(result))
 
