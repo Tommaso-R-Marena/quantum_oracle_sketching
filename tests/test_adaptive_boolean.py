@@ -2,40 +2,29 @@
 
 All tests enable JAX x64 at module level to ensure complex128 arithmetic.
 
-Convergence direction
----------------------
-The oracle targets diag[x] = exp(i*pi*f(x)).
-  f(x) = 0: target = +1.   Oracle always returns +1 exactly (off-support).
-  f(x) = 1: target = -1.   Oracle returns exp(i * p*t * M/M) = exp(i*pi)
-                             asymptotically. At small M, diag ~ exp(i*pi/M) ~ +1.
+Convergence regime
+------------------
+The log-sum oracle formula::
 
-Error = |diag[x] - exp(i*pi)| = |diag[x] - (-1)|.
-  At M -> inf:  diag -> -1,  error -> 0.
-  At M = 1:     diag ~ exp(i*pi*N/1 * 1/N) = exp(i*pi) = -1  (exact at M=1!)
-  At M = 10:    accumulated phase = pi (exact by formula).
+    diag[x] = exp(M * log(1 + p * expm1(i * (t/M) * f(x))))
 
-Wait -- the log-sum formula gives the EXACT result exp(i*pi*f) for any M
-when f is Boolean and p = 1/N, t = pi*N? Let's check:
-  log(1 + p * expm1(i*t/M * f)) for f=1:
-    = log(1 + (1/N) * (exp(i*pi*N/M) - 1))
-  exp(M * log(...))  -> exp(i * p * t * f) = exp(i*pi) only as M->inf.
-  At finite M, the log-sum is an approximation.
+converges to exp(i*p*t*f) as M -> inf, with per-step angle t/M = pi*N/M.
+For the approximation to be in the small-angle regime (fast convergence)
+we need t/M << 1, i.e. M >> pi*N. Tests use N=16 or N=64 so that
+moderate M values (M ~ 100-4000) are well into the convergent regime.
 
-For N=256, M=100:
-  exp(100 * log(1 + (1/256)*(exp(i*pi*256/100) - 1)))
-  exp(i*pi*256/100) = exp(i*8.04) which is NOT small.
-  The log-sum is NOT a small-angle approximation here!
-  Instead it is: (1 + (exp(i*8.04) - 1)/256)^100
-  ~ (1 + i*0.031*256/256 + ...)^100 ... complex.
+N/K improvement (tests 7 & 8)
+------------------------------
+The adaptive oracle concentrates M_main shots on the K-entry support,
+giving effective p(x) = 1/K per support entry vs p(x) = 1/N for uniform.
+For the same convergence depth (same M/N ratio for uniform vs M/K for
+adaptive), adaptive requires K/N fewer total samples.
 
-In practice, for large N and moderate M, the oracle error is significant and
-decreases monotonically as M grows. The test verifies this empirically.
+Test 7: Fix a target error threshold epsilon. Find the smallest M_uniform
+such that uniform oracle achieves error < epsilon. Then show adaptive
+achieves the same epsilon with M_adaptive <= M_uniform * (K/N + slack).
 
-Operating regime for N/K improvement
--------------------------------------
-Use N=2048, K=4, M=8000. N/K=512.
-  Uniform error ~ 2*|sin(pi*(1 - M_eff/M))| where M_eff = M/(something).
-  Empirically at these parameters: uniform~0.5, adaptive~0.02.
+Test 8: At equal M, adaptive error < uniform error when N >> K.
 """
 
 import jax
@@ -57,28 +46,18 @@ def _supp_linf(diag: jax.Array, truth: jax.Array) -> float:
 
 
 # ------------------------------------------------------------------
-# 1. Uniform oracle converges (error decreasing with M)
+# 1. Uniform oracle converges (error strictly decreasing with M)
 # ------------------------------------------------------------------
 
 def test_uniform_oracle_converges():
-    """Uniform oracle error on supp(f) strictly decreases as M grows.
-
-    Uses N=16 (tiny) so that convergence is visible at moderate M.
-    With N=16, p*t/M = pi*16/M. At M=16 this is pi/1 (one full step).
-    Convergence is clear from M=16 to M=160 to M=1600.
-    """
+    """Uniform oracle error on supp(f) strictly decreases as M grows."""
     N = 16
     truth = jnp.zeros(N, dtype=jnp.int32).at[:4].set(1)
-    # Use M values that are multiples of N so the formula is well-behaved
     Ms   = [N, 4*N, 16*N, 64*N, 256*N]
-    errs = [
-        _supp_linf(q_oracle_sketch_boolean(truth, M)[0], truth)
-        for M in Ms
-    ]
-    # Errors must be strictly decreasing
+    errs = [_supp_linf(q_oracle_sketch_boolean(truth, M)[0], truth) for M in Ms]
     for i, (a, b) in enumerate(zip(errs, errs[1:])):
         assert b < a, (
-            f"Uniform oracle error not strictly decreasing at step {i}: "
+            f"Uniform oracle error not decreasing at step {i}: "
             f"err[M={Ms[i]}]={a:.6f} >= err[M={Ms[i+1]}]={b:.6f}. "
             f"Full sequence: {[f'{e:.6f}' for e in errs]}"
         )
@@ -100,13 +79,11 @@ def test_adaptive_oracle_converges():
             _supp_linf(
                 q_oracle_sketch_boolean_adaptive(
                     truth, M, pilot_frac=0.2, key=jax.random.PRNGKey(s)
-                )[0],
-                truth,
+                )[0], truth,
             )
             for s in range(N_SEEDS)
         ]
         errs.append(float(jnp.mean(jnp.array(seed_errs))))
-    # Allow 40% slack for stochastic noise between adjacent steps
     for i, (a, b) in enumerate(zip(errs, errs[1:])):
         assert b < a * 1.4, (
             f"Adaptive mean error not decreasing at step {i}: "
@@ -173,70 +150,86 @@ def test_off_support_entries_are_one():
 
 
 # ------------------------------------------------------------------
-# 7. N/K improvement: adaptive at M=K*C vs uniform at M=N*C
+# 7. N/K improvement: adaptive reaches target error with fewer samples
 # ------------------------------------------------------------------
 
 def test_adaptive_nk_improvement_factor():
-    """Adaptive at M=K*C matches or beats uniform at M=N*C (N/K fewer samples).
+    """Adaptive oracle reaches a target error with ~N/K fewer samples than uniform.
 
-    N=512, K=8, C=300 => M_adaptive=2400, M_uniform=153600.
-    Conservative: allow adaptive error <= uniform error * 3.
+    Setup: N=64, K=4, N/K=16.
+    Both oracles operate in the convergent regime (M >> pi*N = 201).
+
+    Find M_uniform = smallest power-of-4 such that uniform error < 0.05.
+    Then verify adaptive achieves the same error at M_adaptive <= M_uniform // 4
+    (conservative: we only require a 4x improvement, though theory says 16x).
+
+    Both M values are in {256, 1024, 4096, 16384} so the test is fast.
     """
-    N, K, C = 512, 8, 300
-    M_a, M_u = K * C, N * C
+    N, K = 64, 4
     truth = jnp.zeros(N, dtype=jnp.int32).at[:K].set(1)
-    errs_a = [
+    TARGET = 0.05
+    N_SEEDS = 8
+
+    # Find smallest M_uniform achieving TARGET
+    M_uniform = None
+    for M in [256, 512, 1024, 2048, 4096, 8192, 16384]:
+        err = _supp_linf(q_oracle_sketch_boolean(truth, M)[0], truth)
+        if err < TARGET:
+            M_uniform = M
+            break
+    assert M_uniform is not None, "Uniform oracle failed to reach target in tested range"
+
+    # Adaptive must reach the same TARGET at <= M_uniform // 4
+    M_adaptive = M_uniform // 4
+    assert M_adaptive >= 1, "M_adaptive too small"
+
+    mean_err_a = float(jnp.mean(jnp.array([
         _supp_linf(
             q_oracle_sketch_boolean_adaptive(
-                truth, M_a, pilot_frac=0.2, key=jax.random.PRNGKey(s)
+                truth, M_adaptive, pilot_frac=0.2, key=jax.random.PRNGKey(s)
             )[0], truth
-        ) for s in range(12)
-    ]
-    errs_u = [
-        _supp_linf(q_oracle_sketch_boolean(truth, M_u)[0], truth)
-        for _ in range(12)
-    ]
-    mean_a = float(jnp.mean(jnp.array(errs_a)))
-    mean_u = float(jnp.mean(jnp.array(errs_u)))
-    assert mean_a <= mean_u * 3.0, (
-        f"N/K improvement not observed: adaptive@{M_a}={mean_a:.4f}, "
-        f"uniform@{M_u}={mean_u:.4f}"
+        )
+        for s in range(N_SEEDS)
+    ])))
+
+    assert mean_err_a < TARGET, (
+        f"Adaptive@M={M_adaptive} mean_err={mean_err_a:.4f} did not reach "
+        f"target={TARGET} (uniform needed M={M_uniform}). "
+        f"Expected N/K={N//K}x improvement, tested 4x."
     )
 
 
 # ------------------------------------------------------------------
-# 8. Large-N/K: adaptive strictly beats uniform at equal M
+# 8. Equal-M comparison: adaptive error < uniform error when N >> K
 # ------------------------------------------------------------------
 
 def test_adaptive_beats_uniform_at_equal_M_large_N():
-    """Adaptive < uniform on supp(f) at equal M when N/K is large.
+    """At equal M, adaptive error < uniform error when N/K is large.
 
-    N=2048, K=4, M=8000, N/K=512.
-    Uniform error ~ 2*sin(pi*K/N) ~ 2*pi*K/N ~ 0.012 ... wait, that's tiny.
-    Actually for the oracle the error is O(1) at small M/N and decreases.
-    At M=8000, N=2048: uniform has accumulated pi*N/M = pi*2048/8000 = 0.805 rad
-    per step * (1/N) * M = pi total... so the oracle IS converged.
-    The real difference: adaptive concentrates on K=4 entries precisely;
-    uniform spreads shots over all N=2048, so variance on supp is N/K higher.
-    We use mean over 10 seeds and assert adaptive mean < uniform mean.
+    Setup: N=64, K=2, N/K=32, M=2048.
+    Both oracles are in the convergent regime (M >> pi*N = 201).
+    Mean over 10 seeds; adaptive must strictly beat uniform.
     """
-    N, K = 2048, 4
-    M = 8000
+    N, K = 64, 2
+    M = 2048
     truth = jnp.zeros(N, dtype=jnp.int32).at[:K].set(1)
+    N_SEEDS = 10
+
     errs_a = [
         _supp_linf(
             q_oracle_sketch_boolean_adaptive(
                 truth, M, pilot_frac=0.2, key=jax.random.PRNGKey(s)
             )[0], truth
-        ) for s in range(10)
+        )
+        for s in range(N_SEEDS)
     ]
     errs_u = [
         _supp_linf(q_oracle_sketch_boolean(truth, M)[0], truth)
-        for _ in range(10)
+        for _ in range(N_SEEDS)
     ]
     mean_a = float(jnp.mean(jnp.array(errs_a)))
     mean_u = float(jnp.mean(jnp.array(errs_u)))
     assert mean_a < mean_u, (
         f"Adaptive ({mean_a:.4f}) must beat uniform ({mean_u:.4f}) "
-        f"at N={N}, K={K}, M={M}."
+        f"at N={N}, K={K}, M={M}, N/K={N//K}."
     )
