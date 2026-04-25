@@ -75,26 +75,17 @@ def random_sparse_matrix(
     nnz: int,
     batch_size: int = 1,
 ) -> jnp.ndarray:
-    """Generate a batch of unit spectral-norm random sparse matrices.
-
-    Note:
-        Matrix element magnitudes scale as O(1/sqrt(nnz)).
-    """
+    """Generate a batch of unit spectral-norm random sparse matrices."""
     dim1, dim2 = shape
-
     key, subkey = random.split(key)
     row_indices = random.randint(subkey, (batch_size, nnz), 0, dim1, dtype=int_dtype)
-
     key, subkey = random.split(key)
     col_indices = random.randint(subkey, (batch_size, nnz), 0, dim2, dtype=int_dtype)
-
     key, subkey = random.split(key)
     values = random.normal(subkey, (batch_size, nnz), dtype=real_dtype)
-
     A = jnp.zeros((batch_size, dim1, dim2), dtype=real_dtype)
     A = A.at[jnp.arange(batch_size)[:, None], row_indices, col_indices].set(values)
     A = A / jnp.linalg.norm(A, ord=2, axis=(-2, -1), keepdims=True)
-
     return A[0] if batch_size == 1 else A
 
 
@@ -105,27 +96,18 @@ def random_sparse_matrix_constant_magnitude(
     magnitude: float,
     batch_size: int = 1,
 ) -> jnp.ndarray:
-    """Generate random sparse matrices with roughly uniform non-zero magnitudes.
-
-    The magnitude should typically scale ~sqrt(sqrt(dim1 * dim2) / nnz)
-    to ensure the spectral norm is bounded by one.
-    """
+    """Generate random sparse matrices with roughly uniform non-zero magnitudes."""
     dim1, dim2 = shape
-
     key, subkey = random.split(key)
     row_indices = random.randint(subkey, (batch_size, nnz), 0, dim1, dtype=int_dtype)
-
     key, subkey = random.split(key)
     col_indices = random.randint(subkey, (batch_size, nnz), 0, dim2, dtype=int_dtype)
-
     key, subkey = random.split(key)
     values = random.uniform(
         subkey, (batch_size, nnz), minval=-magnitude, maxval=magnitude, dtype=real_dtype
     )
-
     A = jnp.zeros((batch_size, dim1, dim2), dtype=real_dtype)
     A = A.at[jnp.arange(batch_size)[:, None], row_indices, col_indices].set(values)
-
     return A[0] if batch_size == 1 else A
 
 
@@ -135,32 +117,24 @@ def random_sparse_matrix_given_row_sparsity(
     row_sparsity: int,
     batch_size: int = 1,
 ) -> jnp.ndarray:
-    """Generate random sparse matrices with given row sparsity.
-
-    All non-zero elements have roughly the same magnitude scale.
-    """
+    """Generate random sparse matrices with given row sparsity."""
     dim1, dim2 = shape
     nnz = dim1 * row_sparsity
-
     key, subkey = random.split(key)
     row_indices = jnp.repeat(jnp.arange(dim1, dtype=int_dtype), row_sparsity)
     row_indices = jnp.tile(row_indices, (batch_size, 1))
-
     key, subkey = random.split(key)
     col_indices = jnp.tile(jnp.arange(dim2, dtype=int_dtype), (batch_size, dim1, 1))
     permuted_col_indices = random.permutation(
         subkey, col_indices, axis=-1, independent=True
     )
     col_indices = permuted_col_indices[:, :, :row_sparsity].reshape(batch_size, nnz)
-
     key, subkey = random.split(key)
     values = random.uniform(
         subkey, (batch_size, nnz), minval=-1, maxval=1, dtype=real_dtype
     )
-
     A = jnp.zeros((batch_size, dim1, dim2), dtype=real_dtype)
     A = A.at[jnp.arange(batch_size)[:, None], row_indices, col_indices].set(values)
-
     return A[0] if batch_size == 1 else A
 
 
@@ -172,11 +146,9 @@ def laplacian_matrix(dim: int) -> jnp.ndarray:
     """Generate the normalized 1D chain Laplacian with spectral norm bounded by 1."""
     diagonals = jnp.ones([dim], dtype=real_dtype) * 2.0
     off_diagonals = jnp.ones([dim - 1], dtype=real_dtype) * (-1.0)
-
     L = jnp.diag(diagonals)
     L = L.at[jnp.arange(dim - 1), jnp.arange(1, dim)].set(off_diagonals)
     L = L.at[jnp.arange(1, dim), jnp.arange(dim - 1)].set(off_diagonals)
-
     return L / 2.0
 
 
@@ -188,12 +160,12 @@ def unnormalized_hadamard_transform(n: int) -> jnp.ndarray:
     """Return the n-fold Kronecker power of the 2x2 Hadamard matrix [[1,1],[1,-1]].
 
     Args:
-        n: Number of qubits. Returns a (2**n, 2**n) matrix.
+        n: Number of qubits (integer). Returns a (2**n, 2**n) matrix.
 
-    Note:
-        This builds and returns the full matrix. For applying the transform
-        to a vector, use ``fwht(v)`` instead, which runs in O(N log N) without
-        materialising the N x N matrix.
+    Warning:
+        This builds the full N x N matrix (memory O(N^2)). For applying the
+        transform to a single vector, use ``fwht(v)`` instead, which runs in
+        O(N log N) time and O(N) memory without materialising the matrix.
     """
     H = jnp.array([[1.0, 1.0], [1.0, -1.0]], dtype=real_dtype)
     H_n = H
@@ -203,39 +175,36 @@ def unnormalized_hadamard_transform(n: int) -> jnp.ndarray:
 
 
 def fwht(v: jax.Array) -> jax.Array:
-    """Fast Walsh-Hadamard Transform (FWHT) applied to a vector.
+    """Fast Walsh-Hadamard Transform (FWHT) applied in-place on a vector.
 
-    Computes H_n @ v in O(N log N) time and O(N) memory without materialising
-    the N x N Hadamard matrix. Equivalent to
-    ``unnormalized_hadamard_transform(log2(N)) @ v`` but vastly more efficient
-    for large N (e.g. N = 2**8 = 256 for k-Forrelation experiments).
+    Computes H_n @ v in O(N log N) time and O(N) memory using the standard
+    Cooley-Tukey butterfly decomposition via reshape. Equivalent to
+    ``unnormalized_hadamard_transform(log2(N)) @ v`` for integer N = 2**n,
+    but vastly more efficient for large N.
 
     Args:
-        v: Real or complex array of shape ``(N,)`` where N must be a power of 2.
+        v: Real or complex JAX array of shape ``(N,)``.
+           N must be a positive power of 2.
 
     Returns:
         Array of shape ``(N,)`` equal to the unnormalized Hadamard transform of v.
 
     Raises:
-        ValueError: If len(v) is not a power of 2.
+        ValueError: If len(v) is not a positive power of 2.
     """
     N = v.shape[0]
     if N == 0 or (N & (N - 1)) != 0:
-        raise ValueError(f"fwht requires power-of-2 length, got {N}")
-    result = v.astype(real_dtype if not jnp.issubdtype(v.dtype, jnp.complexfloating) else complex_dtype)
+        raise ValueError(f"fwht requires a positive power-of-2 length, got {N}")
+    is_complex = jnp.issubdtype(v.dtype, jnp.complexfloating)
+    x = v.astype(complex_dtype if is_complex else real_dtype)
     h = 1
     while h < N:
-        # Butterfly step: for each block of size 2h, apply the 2x2 Hadamard
-        idx = jnp.arange(N)
-        block_idx = idx // (2 * h)
-        pos_in_block = idx % (2 * h)
-        is_upper = pos_in_block < h
-        partner = jnp.where(is_upper, idx + h, idx - h)
-        upper = jnp.where(is_upper, result, result[partner])
-        lower = jnp.where(is_upper, result[partner], result)
-        result = jnp.where(is_upper, upper + lower, upper - lower)
+        # Reshape into pairs of stride-h blocks and apply the 2x2 butterfly.
+        x = x.reshape((-1, 2 * h))
+        a, b = x[:, :h], x[:, h:]
+        x = jnp.concatenate([a + b, a - b], axis=1)
         h *= 2
-    return result
+    return x.reshape((N,))
 
 
 # ---------------------------------------------------------------------------
@@ -263,11 +232,7 @@ def generate_random_hermitian(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray
 
 
 def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
-    """Construct the canonical Halmos dilation of a Hermitian matrix A.
-
-    The result is a Hermitian unitary block encoding of A.
-    Uses sqrtm for numerical stability.
-    """
+    """Construct the canonical Halmos dilation of a Hermitian matrix A."""
     dim = A.shape[0]
     identity = jnp.eye(dim, dtype=complex_dtype)
     sqrt_A = jax.scipy.linalg.sqrtm(identity - A @ A)
@@ -323,14 +288,11 @@ def block_encoding_from_sparse_oracles(
     """
     row_sparsity = row_index_oracle.shape[1]
     col_sparsity = col_index_oracle.shape[1]
-
     row_index_oracle = jnp.sum(row_index_oracle, axis=1) / jnp.sqrt(row_sparsity)
     col_index_oracle = jnp.sum(col_index_oracle, axis=1) / jnp.sqrt(col_sparsity)
-
     num_rows = row_index_oracle.shape[0]
     num_cols = col_index_oracle.shape[0]
     value_oracle = value_oracle.reshape((num_rows, num_cols))
-
     block_encoding = row_index_oracle.conj() * value_oracle * col_index_oracle.T
     return block_encoding
 

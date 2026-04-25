@@ -5,14 +5,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 import jax
 import jax.numpy as jnp
 from jax import random
 
 from qos.config import int_dtype, real_dtype
-from qos.utils.numerical import fwht  # vector transform, not the matrix builder
+from qos.utils.numerical import fwht  # O(N log N) vector WHT, not the matrix builder
 
 if TYPE_CHECKING:
     from jax import random as jax_random
@@ -95,20 +95,49 @@ class k_forrelation_data:
         self.noise_level = noise_level
         self.dim = 2**n
 
-    def sample_functions(self, key: jax.Array) -> list[jax.Array]:
-        """Sample k random Boolean function layers as full \u00b11 arrays.
+    def sample_functions(
+        self,
+        key: Union[jax.Array, int],
+    ) -> Union[list[jax.Array], tuple[jax.Array, jax.Array]]:
+        """Sample k random Boolean function layers.
+
+        Supports two calling conventions:
+
+        **New API** (notebook Cell 5, tests using the key-based interface):
+            ``sample_functions(key: jax.Array)``
+            Returns a ``list`` of k full \u00b11 arrays each of shape ``(2**n,)``.
+            Use this to call ``compute_exact_forrelation``.
+
+        **Legacy API** (any code that used the old streaming interface):
+            ``sample_functions(num_samples: int)``
+            Returns ``(indices, values)`` where both arrays have shape
+            ``(num_samples,)`` and ``values`` are drawn i.i.d. from {-1, +1}.
+            This API is kept for backward compatibility with existing tests
+            and notebooks that pass an integer sample count.
 
         Args:
-            key: JAX PRNG key. Each layer is a full array of shape (2**n,).
+            key: Either a JAX PRNG key (new API) or a plain Python int
+                 giving the number of samples (legacy API).
 
         Returns:
-            List of k arrays each of shape ``(2**n,)`` with \u00b11 entries.
-
-        Mathematical note:
-            Each layer f_i: {0,1}^n -> {-1, +1} is drawn uniformly at random.
-            The k-Forrelation value is the nested Hadamard inner product of
-            these k layers (Aaronson-Ambainis 2015).
+            New API: ``list[jax.Array]`` of k arrays of shape ``(2**n,)``.
+            Legacy API: ``tuple[jax.Array, jax.Array]`` of (indices, values).
         """
+        # --- Legacy API: integer sample count ---
+        if isinstance(key, int):
+            num_samples = key
+            self.key, k1, k2 = random.split(self.key, 3)
+            indices = random.randint(
+                k1, shape=(num_samples,), minval=0, maxval=self.dim, dtype=int_dtype
+            )
+            values = random.choice(k2, jnp.array([-1.0, 1.0]), shape=(num_samples,))
+            if self.noise_level > 0:
+                self.key, kn = random.split(self.key)
+                flips = random.bernoulli(kn, p=self.noise_level, shape=(num_samples,))
+                values = jnp.where(flips, -values, values)
+            return indices, values
+
+        # --- New API: JAX PRNG key, returns full function layers ---
         keys = random.split(key, self.k)
         funcs = [
             random.choice(keys[i], jnp.array([-1.0, 1.0]), shape=(self.dim,))
@@ -119,30 +148,36 @@ class k_forrelation_data:
             funcs = [
                 jnp.where(
                     random.bernoulli(noise_keys[i], p=self.noise_level, shape=(self.dim,)),
-                    -funcs[i], funcs[i]
+                    -funcs[i], funcs[i],
                 )
                 for i in range(self.k)
             ]
         return funcs
 
     def compute_exact_forrelation(self, functions: list[jax.Array]) -> float:
-        """Compute exact ``k``-Forrelation value using the fast Walsh-Hadamard transform.
+        """Compute exact ``k``-Forrelation value via fast Walsh-Hadamard transform.
 
         Args:
             functions: List of ``k`` arrays, each shape ``(2**n,)`` with \u00b11 entries.
+                       Obtain these by calling ``sample_functions(key)`` with a
+                       JAX PRNG key (new API), not with an integer.
 
         Returns:
             Exact scalar ``Phi_k``.
 
         Mathematical note:
-            Phi_k = mean(f_1 * H(f_2 * H(f_3 * ... * H(f_k)...))) / dim^(k-1)
-            where H is the unnormalized WHT applied as a vector operation via fwht().
-            Uses fwht() which runs in O(N log N) rather than O(N^2) matrix multiply.
+            Phi_k = (1/2^n)^(k-1) * mean(f_1 * H(f_2 * H(...H(f_k)...)))
+            where H = unnormalized 2^n x 2^n Walsh-Hadamard matrix applied
+            as a vector operation via fwht() in O(N log N).
         """
-        assert len(functions) == self.k
+        assert len(functions) == self.k, (
+            f"Expected {self.k} function layers, got {len(functions)}. "
+            "Make sure you called sample_functions(key) with a JAX PRNG key, "
+            "not sample_functions(num_samples) which returns (indices, values)."
+        )
         result = functions[-1].astype(real_dtype)
         for f in reversed(functions[:-1]):
-            result = fwht(result) / self.dim  # O(N log N) vector transform
+            result = fwht(result) / self.dim
             result = f.astype(real_dtype) * result
         return float(jnp.mean(result))
 
