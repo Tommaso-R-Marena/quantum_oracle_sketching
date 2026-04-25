@@ -181,16 +181,61 @@ def laplacian_matrix(dim: int) -> jnp.ndarray:
 
 
 # ---------------------------------------------------------------------------
-# Hadamard transform
+# Hadamard transforms
 # ---------------------------------------------------------------------------
 
 def unnormalized_hadamard_transform(n: int) -> jnp.ndarray:
-    """Return the n-fold Kronecker power of the 2x2 Hadamard matrix [[1,1],[1,-1]]."""
+    """Return the n-fold Kronecker power of the 2x2 Hadamard matrix [[1,1],[1,-1]].
+
+    Args:
+        n: Number of qubits. Returns a (2**n, 2**n) matrix.
+
+    Note:
+        This builds and returns the full matrix. For applying the transform
+        to a vector, use ``fwht(v)`` instead, which runs in O(N log N) without
+        materialising the N x N matrix.
+    """
     H = jnp.array([[1.0, 1.0], [1.0, -1.0]], dtype=real_dtype)
     H_n = H
     for _ in range(n - 1):
         H_n = jnp.kron(H_n, H)
     return H_n
+
+
+def fwht(v: jax.Array) -> jax.Array:
+    """Fast Walsh-Hadamard Transform (FWHT) applied to a vector.
+
+    Computes H_n @ v in O(N log N) time and O(N) memory without materialising
+    the N x N Hadamard matrix. Equivalent to
+    ``unnormalized_hadamard_transform(log2(N)) @ v`` but vastly more efficient
+    for large N (e.g. N = 2**8 = 256 for k-Forrelation experiments).
+
+    Args:
+        v: Real or complex array of shape ``(N,)`` where N must be a power of 2.
+
+    Returns:
+        Array of shape ``(N,)`` equal to the unnormalized Hadamard transform of v.
+
+    Raises:
+        ValueError: If len(v) is not a power of 2.
+    """
+    N = v.shape[0]
+    if N == 0 or (N & (N - 1)) != 0:
+        raise ValueError(f"fwht requires power-of-2 length, got {N}")
+    result = v.astype(real_dtype if not jnp.issubdtype(v.dtype, jnp.complexfloating) else complex_dtype)
+    h = 1
+    while h < N:
+        # Butterfly step: for each block of size 2h, apply the 2x2 Hadamard
+        idx = jnp.arange(N)
+        block_idx = idx // (2 * h)
+        pos_in_block = idx % (2 * h)
+        is_upper = pos_in_block < h
+        partner = jnp.where(is_upper, idx + h, idx - h)
+        upper = jnp.where(is_upper, result, result[partner])
+        lower = jnp.where(is_upper, result[partner], result)
+        result = jnp.where(is_upper, upper + lower, upper - lower)
+        h *= 2
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +270,6 @@ def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
     """
     dim = A.shape[0]
     identity = jnp.eye(dim, dtype=complex_dtype)
-    # Numerically stable matrix square root via SVD-based approach when needed.
     sqrt_A = jax.scipy.linalg.sqrtm(identity - A @ A)
     U = jnp.block([[A, sqrt_A], [sqrt_A, -A]])
     return U
@@ -249,12 +293,7 @@ def random_halmos_dilation(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
 
 
 def hermitian_block_encoding(U: jnp.ndarray) -> jnp.ndarray:
-    """Convert any unitary block encoding U into a Hermitian unitary block encoding.
-
-    Uses the construction in Appendix C of the QSVT paper (arXiv:2002.11649).
-    Compatible with QOS because c^0U and c^1U† can be implemented simultaneously
-    from the same samples.
-    """
+    """Convert any unitary block encoding U into a Hermitian unitary block encoding."""
     hadamard = jnp.array([[1, 1], [1, -1]], dtype=real_dtype) / jnp.sqrt(2)
     zero_to_one = hadamard @ jnp.array([[0, 0], [1, 0]], dtype=real_dtype) @ hadamard
     one_to_zero = hadamard @ jnp.array([[0, 1], [0, 0]], dtype=real_dtype) @ hadamard
@@ -263,15 +302,7 @@ def hermitian_block_encoding(U: jnp.ndarray) -> jnp.ndarray:
 
 
 def get_block_encoded(U: jnp.ndarray, num_ancilla: int = 1) -> jnp.ndarray:
-    """Extract the block-encoded matrix from a unitary U.
-
-    Args:
-        U: Unitary matrix of shape (2^num_ancilla * dim, 2^num_ancilla * dim).
-        num_ancilla: Number of ancilla qubits.
-
-    Returns:
-        The top-left block of shape (dim, dim).
-    """
+    """Extract the block-encoded matrix from a unitary U."""
     dim = U.shape[0]
     if dim % (2**num_ancilla) != 0:
         raise ValueError(
@@ -289,15 +320,6 @@ def block_encoding_from_sparse_oracles(
     """Construct a block encoding of a sparse matrix from sparse oracles.
 
     Implements Lemma 48 of arXiv:1806.01838v1.
-
-    Args:
-        row_index_oracle: shape (num_rows, row_sparsity, num_cols).
-        col_index_oracle: shape (num_cols, col_sparsity, num_rows).
-        value_oracle: shape (num_rows * num_cols,).
-
-    Returns:
-        Block-encoded matrix of shape (num_rows, num_cols), normalized by
-        sqrt(row_sparsity * col_sparsity).
     """
     row_sparsity = row_index_oracle.shape[1]
     col_sparsity = col_index_oracle.shape[1]
@@ -318,10 +340,7 @@ def block_encoding_from_sparse_oracles(
 # ---------------------------------------------------------------------------
 
 def bitwise_parity_matrix(dim: int) -> jnp.ndarray:
-    """Return the dim x dim matrix of (-1)^(j.u) for j,u in {0,...,dim-1}.
-
-    Efficiently computed using JAX population_count on bitwise AND.
-    """
+    """Return the dim x dim matrix of (-1)^(j.u) for j,u in {0,...,dim-1}."""
     u_vec = jnp.arange(dim, dtype=int_dtype)
     j_vec = jnp.arange(dim, dtype=int_dtype)
     bitwise_and = jnp.bitwise_and(j_vec[:, None], u_vec[None, :])
@@ -346,4 +365,7 @@ def is_hermitian(A: jnp.ndarray, atol: float = 1e-10) -> bool:
 
 def spectral_norm_bound(A: jnp.ndarray, bound: float = 1.0, atol: float = 1e-10) -> bool:
     """Check whether the spectral norm of A is bounded by `bound`."""
-    return bool(jnp.isclose(jnp.linalg.norm(A, ord=2), bound, atol=atol) or jnp.linalg.norm(A, ord=2) < bound)
+    return bool(
+        jnp.isclose(jnp.linalg.norm(A, ord=2), bound, atol=atol)
+        or jnp.linalg.norm(A, ord=2) < bound
+    )

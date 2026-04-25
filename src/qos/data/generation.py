@@ -12,7 +12,7 @@ import jax.numpy as jnp
 from jax import random
 
 from qos.config import int_dtype, real_dtype
-from qos.utils.numerical import unnormalized_hadamard_transform
+from qos.utils.numerical import fwht  # vector transform, not the matrix builder
 
 if TYPE_CHECKING:
     from jax import random as jax_random
@@ -96,14 +96,13 @@ class k_forrelation_data:
         self.dim = 2**n
 
     def sample_functions(self, key: jax.Array) -> list[jax.Array]:
-        """Sample k random Boolean function layers as full ±1 arrays.
+        """Sample k random Boolean function layers as full \u00b11 arrays.
 
         Args:
-            key: JAX PRNG key (NOT num_samples — each layer is a full array
-                 of shape (2**n,), not a sample stream).
+            key: JAX PRNG key. Each layer is a full array of shape (2**n,).
 
         Returns:
-            List of k arrays each of shape ``(2**n,)`` with ±1 entries.
+            List of k arrays each of shape ``(2**n,)`` with \u00b11 entries.
 
         Mathematical note:
             Each layer f_i: {0,1}^n -> {-1, +1} is drawn uniformly at random.
@@ -127,23 +126,23 @@ class k_forrelation_data:
         return funcs
 
     def compute_exact_forrelation(self, functions: list[jax.Array]) -> float:
-        """Compute exact ``k``-Forrelation value using Walsh-Hadamard transforms.
+        """Compute exact ``k``-Forrelation value using the fast Walsh-Hadamard transform.
 
         Args:
-            functions: List of ``k`` arrays, each shape ``(2**n,)`` with ±1 entries.
+            functions: List of ``k`` arrays, each shape ``(2**n,)`` with \u00b11 entries.
 
         Returns:
             Exact scalar ``Phi_k``.
 
         Mathematical note:
-            Uses repeated Hadamard action in the k-Forrelation definition.
-            Phi_k = (1/2^n) * f_1 . (H f_2 . (H f_3 ... (H f_k) ...))
-            where H is the unnormalized 2^n x 2^n Hadamard matrix.
+            Phi_k = mean(f_1 * H(f_2 * H(f_3 * ... * H(f_k)...))) / dim^(k-1)
+            where H is the unnormalized WHT applied as a vector operation via fwht().
+            Uses fwht() which runs in O(N log N) rather than O(N^2) matrix multiply.
         """
         assert len(functions) == self.k
         result = functions[-1].astype(real_dtype)
         for f in reversed(functions[:-1]):
-            result = unnormalized_hadamard_transform(result) / self.dim
+            result = fwht(result) / self.dim  # O(N log N) vector transform
             result = f.astype(real_dtype) * result
         return float(jnp.mean(result))
 
@@ -155,10 +154,6 @@ class k_forrelation_data:
 
         Returns:
             Scalar estimate of Forrelation.
-
-        Mathematical note:
-            Models the constant-query amplitude-estimation style routine used in
-            k-Forrelation separations.
         """
         return float(jnp.real(jnp.mean(oracle_diag)))
 
