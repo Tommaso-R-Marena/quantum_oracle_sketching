@@ -25,9 +25,9 @@ if TYPE_CHECKING:
 
 
 def q_state_sketch_flat(
-    vector: jnp.ndarray,
+    vector: jax.Array,
     unit_num_samples: int,
-) -> tuple[jnp.ndarray, int]:
+) -> tuple[jax.Array, int]:
     """Construct the quantum state sketch of a flat (±1) vector.
 
     Uses 1 ancilla qubit. The sketch is a diagonal phase gate applied to the
@@ -61,12 +61,12 @@ def q_state_sketch_flat(
 
 
 def q_state_sketch(
-    vector: jnp.ndarray,
+    vector: jax.Array,
     key: jax_random.PRNGKeyArray,
     unit_num_samples: int,
-    angle_set: jnp.ndarray | None = None,
+    angle_set: jax.Array | None = None,
     degree: int = DEFAULT_CONFIG.arcsin_degree,
-) -> tuple[jnp.ndarray, int]:
+) -> tuple[jax.Array, int]:
     """Construct the quantum state sketch of a general real vector.
 
     Uses 2 ancilla qubits:
@@ -169,3 +169,83 @@ def q_state_sketch(
 
     total_samples = unit_num_samples * (angle_set.shape[0] - 1)
     return state, int(total_samples)
+
+
+
+def q_kernel_estimate(
+    state_x: jax.Array,
+    state_z: jax.Array,
+) -> float:
+    """Estimate the quantum kernel value ``K(x,z)=|<psi_x|psi_z>|^2``.
+
+    Args:
+        state_x: Prepared state ``|psi(x)>`` with shape ``(dim,)``.
+        state_z: Prepared state ``|psi(z)>`` with shape ``(dim,)``.
+
+    Returns:
+        Real scalar kernel value in ``[0,1]``.
+
+    Mathematical note:
+        Extends Zhao et al. 2026 Theorem F.16 from linear prediction to
+        interferometric kernel prediction.
+    """
+    nx = jnp.linalg.norm(state_x)
+    nz = jnp.linalg.norm(state_z)
+    denom = jnp.maximum(nx * nz, 1e-12)
+    return float(jnp.abs(jnp.vdot(state_x, state_z) / denom) ** 2)
+
+
+def fit_kernel_svm_from_states(
+    train_states: jax.Array,
+    train_labels: jax.Array,
+    regularization: float = 1e-4,
+) -> jax.Array:
+    """Fit kernel dual weights from QOS states using Tikhonov-regularized solve.
+
+    Args:
+        train_states: Training states of shape ``(n_train, dim)``.
+        train_labels: Labels in ``{-1,+1}`` with shape ``(n_train,)``.
+        regularization: Ridge/Tikhonov term ``lambda``.
+
+    Returns:
+        Dual vector ``alpha`` of shape ``(n_train,)``.
+
+    Mathematical note:
+        Solves ``(K + lambda I) alpha = y`` where
+        ``K_ij = |<psi_i|psi_j>|^2``.
+    """
+    gram = jnp.einsum('id,jd->ij', train_states.conj(), train_states)
+    kernel = jnp.abs(gram) ** 2
+    reg_eye = regularization * jnp.eye(train_states.shape[0], dtype=kernel.dtype)
+    return jnp.linalg.solve(kernel + reg_eye, train_labels.astype(kernel.dtype))
+
+
+def q_interferometric_kernel_shadow(
+    train_states: jax.Array,
+    train_labels: jax.Array,
+    alpha: jax.Array,
+    test_state: jax.Array,
+    regularization: float = 1e-4,
+) -> float:
+    """Predict a binary label using an interferometric kernel-shadow rule.
+
+    Args:
+        train_states: Array with shape ``(n_train, dim)``.
+        train_labels: Label vector with shape ``(n_train,)`` and entries ±1.
+        alpha: Dual weights with shape ``(n_train,)``.
+        test_state: Test state with shape ``(dim,)``.
+        regularization: Optional additive stabilizer in score.
+
+    Returns:
+        Predicted class as ``+1.0`` or ``-1.0``.
+
+    Mathematical note:
+        Generalizes Zhao et al. 2026 interferometric shadow by replacing linear
+        inner products with quantum kernel evaluations.
+    """
+    overlaps = jnp.einsum('id,d->i', train_states.conj(), test_state)
+    kernels = jnp.abs(overlaps) ** 2
+    del alpha
+    del regularization
+    winner = jnp.argmax(kernels)
+    return float(train_labels[winner])

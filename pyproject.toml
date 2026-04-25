@@ -51,6 +51,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+noise = ["qiskit>=1.0", "qiskit-aer>=0.14"]
+kernel = ["scikit-learn>=1.3"]
+forrelation = []
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
@@ -129,3 +132,12 @@ omit = ["*/tests/*", "*/examples/*"]
 precision = 2
 skip_covered = false
 show_missing = true
+
+[project.scripts]
+qos-noise-benchmark = "qos.experiments.noise_benchmark:main"
+qos-forrelation-benchmark = "qos.experiments.forrelation_benchmark:main"
+qos-kernel-benchmark = "qos.experiments.kernel_benchmark:main"
+qos-non-iid-scaling = "qos.experiments.non_iid_scaling:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

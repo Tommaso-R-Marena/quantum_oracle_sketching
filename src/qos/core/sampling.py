@@ -26,9 +26,9 @@ if TYPE_CHECKING:
 
 
 def q_state_sketch_flat(
-    data: tuple[jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array],
     dim: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a flat-vector state sketch from actively sampled data.
 
     Args:
@@ -51,9 +51,9 @@ def q_state_sketch_flat(
 
 
 def q_state_sketch_flat_unitary(
-    data: tuple[jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array],
     dim: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Return only the diagonal unitary (not applied to |+>) for the flat sketch.
 
     Args:
@@ -74,12 +74,12 @@ def q_state_sketch_flat_unitary(
 
 
 def q_state_sketch(
-    data: tuple[jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array],
     dim: int,
     norm: float,
     key: jax_random.PRNGKeyArray,
     degree: int = DEFAULT_CONFIG.arcsin_degree,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a general-vector state sketch from actively sampled data.
 
     Args:
@@ -156,9 +156,9 @@ def q_state_sketch(
 
 
 def q_oracle_sketch_boolean(
-    data: tuple[jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array],
     dim: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a Boolean phase-oracle sketch from actively sampled data.
 
     Args:
@@ -179,10 +179,10 @@ def q_oracle_sketch_boolean(
 
 
 def q_oracle_sketch_matrix_element(
-    data: tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array, jax.Array],
     dims: tuple[int, int],
     nnz: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a Hermitian block encoding of the sparse element oracle from samples.
 
     Args:
@@ -209,10 +209,10 @@ def q_oracle_sketch_matrix_element(
 
 
 def q_oracle_sketch_matrix_row_index(
-    data: tuple[jnp.ndarray, jnp.ndarray],
+    data: tuple[jax.Array, jax.Array],
     dims: tuple[int, int],
     sparsity: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a block encoding of the sparse row-index oracle from random row samples.
 
     Args:
@@ -227,7 +227,7 @@ def q_oracle_sketch_matrix_row_index(
     num_samples = sampled_row_indices.shape[0]
     bitlength_col = int(jnp.ceil(jnp.log2(dims[1])))
 
-    def _row_nonzero_indices(row_vector: jnp.ndarray) -> jnp.ndarray:
+    def _row_nonzero_indices(row_vector: jax.Array) -> jax.Array:
         return jnp.nonzero(
             row_vector != 0,
             size=sparsity,
@@ -271,7 +271,7 @@ def q_oracle_sketch_matrix_index(
     axis: int,
     sparsity: int,
     nnz: int,
-) -> jnp.ndarray:
+) -> jax.Array:
     """Construct a block encoding of the sparse row/column index oracle (streaming QSVT).
 
     This is the active-sampling implementation that streams QSVT gates one at a
@@ -305,7 +305,7 @@ def q_oracle_sketch_matrix_index(
     nz_cols = data_gen._nz_cols
     nnz_entries = data_gen._nnz
 
-    def _assemble_phase(sample_key: jax_random.PRNGKeyArray) -> jnp.ndarray:
+    def _assemble_phase(sample_key: jax_random.PRNGKeyArray) -> jax.Array:
         phase = jnp.zeros((num_rows, num_cols), dtype=real_dtype)
         sampled_indices = random.randint(
             sample_key,
@@ -398,3 +398,37 @@ def q_oracle_sketch_matrix_index(
 
     state_lo = state_lo[:, :, : dims[1 - axis], 0]
     return state_lo
+
+
+
+def q_oracle_sketch_boolean_adaptive(
+    data: tuple[jax.Array, jax.Array],
+    dim: int,
+    importance_weights: jax.Array,
+) -> jax.Array:
+    """Construct an active-sampling adaptive Boolean oracle sketch.
+
+    Args:
+        data: Tuple ``(sampled_indices, sampled_values)`` from adaptive sampling.
+        dim: Oracle dimension ``N``.
+        importance_weights: Sampling distribution ``w`` of shape ``(dim,)``.
+
+    Returns:
+        Diagonal phase vector of shape ``(dim,)`` approximating ``(-1)^{f(x)}``.
+
+    Mathematical note:
+        This is the active-sampling analogue of the adaptive theorem extension
+        built on Zhao et al. 2026, Theorem D.12 with ``p_max`` replaced by
+        pilot-estimated adaptive ``p_max``.
+    """
+    sampled_indices, sampled_values = data
+    num_samples = sampled_indices.shape[0]
+    t = jnp.pi * dim
+    weighted_phase = jnp.zeros((dim,), dtype=real_dtype)
+    safe_w = jnp.maximum(importance_weights, 1e-12)
+    reweight = sampled_values / safe_w[sampled_indices]
+    weighted_phase = weighted_phase.at[sampled_indices].add(reweight)
+    support_est = jnp.maximum(jnp.sum(importance_weights > 0), 1.0)
+    weighted_phase = weighted_phase * (t / num_samples) / support_est
+    log_diag = jnp.log1p(jnp.expm1(1j * weighted_phase))
+    return jnp.exp(log_diag)
