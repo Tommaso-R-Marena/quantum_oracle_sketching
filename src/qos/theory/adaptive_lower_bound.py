@@ -49,8 +49,8 @@ class BoundResult:
         K: Support size of the Boolean function f.
         epsilon: Target approximation error.
         M_uniform_upper: Uniform-sampling upper bound (blind oracle, p=1/N).
-        M_adaptive_upper: Adaptive upper bound (blind oracle, p concentrated
-            on pilot-estimated support; Marena 2026 Theorem 1).
+        M_adaptive_upper: Adaptive upper bound (blind oracle, pilot-estimated
+            support; Marena 2026 Theorem 1). Uses t_adaptive = pi*N/K.
         M_lower_bound: Information-theoretic floor M = Omega(K/eps^2).
             This is the minimum samples needed to observe each of the K
             support positions at least once; it is a lower bound on any
@@ -82,10 +82,11 @@ def compute_bounds(N: int, K: int, epsilon: float, constant: float = 1.0) -> Bou
         BoundResult with all bound values and tightness flag.
 
     Mathematical note (blind-oracle model only):
-        Uniform upper bound: M = O(N * pi^2 / eps^2)
-            From Zhao et al. 2026 Theorem D.12 with p(x) = 1/N, t = pi*N.
+        Uniform upper bound:  M = O(N * pi^2 / eps^2)
+            p(x) = 1/N, t_uniform = pi*N, variance per entry = N^2*pi^2/(N*M) = N*pi^2/M.
         Adaptive upper bound: M = O(N^2 * pi^2 / (K * eps^2))
-            From Marena 2026 Theorem 1 with t_adaptive = pi*N/K.
+            t_adaptive = pi*N/K, variance per entry on supp(f) = K*(pi*N/K)^2/M
+                       = N^2*pi^2/(K*M).
             The N/K improvement arises because the pilot phase concentrates
             samples near supp(f), reducing the effective phase time needed.
         Lower bound (blind-oracle): M = Omega(K / eps^2)
@@ -95,15 +96,17 @@ def compute_bounds(N: int, K: int, epsilon: float, constant: float = 1.0) -> Bou
             phase time is t = pi*K giving M = O(K^3/eps^2), which can beat
             the adaptive bound. This model is NOT captured here.
     """
-    t_uniform = math.pi
-    t_adaptive = math.pi * N / K
+    t_uniform = math.pi * N      # uniform: each entry gets phase pi*N*(1/N) = pi
+    t_adaptive = math.pi * N / K  # adaptive: support entries get phase pi*N/K*(1/K)... =pi
 
-    M_uniform = int(math.ceil(constant * N * t_uniform ** 2 / epsilon ** 2))
-    M_adaptive = int(math.ceil(constant * K * t_adaptive ** 2 / epsilon ** 2))
+    # Sample complexity: M = t^2 / eps^2 * (entries to cover)
+    # Uniform: M = N * t_uniform^2 / (N * eps^2) = N * pi^2 / eps^2  (t_per_entry = pi)
+    # Adaptive: M = K * t_adaptive^2 / (K * eps^2) = N^2*pi^2/(K*eps^2)
+    M_uniform = int(math.ceil(constant * N * math.pi ** 2 / epsilon ** 2))
+    M_adaptive = int(math.ceil(constant * N ** 2 * math.pi ** 2 / (K * epsilon ** 2)))
     M_lower = int(math.ceil(constant * K / epsilon ** 2))
 
     improvement = N / K
-    # Sanity check: adaptive should require at least the information-theoretic floor.
     is_tight = M_adaptive >= M_lower
 
     return BoundResult(
@@ -156,6 +159,11 @@ def uniform_vs_adaptive_error_comparison(
     before f is revealed. Under concentrated-support distributions the improvement
     factor is different; see module docstring.
 
+    The adaptive pilot fraction is set to ``max(0.3, 20*K/M)`` to ensure the
+    pilot phase always receives at least ~20 samples per support position before
+    importance weights are computed. Using a fixed small pilot_frac (e.g. 0.1)
+    with small M causes variance explosion as importance weights become unstable.
+
     Args:
         N: Ambient dimension.
         K: Support size.
@@ -176,6 +184,11 @@ def uniform_vs_adaptive_error_comparison(
     }
 
     for M in sample_counts:
+        # Scale pilot_frac so pilot always gets >= 20 samples per support point.
+        # This prevents importance-weight variance explosion at small M.
+        pilot_frac = max(0.3, 20.0 * K / M)
+        pilot_frac = min(pilot_frac, 0.7)  # cap at 70% so main phase keeps >= 30%
+
         u_errors, a_errors = [], []
         for trial in range(num_trials):
             k1, k2, key = jax.random.split(key, 3)
@@ -185,7 +198,7 @@ def uniform_vs_adaptive_error_comparison(
 
             u_diag, _ = q_oracle_sketch_boolean(truth, M)
             a_diag, _, _ = q_oracle_sketch_boolean_adaptive(
-                truth, M, pilot_frac=0.1, key=k2
+                truth, M, pilot_frac=pilot_frac, key=k2
             )
 
             u_err = float(jnp.max(jnp.abs((u_diag - exact)[support_mask])))
