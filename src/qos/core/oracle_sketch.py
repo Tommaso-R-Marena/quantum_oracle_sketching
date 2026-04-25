@@ -44,6 +44,24 @@ def q_oracle_sketch_boolean(
     return diag, int(unit_num_samples)
 
 
+def _compute_pilot_weights(
+    key: jax.Array,
+    pilot_samples: int,
+    dim: int,
+    support: jax.Array,
+    uniform_prob: jax.Array,
+) -> jax.Array:
+    """Compute importance weights from pilot samples (eager, no lax.cond)."""
+    idx = random.choice(key, jnp.arange(dim, dtype=int_dtype), shape=(pilot_samples,), replace=True)
+    counts = jnp.bincount(idx, length=dim).astype(real_dtype)
+    weighted_counts = counts * support
+    # Laplace smoothing over support ensures all support positions get nonzero weight
+    # even if none were sampled in the pilot phase.
+    smoothed = weighted_counts + support
+    total = jnp.sum(smoothed)
+    return jnp.where(total > 0, smoothed / total, uniform_prob)
+
+
 def q_oracle_sketch_boolean_adaptive(
     truth_table: jax.Array,
     unit_num_samples: int,
@@ -64,24 +82,26 @@ def q_oracle_sketch_boolean_adaptive(
         ``eps ~ sqrt(K * pi^2 / M_main)``.
 
         The blind-oracle improvement factor relative to uniform sampling is
-        ``N/K`` (same as Theorem 1) because uniform sampling requires
-        ``M = O(N * pi^2 / eps^2)`` while this construction requires
-        ``M_main = O(K * pi^2 / eps^2)``, i.e. a factor ``N/K`` fewer
-        *main* samples.  The pilot overhead is negligible for small
-        ``pilot_frac`` (default 0.1).
+        ``N/K``: uniform needs ``M = O(N * pi^2 / eps^2)`` while this
+        construction needs ``M_main = O(K * pi^2 / eps^2)``.
 
-        **Important:** the crossover in empirical error curves occurs near
-        ``M_main ~ K * pi^2 / eps^2``, which at ``K=16, eps=0.3`` is
-        ``M_main ~ 1750``, i.e. ``M_total ~ 1950`` with ``pilot_frac=0.1``.
-        This is well within the M=200..20000 simulation window.
+        Crossover (K=16, eps=0.3): ``M_main ~ K*pi^2/eps^2 ~ 1750``,
+        i.e. ``M_total ~ 1950`` with ``pilot_frac=0.1``.
+
+    Implementation note:
+        This function deliberately avoids ``jax.lax.cond`` for the pilot-weight
+        computation.  ``lax.cond`` traces both branches and can behave
+        unexpectedly when one branch contains ``random.choice``; the resulting
+        importance weights silently converge to a wrong distribution as
+        ``pilot_samples`` grows.  Plain Python ``if``/``else`` is correct here
+        because ``pilot_samples`` and ``support_sum`` are concrete (eager)
+        values at call time.
 
     Args:
         truth_table: Boolean values in {0,1} with shape ``(dim,)``.
         unit_num_samples: Total number of sketching samples ``M``.
         pilot_frac: Fraction of samples used in pilot estimation, in ``[0, 1]``.
             Keep small (default 0.1) so most samples go to the main phase.
-            The caller (``uniform_vs_adaptive_error_comparison``) overrides
-            this with ``min(0.1, 20*K/M)`` to ensure pilot coverage.
         key: Optional JAX PRNG key for pilot sampling.
 
     Returns:
@@ -107,30 +127,29 @@ def q_oracle_sketch_boolean_adaptive(
 
     uniform_prob = jnp.ones((dim,), dtype=real_dtype) / dim
     support = truth_table.astype(real_dtype)
-    support_sum = jnp.sum(support)
+    support_sum = float(jnp.sum(support))
 
-    def _pilot_weights() -> jax.Array:
-        idx = random.choice(key, jnp.arange(dim, dtype=int_dtype), shape=(pilot_samples,), replace=True)
-        counts = jnp.bincount(idx, length=dim).astype(real_dtype)
-        weighted_counts = counts * support
-        # Laplace smoothing over support to avoid dropping unseen support points.
-        smoothed = weighted_counts + support
-        total = jnp.sum(smoothed)
-        return jnp.where(total > 0, smoothed / total, uniform_prob)
+    # Compute importance weights with plain Python if/else (not lax.cond).
+    # This avoids lax.cond tracing both branches, which causes random.choice
+    # inside the pilot branch to return wrong values as pilot_samples grows.
+    if pilot_samples > 0 and support_sum > 0:
+        importance_weights = _compute_pilot_weights(
+            key, pilot_samples, dim, support, uniform_prob
+        )
+    elif support_sum > 0:
+        importance_weights = support / support_sum
+    else:
+        importance_weights = uniform_prob
 
-    importance_weights = jax.lax.cond(
-        (pilot_samples > 0) & (support_sum > 0),
-        _pilot_weights,
-        lambda: jnp.where(support_sum > 0, support / support_sum, uniform_prob),
-    )
-
-    k_hat = jnp.maximum(support_sum, 1.0)
-    if (pilot_samples == 0) or (float(support_sum) == float(dim)):
+    # Fall back to uniform oracle when all entries are support (dense case)
+    # or pilot is disabled.
+    if pilot_samples == 0 or support_sum == float(dim):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), importance_weights
 
     # Adaptive phase time: t = pi * K so that p(x)*t = pi for x in supp(f).
     # (p(x) = 1/K after pilot concentration, so (1/K)*(pi*K) = pi.)
+    k_hat = max(support_sum, 1.0)
     t = jnp.pi * k_hat
     phase = truth_table.astype(real_dtype)
     log_diag = jnp.log1p(importance_weights * jnp.expm1(1j * t / main_samples * phase))
