@@ -33,7 +33,8 @@ def q_oracle_sketch_boolean(
 
     Mathematical note:
         Zhao et al. 2026, Theorem D.12 gives IID sample complexity scaling for
-        this construction using uniform sampling.
+        this construction using uniform sampling.  Phase time t = pi * N so that
+        each entry accumulates phase p(x)*t = (1/N)*(pi*N) = pi.
     """
     dim = truth_table.shape[0]
     prob = jnp.ones_like(truth_table, dtype=real_dtype) / dim
@@ -55,10 +56,32 @@ def q_oracle_sketch_boolean_adaptive(
     expected-unitary accumulation to reduce effective ``p_max`` for sparse
     functions.
 
+    Phase time choice:
+        The adaptive estimator uses ``t = pi * K`` where ``K = |supp(f)|``.
+        With importance weights ``p(x) = 1/K`` on ``supp(f)``, each support
+        entry accumulates phase ``p(x)*t = (1/K)*(pi*K) = pi``, matching the
+        target ``(-1)^{f(x)}``.  This gives error scaling
+        ``eps ~ sqrt(K * pi^2 / M_main)``.
+
+        The blind-oracle improvement factor relative to uniform sampling is
+        ``N/K`` (same as Theorem 1) because uniform sampling requires
+        ``M = O(N * pi^2 / eps^2)`` while this construction requires
+        ``M_main = O(K * pi^2 / eps^2)``, i.e. a factor ``N/K`` fewer
+        *main* samples.  The pilot overhead is negligible for small
+        ``pilot_frac`` (default 0.1).
+
+        **Important:** the crossover in empirical error curves occurs near
+        ``M_main ~ K * pi^2 / eps^2``, which at ``K=16, eps=0.3`` is
+        ``M_main ~ 1750``, i.e. ``M_total ~ 1950`` with ``pilot_frac=0.1``.
+        This is well within the M=200..20000 simulation window.
+
     Args:
         truth_table: Boolean values in {0,1} with shape ``(dim,)``.
         unit_num_samples: Total number of sketching samples ``M``.
         pilot_frac: Fraction of samples used in pilot estimation, in ``[0, 1]``.
+            Keep small (default 0.1) so most samples go to the main phase.
+            The caller (``uniform_vs_adaptive_error_comparison``) overrides
+            this with ``min(0.1, 20*K/M)`` to ensure pilot coverage.
         key: Optional JAX PRNG key for pilot sampling.
 
     Returns:
@@ -66,16 +89,14 @@ def q_oracle_sketch_boolean_adaptive(
         and ``importance_weights`` is an empirical distribution of shape ``(dim,)``.
 
     Mathematical note:
-        **Theorem (Adaptive Boolean Oracle).** Let ``f:{0,1}^n→{0,1}`` with
-        support size ``K``. Using pilot-estimated importance weights concentrated
-        on ``supp(f)``, the sketch achieves error ``ε`` with
-        ``M = O(K t^2 / ε^2)`` where ``t = π N / K``. Relative to uniform
-        sampling with ``p_max = 1/N`` and ``M = O(N t^2 / ε^2)``, this improves
-        sample complexity by factor ``N/K``.
-
-        Proof sketch: adapt Zhao et al. 2026 Theorem D.12 concentration argument
-        replacing the maximal sampling mass from ``1/N`` to ``p_max≈1/K`` after
-        pilot estimation of support, and applying unbiased reweighting by ``N/K``.
+        **Theorem (Adaptive Boolean Oracle, concentrated-support model).**
+        Let ``f:{0,1}^n -> {0,1}`` with support size ``K``.  Using
+        pilot-estimated importance weights ``p(x) ~ 1/K`` on ``supp(f)``,
+        the sketch achieves error ``eps`` with
+        ``M_main = O(K * pi^2 / eps^2)`` main samples.
+        Total samples ``M = M_main / (1 - pilot_frac)``.
+        Relative to uniform sampling (``M = O(N * pi^2 / eps^2)``), this
+        improves sample complexity by factor ``N/K``.
     """
     dim = truth_table.shape[0]
     if key is None:
@@ -108,7 +129,8 @@ def q_oracle_sketch_boolean_adaptive(
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), importance_weights
 
-    # Adaptive support-aware phase time uses t_adaptive = pi * K.
+    # Adaptive phase time: t = pi * K so that p(x)*t = pi for x in supp(f).
+    # (p(x) = 1/K after pilot concentration, so (1/K)*(pi*K) = pi.)
     t = jnp.pi * k_hat
     phase = truth_table.astype(real_dtype)
     log_diag = jnp.log1p(importance_weights * jnp.expm1(1j * t / main_samples * phase))
