@@ -1,7 +1,6 @@
 """k-Forrelation benchmark experiments.
 
-Copyright 2026 The Quantum Oracle Sketching Authors.
-Licensed under the Apache License, Version 2.0.
+# Copyright (c) 2026 Tommaso R. Marena. MIT License.
 """
 
 from __future__ import annotations
@@ -16,6 +15,7 @@ from matplotlib import pyplot as plt
 
 from qos.core.oracle_sketch import q_oracle_sketch_boolean
 from qos.data.generation import k_forrelation_data
+from qos.utils.numerical import unnormalized_hadamard_transform
 
 __all__ = ["run_k_forrelation_sweep", "main"]
 
@@ -33,7 +33,12 @@ def run_k_forrelation_sweep(n_values: list[int], k_values: list[int], num_sample
                     key, *subs = jax.random.split(key, k + 2)
                     funcs = [jax.random.choice(subs[i], jnp.array([-1.0, 1.0]), shape=(dim,)) for i in range(k)]
                     exact = generator.compute_exact_forrelation(funcs)
-                    truth = ((1.0 - funcs[0]) / 2.0).astype(jnp.int32)
+                    hadamard = unnormalized_hadamard_transform(n)
+                    state = funcs[-1].astype(jnp.float32)
+                    for fi in reversed(funcs[:-1]):
+                        state = (hadamard @ state) / generator.dim
+                        state = fi.astype(jnp.float32) * state
+                    truth = ((1.0 - jnp.sign(state)) / 2.0).astype(jnp.int32)
                     diag, _ = q_oracle_sketch_boolean(truth, m)
                     est = generator.quantum_query_algorithm(diag)
                     errs.append(abs(est - exact))

@@ -1,7 +1,6 @@
 """Noise crossover benchmark for QOS.
 
-Copyright 2026 The Quantum Oracle Sketching Authors.
-Licensed under the Apache License, Version 2.0.
+# Copyright (c) 2026 Tommaso R. Marena. MIT License.
 """
 
 from __future__ import annotations

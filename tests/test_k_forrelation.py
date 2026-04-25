@@ -8,9 +8,21 @@ def test_k2_forrelation_matches_paper_formula():
     key = jax.random.PRNGKey(0)
     gen = k_forrelation_data(n=3, k=2, key=key)
     f1 = jax.random.choice(key, jnp.array([-1.0, 1.0]), shape=(8,))
-    f2 = jnp.ones((8,))
+    f2 = jax.random.choice(jax.random.PRNGKey(1), jnp.array([-1.0, 1.0]), shape=(8,))
+    had = jnp.array(
+        [[1, 1, 1, 1, 1, 1, 1, 1],
+         [1, -1, 1, -1, 1, -1, 1, -1],
+         [1, 1, -1, -1, 1, 1, -1, -1],
+         [1, -1, -1, 1, 1, -1, -1, 1],
+         [1, 1, 1, 1, -1, -1, -1, -1],
+         [1, -1, 1, -1, -1, 1, -1, 1],
+         [1, 1, -1, -1, -1, -1, 1, 1],
+         [1, -1, -1, 1, -1, 1, 1, -1]],
+        dtype=jnp.float32,
+    )
+    manual = float(jnp.mean(f1 * ((had @ f2) / 8.0)))
     val = gen.compute_exact_forrelation([f1, f2])
-    assert abs(val - float(jnp.mean(f1))) < 1e-6
+    assert abs(val - manual) < 1e-6
 
 
 def test_quantum_query_zero_error_for_exact_oracle():
@@ -21,9 +33,10 @@ def test_quantum_query_zero_error_for_exact_oracle():
 
 
 def test_classical_complexity_increases_with_k():
+    """N^(1-1/k) increases as k increases for fixed N > 1."""
     gen2 = k_forrelation_data(n=10, k=2, key=jax.random.PRNGKey(0))
     gen4 = k_forrelation_data(n=10, k=4, key=jax.random.PRNGKey(1))
-    assert gen2.classical_streaming_complexity(0.1) > gen4.classical_streaming_complexity(0.1)
+    assert gen4.classical_streaming_complexity(0.1) > gen2.classical_streaming_complexity(0.1)
 
 
 def test_noise_degrades_forrelation_estimate():

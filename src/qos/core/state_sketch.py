@@ -232,20 +232,21 @@ def q_interferometric_kernel_shadow(
     Args:
         train_states: Array with shape ``(n_train, dim)``.
         train_labels: Label vector with shape ``(n_train,)`` and entries ±1.
-        alpha: Dual weights with shape ``(n_train,)``.
+        alpha: Dual weights with shape ``(n_train,)`` from fit_kernel_svm_from_states.
         test_state: Test state with shape ``(dim,)``.
-        regularization: Optional additive stabilizer in score.
+        regularization: Additive stabilizer applied to the sign of the score.
 
     Returns:
         Predicted class as ``+1.0`` or ``-1.0``.
 
     Mathematical note:
-        Generalizes Zhao et al. 2026 interferometric shadow by replacing linear
-        inner products with quantum kernel evaluations.
+        Implements score = sum_i alpha_i * |<psi_i|psi_test>|^2, then returns
+        sign(score). Generalizes Zhao et al. 2026 interferometric shadow by
+        replacing linear inner products with quantum kernel evaluations
+        K(x,z) = |<psi(x)|psi(z)>|^2.
     """
+    del train_labels
     overlaps = jnp.einsum('id,d->i', train_states.conj(), test_state)
     kernels = jnp.abs(overlaps) ** 2
-    del alpha
-    del regularization
-    winner = jnp.argmax(kernels)
-    return float(train_labels[winner])
+    score = jnp.dot(alpha, kernels)
+    return float(jnp.sign(score + regularization * jnp.sign(score)))

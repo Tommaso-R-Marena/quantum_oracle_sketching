@@ -1,7 +1,6 @@
 """Quantum oracle sketching: expected-unitary constructions.
 
-Copyright 2026 The Quantum Oracle Sketching Authors.
-Licensed under the Apache License, Version 2.0.
+# Copyright (c) 2026 Tommaso R. Marena. MIT License.
 """
 
 from __future__ import annotations
@@ -93,8 +92,10 @@ def q_oracle_sketch_boolean_adaptive(
         idx = random.choice(key, jnp.arange(dim, dtype=int_dtype), shape=(pilot_samples,), replace=True)
         counts = jnp.bincount(idx, length=dim).astype(real_dtype)
         weighted_counts = counts * support
-        total = jnp.sum(weighted_counts)
-        return jnp.where(total > 0, weighted_counts / total, uniform_prob)
+        # Laplace smoothing over support to avoid dropping unseen support points.
+        smoothed = weighted_counts + support
+        total = jnp.sum(smoothed)
+        return jnp.where(total > 0, smoothed / total, uniform_prob)
 
     importance_weights = jax.lax.cond(
         (pilot_samples > 0) & (support_sum > 0),
@@ -102,7 +103,7 @@ def q_oracle_sketch_boolean_adaptive(
         lambda: jnp.where(support_sum > 0, support / support_sum, uniform_prob),
     )
 
-    k_hat = jnp.maximum(jnp.sum(importance_weights > 0), 1.0)
+    k_hat = jnp.maximum(support_sum, 1.0)
     if (pilot_samples == 0) or (float(support_sum) == float(dim)):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), importance_weights
@@ -112,9 +113,6 @@ def q_oracle_sketch_boolean_adaptive(
     phase = truth_table.astype(real_dtype)
     log_diag = jnp.log1p(importance_weights * jnp.expm1(1j * t / main_samples * phase))
     diag = jnp.exp(main_samples * log_diag)
-    # Bias correction to preserve +/-1 target phases.
-    exact = jnp.exp(1j * jnp.pi * truth_table.astype(real_dtype))
-    diag = jnp.where(truth_table > 0, exact, diag)
     return diag, int(unit_num_samples), importance_weights
 
 

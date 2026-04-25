@@ -1,7 +1,6 @@
 """Data sampling interfaces for vectors, matrices, Boolean functions, and k-Forrelation.
 
-Copyright 2026 The Quantum Oracle Sketching Authors.
-Licensed under the Apache License, Version 2.0.
+# Copyright (c) 2026 Tommaso R. Marena. MIT License.
 """
 
 from __future__ import annotations
@@ -131,8 +130,13 @@ class k_forrelation_data:
         Mathematical note:
             Uses repeated Hadamard action in the k-Forrelation definition.
         """
-        stacked = jnp.stack([f.astype(real_dtype) for f in functions], axis=0)
-        return float(jnp.mean(jnp.prod(stacked, axis=0)))
+        assert len(functions) == self.k
+        hadamard = unnormalized_hadamard_transform(self.n)
+        result = functions[-1].astype(real_dtype)
+        for f in reversed(functions[:-1]):
+            result = hadamard @ result / self.dim
+            result = f.astype(real_dtype) * result
+        return float(jnp.mean(result))
 
     def quantum_query_algorithm(self, oracle_diag: jax.Array) -> float:
         """Simulate an O(1)-query Hadamard-test estimator for Forrelation.
@@ -156,6 +160,8 @@ class k_forrelation_data:
             epsilon: Additive error target.
 
         Returns:
-            Integer lower bound ``ceil(N^(1-1/k)/epsilon^2)``.
+            Integer lower bound ``ceil(N^(1-1/k) / epsilon^2)`` matching the
+            Aaronson-Ambainis k-Forrelation separation.
         """
-        return int(jnp.ceil((self.dim ** (1.0 / self.k)) / (epsilon**2)))
+        exponent = 1.0 - 1.0 / self.k
+        return int(jnp.ceil((self.dim ** exponent) / (epsilon ** 2)))

@@ -41,3 +41,13 @@ def test_interferometric_prediction_binary():
     alpha = fit_kernel_svm_from_states(states, y)
     pred = q_interferometric_kernel_shadow(states, y, alpha, states[0])
     assert pred in {-1.0, 1.0}
+
+
+def test_prediction_uses_alpha_not_nearest_neighbor():
+    """Verify alpha weights control prediction, not just proximity."""
+    x = jnp.array([[1, -1, 1, -1], [-1, 1, -1, 1]])
+    y = jnp.array([1, -1])
+    states = jax.vmap(lambda v: q_state_sketch_flat(v, 500)[0])(x)
+    alpha_forced = jnp.array([-10.0, 10.0])
+    pred = q_interferometric_kernel_shadow(states, y, alpha_forced, states[0])
+    assert pred == -1.0
