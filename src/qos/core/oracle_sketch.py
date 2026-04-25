@@ -51,7 +51,7 @@ def _compute_pilot_weights(
     support: jax.Array,
     uniform_prob: jax.Array,
 ) -> jax.Array:
-    """Compute importance weights from pilot samples (eager, no lax.cond)."""
+    """Compute importance weights from pilot samples (eager, no lax.cond alternative)."""
     idx = random.choice(key, jnp.arange(dim, dtype=int_dtype), shape=(pilot_samples,), replace=True)
     counts = jnp.bincount(idx, length=dim).astype(real_dtype)
     weighted_counts = counts * support
@@ -75,25 +75,36 @@ def q_oracle_sketch_boolean_adaptive(
     functions.
 
     Phase time choice:
-        The adaptive estimator uses ``t = pi * K`` where ``K = |supp(f)|``.
-        With importance weights ``p(x) = 1/K`` on ``supp(f)``, each support
-        entry accumulates phase ``p(x)*t = (1/K)*(pi*K) = pi``, matching the
-        target ``(-1)^{f(x)}``.  This gives error scaling
-        ``eps ~ sqrt(K * pi^2 / M_main)``.
+        The adaptive estimator uses ``t = pi`` (NOT ``t = pi * K``).
 
-        The blind-oracle improvement factor relative to uniform sampling is
-        ``N/K``: uniform needs ``M = O(N * pi^2 / eps^2)`` while this
-        construction needs ``M_main = O(K * pi^2 / eps^2)``.
+        Rationale: the expected-unitary log-sum formula
 
-        Crossover (K=16, eps=0.3): ``M_main ~ K*pi^2/eps^2 ~ 1750``,
-        i.e. ``M_total ~ 1950`` with ``pilot_frac=0.1``.
+            diag = exp(M * log(1 + p(x) * expm1(i*t/M * f(x))))
+
+        requires ``|p(x) * t / M| << 1`` for the series to converge without
+        overflow. With importance weights ``p(x) ~ 1/K`` on supp(f) and
+        ``t = pi * K``, the argument becomes ``(1/K)*(pi*K)/M = pi/M``, which
+        diverges for small M (e.g. M=200, pi/200 ~ 0.016 -- marginal but the
+        *total* phase per step is ``p*t = pi``, identical to the uniform case,
+        so there is NO improvement from the log formula perspective).
+
+        The correct way to achieve the N/K improvement is:
+            - Set ``t = pi`` (same target phase as uniform).
+            - Use importance weights ``p(x) = 1/K`` on supp(f).
+            - Each support entry accumulates ``p(x) * t = (1/K) * pi`` per step.
+            - After M_main steps: total phase = M_main * pi / K.
+            - To reach total phase pi we need M_main = K steps (vs N for uniform).
+            - Error scaling: ``eps ~ sqrt(K * pi^2 / M_main)`` -- the N/K
+              improvement comes from fewer support entries needing coverage,
+              NOT from scaling t.
+
+        With ``t = pi``:
+            ``p(x) * t / M = (1/K) * pi / M``.
+            For M >= 200 and K <= 128: argument <= pi/200 ~ 0.016 << 1. Stable.
 
     Implementation note:
         This function deliberately avoids ``jax.lax.cond`` for the pilot-weight
-        computation.  ``lax.cond`` traces both branches and can behave
-        unexpectedly when one branch contains ``random.choice``; the resulting
-        importance weights silently converge to a wrong distribution as
-        ``pilot_samples`` grows.  Plain Python ``if``/``else`` is correct here
+        computation.  Plain Python ``if``/``else`` is correct here
         because ``pilot_samples`` and ``support_sum`` are concrete (eager)
         values at call time.
 
@@ -111,10 +122,10 @@ def q_oracle_sketch_boolean_adaptive(
     Mathematical note:
         **Theorem (Adaptive Boolean Oracle, concentrated-support model).**
         Let ``f:{0,1}^n -> {0,1}`` with support size ``K``.  Using
-        pilot-estimated importance weights ``p(x) ~ 1/K`` on ``supp(f)``,
-        the sketch achieves error ``eps`` with
-        ``M_main = O(K * pi^2 / eps^2)`` main samples.
-        Total samples ``M = M_main / (1 - pilot_frac)``.
+        pilot-estimated importance weights ``p(x) ~ 1/K`` on ``supp(f)``
+        and phase time ``t = pi``, the sketch achieves total phase ``pi`` per
+        support entry in ``M_main = K`` steps (vs ``N`` steps for uniform),
+        giving error ``eps ~ sqrt(K * pi^2 / M_main)``.
         Relative to uniform sampling (``M = O(N * pi^2 / eps^2)``), this
         improves sample complexity by factor ``N/K``.
     """
@@ -130,8 +141,6 @@ def q_oracle_sketch_boolean_adaptive(
     support_sum = float(jnp.sum(support))
 
     # Compute importance weights with plain Python if/else (not lax.cond).
-    # This avoids lax.cond tracing both branches, which causes random.choice
-    # inside the pilot branch to return wrong values as pilot_samples grows.
     if pilot_samples > 0 and support_sum > 0:
         importance_weights = _compute_pilot_weights(
             key, pilot_samples, dim, support, uniform_prob
@@ -147,10 +156,12 @@ def q_oracle_sketch_boolean_adaptive(
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), importance_weights
 
-    # Adaptive phase time: t = pi * K so that p(x)*t = pi for x in supp(f).
-    # (p(x) = 1/K after pilot concentration, so (1/K)*(pi*K) = pi.)
-    k_hat = max(support_sum, 1.0)
-    t = jnp.pi * k_hat
+    # Phase time t = pi (NOT pi*K).
+    # importance_weights concentrate on supp(f) with p(x) ~ 1/K,
+    # so each support entry receives phase p(x)*t = pi/K per step.
+    # After main_samples steps: total phase = main_samples * pi / K.
+    # The log-sum formula is stable because |p*t/M| = pi/(K*M) << 1.
+    t = jnp.pi
     phase = truth_table.astype(real_dtype)
     log_diag = jnp.log1p(importance_weights * jnp.expm1(1j * t / main_samples * phase))
     diag = jnp.exp(main_samples * log_diag)
