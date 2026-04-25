@@ -168,7 +168,7 @@ cfg.arcsin_degree = 30          # higher-degree polynomial
 cfg.sign_rescale = 0.95         # tighter sign-function bound
 ```
 
-Set the environment variable `QOS_PRECISION=32` to use 32-bit floats (faster but less accurate for high-degree polynomials).
+Set the environment variable `QOS_PRECISION=32` to use 32-bit floats (faster but faster but less accurate for high-degree polynomials).
 
 ## API Reference (Selected)
 
@@ -199,6 +199,8 @@ from qos.core.oracle_sketch import (
 diag, samples = q_oracle_sketch_boolean(truth_table, unit_num_samples=100_000)
 
 # Adaptive Boolean oracle with importance sampling [Marena 2026]
+# Uses phase time t = pi*K so that support entries accumulate phase pi*K*(1/K) = pi.
+# Sample complexity: M = O(K * pi^2 / eps^2), improvement factor N/K vs uniform.
 diag, samples, weights = q_oracle_sketch_boolean_adaptive(
     truth_table, unit_num_samples=100_000, pilot_frac=0.1, key=jax.random.PRNGKey(0)
 )
@@ -296,12 +298,12 @@ We add a non-IID repetition-scaling experiment to test whether the theoretical r
 
 $$
 \textbf{Adaptive Boolean Oracle Theorem:}\quad
-M = O\!\left(\frac{K t^2}{\epsilon^2}\right),\quad t = \pi N/K,
+M = O\!\left(\frac{K\,\pi^2}{\epsilon^2}\right),\quad t = \pi K,
 $$
-with improvement factor $N/K$ over uniform-sampling bounds.
+with improvement factor $N/K$ over uniform-sampling bounds ($M_{\rm uniform} = O(N\pi^2/\epsilon^2)$).
 
-| Method | Sample complexity (Boolean) | Notes |
-|---|---:|---|
-| Uniform QOS | $O(N t^2/\epsilon^2)$ | Zhao et al. 2026 baseline |
-| Adaptive QOS (this work) | $O(K t^2/\epsilon^2)$ | Pilot-estimated support weights |
-| Classical streaming baseline | $\Omega(N/\epsilon^2)$ | No coherent phase access |
+| Method | Sample complexity | Phase time $t$ | Notes |
+|---|---:|---:|---|
+| Uniform QOS | $O(N\pi^2/\varepsilon^2)$ | $\pi N$ | Zhao et al. 2026 baseline; $p(x)=1/N$ |
+| Adaptive QOS (this work) | $O(K\pi^2/\varepsilon^2)$ | $\pi K$ | Pilot-estimated support; $p(x)=1/K$ on $\text{supp}(f)$ |
+| Classical streaming baseline | $\Omega(N/\varepsilon^2)$ | — | No coherent phase access |
