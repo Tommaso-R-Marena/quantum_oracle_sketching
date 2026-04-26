@@ -23,37 +23,24 @@ def q_oracle_sketch_boolean(
 ) -> tuple[jax.Array, int]:
     """Uniform Boolean phase-oracle diagonal via expected-unitary accumulation.
 
-    Target: diag[x] = exp(i*pi*f(x))  (i.e. -1 for f=1, +1 for f=0).
+    Target: diag[x] = exp(i*pi*f(x)).
 
-    Formula (Zhao et al. 2025/2026, Section D)::
+    Zhao et al. formula::
 
-        p    = 1/N           (uniform probability)
-        t    = pi * N        (total phase time, so p*t = pi)
-        diag = exp(M * log(1 + p * expm1(i * t/M * f)))
+        p      = 1/N               uniform probability
+        t      = pi * N            p * t = pi for all x
+        diag   = exp(M * log(1 + p * expm1(i * (t/M) * f)))
 
-    Per-step angle: t/M = pi*N/M.  For large M:
-        M * p * expm1(i*t/M) ~ M * (1/N) * (i*t/M) = i*p*t = i*pi
-    so diag -> exp(i*pi*f).  Error decreases monotonically with M.
-
-    All arithmetic is in complex128 (requires jax_enable_x64=True or
-    explicit float64 casts, which we do here).
-
-    Args:
-        truth_table: Boolean array in {0,1}, shape (N,).
-        unit_num_samples: Number of samples M.
-
-    Returns:
-        (diag, M) where diag ~= exp(i*pi*f), dtype complex128.
+    Per-step angle t/M = pi*N/M. As M -> inf, diag -> exp(i*pi*f).
+    All arithmetic in float64/complex128 to avoid expm1 cancellation.
     """
     M = int(unit_num_samples)
-    f = truth_table.astype(jnp.float64)          # (N,) float64
-    N = f.shape[0]
-    # p * t = (1/N) * (pi*N) = pi  -- this is the key identity.
-    p   = jnp.float64(1.0) / jnp.float64(N)      # scalar
-    t_over_M = jnp.float64(jnp.pi * N) / jnp.float64(M)  # t/M = pi*N/M
-    # phase_arg[x] = i * (t/M) * f(x)  -- complex128
-    phase_arg = jnp.complex128(1j) * t_over_M * f
-    log_diag  = jnp.log1p(p * jnp.expm1(phase_arg))
+    f        = truth_table.astype(jnp.float64)
+    N        = f.shape[0]
+    p        = jnp.float64(1.0) / jnp.float64(N)
+    t_over_M = jnp.float64(jnp.pi * N) / jnp.float64(M)   # pi*N/M
+    phase_arg = jnp.complex128(1j) * t_over_M * f           # i*(pi*N/M)*f
+    log_diag  = jnp.log1p(p * jnp.expm1(phase_arg))        # log(1 + p*expm1(...))
     diag      = jnp.exp(jnp.float64(M) * log_diag)
     return diag, M
 
@@ -66,44 +53,44 @@ def q_oracle_sketch_boolean_adaptive(
 ) -> tuple[jax.Array, int, jax.Array]:
     """Adaptive importance-sampled Boolean oracle diagonal (Marena 2026).
 
-    ## Two-phase algorithm
+    The Zhao et al. formula generalises to any probability distribution p:
 
-    **Phase 1 - Pilot (M_pilot = pilot_frac * M samples):**
-    Sample M_pilot indices uniformly. Count hits per position.
-    Laplace-smooth and restrict to supp(f):
+        diag[x] = exp(M * log(1 + p(x) * expm1(i * t(x) / M * f(x))))
 
-        q(x) = (count(x) + 1) / Z   for x in supp(f)  (Z = normaliser)
-        q(x) = 0                     for x not in supp(f)
+    where t(x) = pi / p(x) so that p(x)*t(x) = pi for all x in supp(f).
 
-    Estimate K_hat = hit_rate * N  (unbiased estimator of K).
+    Adaptive choice: p(x) = q(x) = importance weight concentrated on supp(f).
+    Then t(x) = pi / q(x) per entry.  Per-step angle = t(x)/M = pi/(q(x)*M).
 
-    **Phase 2 - Main oracle (M_main = M - M_pilot samples):**
-    For importance-weighted oracle with p(x)=q(x) and t=pi*K_hat:
-        p(x)*t = q(x)*pi*K_hat
-        per-step angle: t_over_M(x) = q(x)*pi*K_hat / M_main
+    Equivalently, setting t_global = pi * K_hat and distributing:
+        q(x) * t_global / M_main = q(x) * pi * K_hat / M_main
+    For perfect pilot (q=1/K, K_hat=K): = pi/M_main.  Correct.
 
-    Oracle diagonal (complex128 throughout)::
+    The log-sum formula is::
 
-        phase_arg(x) = i * (q(x)*pi*K_hat/M_main) * f(x)
-        diag[x] = exp(M_main * log(1 + expm1(phase_arg(x))))
+        phase_step(x) = pi * K_hat / M_main          (scalar, same for all supp entries
+                                                       when q is uniform on supp)
+        diag[x] = exp(M_main * log(1 + q(x) * expm1(i * phase_step * f(x))))
 
-    For perfect pilot q(x)=1/K, K_hat=K:
-        t_over_M(x) = pi/M_main  =>  M_main steps accumulate i*pi
-        diag[x] = exp(i*pi) = -1.  Correct.
+    Note: q(x) must be INSIDE the log1p, not multiplied onto the exponent.
+    The formula log1p(expm1(z)) = z is a tautology and gives no accumulation.
 
-    Off-support (f=0 or q=0): phase_arg=0 => expm1(0)=0 => log1p(0)=0
-        => exp(0) = 1.  Exact.
+    Off-support: q(x)=0 => log1p(0)=0 => exp(0)=1. Exact.
+    On-support (perfect pilot): q(x)*expm1(i*pi/M_main) accumulated M_main
+    times gives exp(i*pi) = -1.
 
-    Sample complexity: M = O(K * pi^2 / eps^2),  N/K improvement.
+    Two-phase algorithm
+    -------------------
+    Phase 1 (Pilot, M_pilot samples):
+      - Draw uniform indices, count hits per x.
+      - Laplace-smooth restricted to supp(f): q(x) = (count+1)/Z * f(x)
+      - Estimate K_hat from pilot hit rate, bias-corrected.
 
-    Args:
-        truth_table: Boolean array in {0,1}, shape (N,).
-        unit_num_samples: Total M.
-        pilot_frac: Fraction of M for pilot. Default 0.1.
-        key: JAX PRNG key.
+    Phase 2 (Main, M_main samples):
+      - phase_step = pi * K_hat / M_main
+      - diag[x] = exp(M_main * log1p(q(x) * expm1(1j * phase_step * f(x))))
 
-    Returns:
-        (diag, M, importance_weights).
+    Sample complexity: O(K/eps^2), N/K improvement over Zhao et al. O(N/eps^2).
     """
     N = int(truth_table.shape[0])
     if key is None:
@@ -116,36 +103,49 @@ def q_oracle_sketch_boolean_adaptive(
     uniform_q = jnp.ones((N,), dtype=jnp.float64) / jnp.float64(N)
     K_true    = float(jnp.sum(f))
 
-    # Fallback to uniform when pilot is disabled or function is trivial
     if M_pilot == 0 or K_true == 0.0 or K_true == float(N):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), uniform_q
 
     # ------------------------------------------------------------------
-    # Phase 1: Pilot
+    # Phase 1: Pilot -- estimate support distribution
     # ------------------------------------------------------------------
     key, pkey = random.split(key)
     idx    = random.randint(pkey, shape=(M_pilot,), minval=0, maxval=N)
     counts = jnp.bincount(idx, length=N).astype(jnp.float64)
 
-    raw = (counts + jnp.float64(1.0)) * f   # Laplace-smooth on support only
+    # Laplace-smooth importance weights on supp(f) only
+    raw = (counts + jnp.float64(1.0)) * f
     Z   = jnp.sum(raw)
-    q   = raw / Z                            # float64, sums to 1 on supp(f)
+    q   = raw / Z                       # float64, sums to 1 on supp(f)
 
-    pilot_hits = jnp.sum(counts * f)
-    K_hat      = float(jnp.clip(
+    # Bias-corrected K_hat: subtract Laplace pseudo-counts
+    # raw_hits = sum of actual counts on support (before +1 smoothing)
+    pilot_hits = jnp.sum(counts * f)    # raw hits on supp(f)
+    # Unbiased estimate: K_hat = pilot_hits / M_pilot * N
+    # Clip to [1, N] to prevent degenerate angles
+    K_hat = float(jnp.clip(
         pilot_hits / jnp.float64(M_pilot) * jnp.float64(N),
-        jnp.float64(1.0), jnp.float64(float(N))
+        jnp.float64(1.0),
+        jnp.float64(float(N))
     ))
 
     # ------------------------------------------------------------------
-    # Phase 2: Main oracle
+    # Phase 2: Main oracle -- Zhao log-sum formula with p = q
     # ------------------------------------------------------------------
-    # per-step angle for entry x: q(x)*pi*K_hat / M_main
-    # q(x)=0 off-support => angle=0 => diag=1 exactly
-    t_over_M  = q * (jnp.float64(jnp.pi) * jnp.float64(K_hat)) / jnp.float64(M_main)
-    phase_arg = jnp.complex128(1j) * t_over_M * f   # zero off-support
-    log_term  = jnp.log1p(jnp.expm1(phase_arg))
+    # Per-step angle (scalar): pi * K_hat / M_main
+    # For perfect pilot: q(x) = 1/K, K_hat = K
+    #   => M_main * log1p(q(x) * expm1(i * pi*K/M_main))
+    #   => M_main * log1p((1/K) * expm1(i * pi*K/M_main))
+    #   -> exp(i * (1/K) * pi*K) = exp(i*pi) = -1 as M_main -> inf. Correct.
+    #
+    # KEY: q(x) must be INSIDE log1p, just like p is inside log1p in Zhao.
+    # This is the log-sum (expected-unitary) formula, not a direct formula.
+    phase_step = jnp.float64(jnp.pi) * jnp.float64(K_hat) / jnp.float64(M_main)
+    # phase_arg[x] = i * phase_step * f(x)  (same for all supp entries if q were omitted,
+    # but q IS the weight inside log1p, not an angle modifier)
+    inner     = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)  # q(x)*expm1(i*ps*f)
+    log_term  = jnp.log1p(inner)                                      # log(1 + q*expm1(...))
     diag      = jnp.exp(jnp.float64(M_main) * log_term)
 
     return diag, int(unit_num_samples), q
