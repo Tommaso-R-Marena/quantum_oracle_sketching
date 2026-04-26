@@ -97,6 +97,8 @@ def q_state_sketch(
         5. QSVT (parity=1, odd): block[0,0] = i * arcsin(x)/(pi/2).
            Signal is in the imaginary part: ``imag(block[0,0])``.
         6. Inverse Walsh-Hadamard + sign unrandomization.
+        7. Only one normalisation by sqrt(dim) -- the Hadamard already
+           carries its own 1/sqrt(dim) factor; do NOT divide again.
     """
     from qos.qsvt.angles import get_qsvt_angles
 
@@ -163,11 +165,13 @@ def q_state_sketch(
     block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
 
     # For odd-parity QSVT, signal is in imag(block[0,0]).
+    # Divide by sqrt(dim) once here (normalization of the uniform superposition).
     state = jnp.imag(block_encoding[0, 0]) / jnp.sqrt(dim)
 
-    # Inverse randomized Hadamard transform.
+    # Inverse randomized Hadamard: unnormalized_hadamard_transform already
+    # applies a 1/sqrt(dim) factor internally, so do NOT divide by sqrt(dim) again.
     hadamard = unnormalized_hadamard_transform(int(jnp.round(jnp.log2(dim))))
-    state = hadamard @ state / jnp.sqrt(dim)
+    state = hadamard @ state  # no extra / sqrt(dim) here
     state = random_signs * state
     state = state[:orig_dim]
 

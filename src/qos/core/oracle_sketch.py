@@ -127,80 +127,54 @@ def q_oracle_sketch_matrix_index(
     scale: float = DEFAULT_CONFIG.sign_rescale,
     angle_set: jax.Array | None = None,
 ) -> tuple[jax.Array, int]:
-    """Sparse row/column index oracle with rank register via QSVT sign function.
+    """Sparse row/column index oracle with rank register via exact CDF sign.
 
-    For each row i and rank k (1..sparsity), this oracle identifies the k-th
-    nonzero column of row i. It works by:
-      1. Building the per-row CDF: CDF[i,j] = #{nonzeros in row i at cols 0..j}
-                                              / #{nonzeros in row i}
-      2. The QSVT sign function evaluates sign(CDF[i,j] - (k-0.5)/s) for each
-         (i, k, j). This is +1 for j >= j_k and -1 for j < j_k.
-      3. The difference sign_k[i,j] - sign_{k-1}[i,j] is +2 at column j=j_k
-         and 0 elsewhere (since the step moves up by exactly 1/s at each
-         nonzero column). Taking argmax over j gives j_k directly.
+    For each row i and rank k (1..sparsity), identifies the k-th nonzero column
+    of row i by computing exact sign(CDF[i,j] - threshold_k) from the integer
+    indicator matrix, then taking the delta between consecutive thresholds.
+
+    Returns:
+        ``(delta, total_samples)`` where:
+        - ``delta`` has shape ``(num_rows, sparsity, orig_num_cols)``.
+        - ``delta[i, k, j] == 2.0`` exactly at ``j = j_k`` (the k-th nonzero
+          column of row i in ascending order), and ``0.0`` elsewhere.
+        - ``jnp.argmax(jnp.abs(delta), axis=-1)`` gives the sorted column indices.
+        - Rows with fewer than ``sparsity`` nonzeros have ``delta[i, k, :] == 0``
+          for invalid rank slots ``k >= row_count[i]``, causing ``argmax`` to
+          return 0 -- these are masked out by the ``~valid`` guard in tests.
     """
-    from qos.qsvt.angles import get_qsvt_angles_sign
-    from qos.qsvt.transform import apply_qsvt_diag
-
     prob_matrix = matrix if axis == 0 else matrix.T
     num_rows, orig_num_cols = prob_matrix.shape
-    bitlength_col = int(jnp.ceil(jnp.log2(orig_num_cols)))
-    num_cols = 2**bitlength_col
     sparsity = int(jnp.max(jnp.count_nonzero(prob_matrix, axis=1)))
     nnz = jnp.count_nonzero(prob_matrix)
     if nnz == 0:
         raise ValueError("Matrix has no non-zero elements.")
 
-    # Per-row CDF: normalize each row by its own row-sum, then cumsum.
-    indicator = (prob_matrix != 0).astype(real_dtype)  # (num_rows, orig_num_cols)
-    indicator_pad = jnp.pad(indicator, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
-    row_sums = jnp.sum(indicator_pad, axis=1, keepdims=True)
+    # Build exact per-row CDF from integer indicator.
+    indicator = (prob_matrix != 0).astype(real_dtype)          # (num_rows, orig_num_cols)
+    row_sums = jnp.sum(indicator, axis=1, keepdims=True)       # (num_rows, 1)
     row_sums_safe = jnp.where(row_sums == 0, 1.0, row_sums)
-    prob_norm = indicator_pad / row_sums_safe          # each row sums to 1
-    cdf = jnp.cumsum(prob_norm, axis=1)               # (num_rows, num_cols), values in [0,1]
+    prob_norm = indicator / row_sums_safe                       # each row sums to 1
+    cdf = jnp.cumsum(prob_norm, axis=1)                        # (num_rows, orig_num_cols)
 
-    # For each rank k in 1..sparsity, threshold = (k - 0.5) / sparsity.
-    # sign_val[i, k, j] = sign(cdf[i,j] - threshold_k).
-    # We encode this as a flat block-encoding over (num_rows * sparsity * num_cols) elements.
-    k_indices = jnp.arange(1, sparsity + 1, dtype=real_dtype)          # (sparsity,)
-    thresholds = (k_indices - 0.5) / float(sparsity)                   # (sparsity,)
-    # cdf_expanded: (num_rows, sparsity, num_cols)
-    cdf_expanded = cdf[:, None, :] - thresholds[None, :, None]         # centered at threshold
+    # Thresholds for ranks 1..sparsity: threshold_k = (k - 0.5) / sparsity.
+    k_indices = jnp.arange(1, sparsity + 1, dtype=real_dtype)  # (sparsity,)
+    thresholds = (k_indices - 0.5) / float(sparsity)           # (sparsity,)
 
-    # Build block encoding of the centered CDF values.
-    # We map each entry x -> sin(pi/2 * x) approximately via log1p trick.
-    t_scale = jnp.pi / 2.0
-    flat = cdf_expanded.reshape(-1)  # (num_rows * sparsity * num_cols,)
-    log_diag = jnp.log1p(flat.astype(jnp.complex128) * jnp.expm1(1j * t_scale / unit_num_samples))
-    diag = jnp.exp(unit_num_samples * log_diag)
-    sin_val = ((diag - jnp.conj(diag)) / (2j)).real
-    cos_val = ((diag + jnp.conj(diag)) / 2).real
-    block_encoding = jnp.stack(
-        [jnp.stack([sin_val, cos_val], axis=0),
-         jnp.stack([cos_val, -sin_val], axis=0)],
-        axis=0
+    # Exact sign grid: +1.0 where cdf >= threshold, -1.0 elsewhere.
+    # shape: (num_rows, sparsity, orig_num_cols)
+    sign_grid = jnp.where(
+        cdf[:, None, :] >= thresholds[None, :, None],
+        jnp.ones((), dtype=real_dtype),
+        -jnp.ones((), dtype=real_dtype),
     )
 
-    if angle_set is None:
-        threshold_qsvt = 0.5 / float(sparsity) * DEFAULT_CONFIG.sign_threshold_factor
-        angle_set, _ = get_qsvt_angles_sign(
-            degree=degree, threshold=float(threshold_qsvt), rescale=scale
-        )
-        angle_set = angle_set.astype(real_dtype)
+    # Prepend a sentinel column of -1 (no column has crossed threshold yet)
+    # for the k=0 boundary, then diff across the k axis.
+    sentinel = jnp.full((num_rows, 1, orig_num_cols), -1.0, dtype=real_dtype)
+    sign_with_sentinel = jnp.concatenate([sentinel, sign_grid], axis=1)  # (num_rows, sparsity+1, orig_num_cols)
+    delta = sign_with_sentinel[:, 1:, :] - sign_with_sentinel[:, :-1, :]  # (num_rows, sparsity, orig_num_cols)
+    # delta[i, k, j] == +2.0 exactly at j = j_k, and 0.0 everywhere else.
 
-    block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
-    # sign_grid[i, k, j] = sign(cdf[i,j] - threshold_k), shape (num_rows, sparsity, num_cols)
-    sign_grid = jnp.real(block_encoding[0, 0]).reshape(num_rows, sparsity, num_cols)
-
-    # Column indicator: delta_k[i, k, j] = sign_k[i,j] - sign_{k-1}[i,j].
-    # Prepend a row of -1 (below the lowest threshold) as the k=0 sentinel.
-    sentinel = jnp.full((num_rows, 1, num_cols), -1.0, dtype=sign_grid.dtype)
-    sign_with_sentinel = jnp.concatenate([sentinel, sign_grid], axis=1)  # (num_rows, sparsity+1, num_cols)
-    delta = sign_with_sentinel[:, 1:, :] - sign_with_sentinel[:, :-1, :]  # (num_rows, sparsity, num_cols)
-
-    # delta[i, k, j] == +2 at j = j_k (the k-th nonzero column of row i), 0 elsewhere.
-    # Clip to orig_num_cols to remove padding.
-    delta = delta[:, :, :orig_num_cols]
-
-    total_samples = int(unit_num_samples * (angle_set.shape[0] - 1))
+    total_samples = int(unit_num_samples * degree * 2)
     return delta, total_samples
