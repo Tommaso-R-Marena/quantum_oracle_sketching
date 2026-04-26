@@ -49,9 +49,9 @@ class TestStateSketchFlat:
 
 class TestStateSketchGeneral:
     def test_success_probability_and_error(self, key):
-        """QSVT arcsin approximation needs degree >= 40 to achieve prob > 0.5
-        for N=128 (the polynomial must approximate arcsin well enough on
-        [-sin(1), sin(1)] that the LCU amplification succeeds).
+        """QSVT arcsin approximation on [-1, 1] with degree=40.
+        The polynomial arcsin(x)/(pi/2) on the full domain [-1, 1] converges
+        rapidly in QSP optimization (parity=1, odd function).
         """
         N = 128
         num_samples = 100_000

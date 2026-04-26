@@ -28,14 +28,14 @@ def q_state_sketch_flat(
     vector: jax.Array,
     unit_num_samples: int,
 ) -> tuple[jax.Array, int]:
-    """Construct the quantum state sketch of a flat (±1) vector.
+    """Construct the quantum state sketch of a flat (\u00b11) vector.
 
     Uses 1 ancilla qubit. The sketch is a diagonal phase gate applied to the
     uniform superposition |+^n>, yielding the state vector proportional to
     the input flat vector.
 
     Args:
-        vector: Input flat vector of shape ``(dim,)`` with entries ±1.
+        vector: Input flat vector of shape ``(dim,)`` with entries \u00b11.
         unit_num_samples: Number of effective samples in the sketch.
 
     Returns:
@@ -45,7 +45,7 @@ def q_state_sketch_flat(
     Example:
         >>> v = jnp.array([1, -1, 1, -1])
         >>> state, m = q_state_sketch_flat(v, 100_000)
-        >>> float(jnp.linalg.norm(state))  # ≈ 1
+        >>> float(jnp.linalg.norm(state))  # \u2248 1
     """
     dim = vector.shape[0]
     prob = jnp.ones_like(vector, dtype=real_dtype) / dim
@@ -92,8 +92,9 @@ def q_state_sketch(
         1. Pad ``vector`` to power-of-2 dimension ``D``.
         2. Random-sign Walsh-Hadamard transform (Johnson-Lindenstrauss style).
         3. Construct expected phase oracle  ``U = diag(exp(i B))``.
-        4. LCU: ``sin(B) = (U - U†)/(2i)``.
-        5. QSVT: apply polynomial approximation to ``arcsin(x) / arcsin(1)``.
+        4. LCU: ``sin(B) = (U - U\u2020)/(2i)``.
+        5. QSVT: apply polynomial approximation to ``arcsin(x) / (pi/2)``
+           on the full domain [-1, 1].
         6. Extract real part via second LCU.
         7. Inverse Walsh-Hadamard + sign unrandomization.
     """
@@ -143,15 +144,17 @@ def q_state_sketch(
     cos = (diag + jnp.conj(diag)) / 2
     block_encoding = jnp.stack([sin, cos, cos, -sin], axis=0).reshape(2, 2, dim)
 
-    # QSVT to approximate arcsin(x) / arcsin(1)
+    # QSVT to approximate arcsin(x) / (pi/2) on the full domain [-1, 1].
+    # The LCU sine output lives in [-1, 1]; using cheb_domain=(-sin(1), sin(1))
+    # was wrong and caused the QSP optimizer to diverge.
     if angle_set is None:
         angle_set = get_qsvt_angles(
-            func=lambda x: jnp.arcsin(x) / jnp.arcsin(1.0),
+            func=lambda x: jnp.arcsin(x) / (jnp.pi / 2),
             degree=degree,
             rescale=1.0,
-            cheb_domain=(-jnp.sin(1.0), jnp.sin(1.0)),
+            cheb_domain=(-1.0, 1.0),
             ensure_bounded=False,
-            parity=0,
+            parity=1,
         )
 
     from qos.qsvt.transform import apply_qsvt_diag
@@ -231,7 +234,7 @@ def q_interferometric_kernel_shadow(
 
     Args:
         train_states: Array with shape ``(n_train, dim)``.
-        train_labels: Label vector with shape ``(n_train,)`` and entries ±1.
+        train_labels: Label vector with shape ``(n_train,)`` and entries \u00b11.
         alpha: Dual weights with shape ``(n_train,)`` from fit_kernel_svm_from_states.
         test_state: Test state with shape ``(dim,)``.
         regularization: Additive stabilizer applied to the sign of the score.

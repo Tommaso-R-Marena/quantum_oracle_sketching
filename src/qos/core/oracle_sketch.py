@@ -51,51 +51,7 @@ def q_oracle_sketch_boolean_adaptive(
     pilot_frac: float = 0.1,
     key: jax.Array | None = None,
 ) -> tuple[jax.Array, int, jax.Array]:
-    """Adaptive Boolean oracle diagonal -- K-sparse concentration (Marena 2026).
-
-    Core insight
-    ------------
-    The Zhao et al. formula generalises to any probability p(x) satisfying
-    p(x)*t(x) = pi for x in supp(f).  The uniform oracle uses p=1/N, t=pi*N.
-    The adaptive oracle uses p=1/K, t=pi*K:
-
-        diag[x] = exp(M_main * log(1 + (1/K) * expm1(i * pi*K/M_main * f(x))))
-
-    This is identical in structure to the Zhao formula but with N replaced by K.
-    Convergence threshold: M_main >> pi*K  (vs M >> pi*N for uniform).
-    Error on supp(f): O(sqrt(K/M_main))   (vs O(sqrt(N/M)) for uniform).
-    Sample improvement: N/K.
-
-    For perfect weights p=1/K:
-      inner = (1/K) * expm1(i * pi*K/M_main)
-             ~ (1/K) * i*pi*K/M_main   [small angle]
-             = i*pi/M_main
-      M_main * log1p(i*pi/M_main) -> i*pi
-      diag -> exp(i*pi) = -1.  Correct.
-
-    Off-support (f=0): inner=0 => log1p(0)=0 => exp(0)=1.  Exact.
-
-    Why exact uniform weights (not pilot-estimated)
-    -----------------------------------------------
-    For a Boolean function the truth table is fully known (classical oracle),
-    so K = jnp.sum(f) is exact.  Pilot-estimated q(x) introduces noise that
-    gives different entries different effective phases, breaking convergence at
-    small M_pilot.  Using q(x) = 1/K exactly is both faster and more accurate.
-
-    The pilot_frac parameter is retained for API compatibility and for future
-    extension to non-uniform weighted functions; in the Boolean uniform-support
-    case it is ignored after the M_main split.
-
-    Args:
-        truth_table: Boolean array in {0,1}, shape (N,).
-        unit_num_samples: Total samples M.
-        pilot_frac: Fraction reserved for pilot (kept for API compat; ignored
-            in convergence path since we use exact K).
-        key: JAX PRNG key (unused in this path; kept for API compat).
-
-    Returns:
-        (diag, M, q) where q is the uniform-on-support weight vector.
-    """
+    """Adaptive Boolean oracle diagonal -- K-sparse concentration (Marena 2026)."""
     N = int(truth_table.shape[0])
     if key is None:
         key = random.PRNGKey(0)
@@ -104,24 +60,18 @@ def q_oracle_sketch_boolean_adaptive(
     M_main  = max(unit_num_samples - M_pilot, 1)
 
     f      = truth_table.astype(jnp.float64)
-    K_true = float(jnp.sum(f))                  # exact support size
+    K_true = float(jnp.sum(f))
 
     uniform_q = jnp.ones((N,), dtype=jnp.float64) / jnp.float64(N)
 
-    # Fallback: pilot disabled, trivial function, or all-ones -> uniform oracle
     if M_pilot == 0 or K_true == 0.0 or K_true == float(N):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), uniform_q
 
-    # ------------------------------------------------------------------
-    # Exact uniform-on-support weights: q(x) = f(x) / K
-    # Equivalent to Zhao formula with N replaced by K.
-    # ------------------------------------------------------------------
-    q           = f / jnp.float64(K_true)       # 1/K on supp, 0 off-supp
+    q           = f / jnp.float64(K_true)
     phase_step  = jnp.float64(jnp.pi) * jnp.float64(K_true) / jnp.float64(M_main)
-    # q(x) * expm1(i * phase_step * f(x)):  off-supp f=0 -> 0; on-supp f=1 -> (1/K)*expm1(...)
     inner       = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)
-    log_term    = jnp.log1p(inner)              # log(1 + (1/K)*expm1(i*pi*K/M_main))
+    log_term    = jnp.log1p(inner)
     diag        = jnp.exp(jnp.float64(M_main) * log_term)
 
     return diag, int(unit_num_samples), q
@@ -179,9 +129,11 @@ def q_oracle_sketch_matrix_index(
 ) -> tuple[jax.Array, int]:
     """Sparse row/column index oracle with rank register via QSVT.
 
-    The cumulative probability CDF is used to define threshold comparisons
-    via the sign function QSVT: the k-th nonzero column j_k satisfies
-    CDF(j_k) in ((k-0.5)/s, (k+0.5)/s) where s = sparsity.
+    The CDF is built **per-row** so that each row's probability mass is
+    independent. Row i's CDF[i, j] = (number of nonzeros in row i at columns
+    0..j) / (total nonzeros in row i). Rows with no nonzeros get a uniform
+    CDF. This ensures the sign-QSVT threshold correctly identifies the k-th
+    nonzero column within each row independently.
     """
     from qos.qsvt.angles import get_qsvt_angles_sign
     from qos.qsvt.transform import apply_qsvt_diag
@@ -198,14 +150,18 @@ def q_oracle_sketch_matrix_index(
     k_indices = jnp.arange(sparsity, dtype=int_dtype) + 1
     t = jnp.pi * nnz / (2 * sparsity + 1)
     k_phase_scale = jnp.pi / (2 * sparsity + 1)
+
     prob_matrix = matrix if axis == 0 else matrix.T
-    prob = jnp.zeros_like(prob_matrix, dtype=real_dtype)
-    prob = prob.at[prob_matrix != 0].set(1.0 / nnz)
-    prob = jnp.pad(prob, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
-    # CDF: prob[i, j] = fraction of mass at columns <= j.
-    # This is the correct threshold for the sign-function rank register:
-    # the k-th nonzero column is detected where CDF crosses k/sparsity.
-    prob = jnp.cumsum(prob, axis=1)
+    # Per-row indicator: 1 where nonzero, 0 elsewhere.
+    indicator = (prob_matrix != 0).astype(real_dtype)
+    # Pad columns to next power of 2.
+    indicator = jnp.pad(indicator, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
+    # Per-row CDF: normalize each row by its own row-sum, then cumsum.
+    row_sums = jnp.sum(indicator, axis=1, keepdims=True)  # (num_rows, 1)
+    # Avoid division by zero for empty rows.
+    row_sums_safe = jnp.where(row_sums == 0, 1.0, row_sums)
+    prob = indicator / row_sums_safe  # each row sums to 1 (or 0 if empty)
+    prob = jnp.cumsum(prob, axis=1)   # per-row CDF in [0, 1]
 
     log_diag = jnp.log1p(prob * jnp.expm1(1j * t / unit_num_samples))
     log_diag = jnp.repeat(log_diag[:, None, :], sparsity, axis=1)
