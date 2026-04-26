@@ -143,26 +143,24 @@ def random_sparse_matrix_given_row_sparsity(
 # ---------------------------------------------------------------------------
 
 def laplacian_matrix(dim: int) -> jnp.ndarray:
-    """Generate the symmetric normalized 1D chain Laplacian with spectral norm <= 1.
+    """Generate the normalized 1D chain Laplacian with spectral norm <= 1.
 
-    Uses the symmetric normalization L_sym = D^{-1/2} L D^{-1/2}, where D is
-    the degree matrix. For a path graph, max degree is 2, so this divides each
-    off-diagonal entry by sqrt(deg_i * deg_j). The resulting spectral norm is
-    bounded by 1 (eigenvalues lie in [0, 1] for a connected graph).
+    Returns L_norm = L / sigma_max(L) where L is the standard unnormalized
+    1D path Laplacian (tridiagonal: 2 on diagonal, -1 on off-diagonals,
+    with endpoint corrections to degree 1). This guarantees spectral norm
+    exactly 1 while preserving symmetry.
     """
-    # Build unnormalized Laplacian: L = D - A
+    # Build unnormalized Laplacian: interior degree=2, endpoints degree=1
     diagonals = jnp.ones([dim], dtype=real_dtype) * 2.0
-    # Endpoint nodes have degree 1
     diagonals = diagonals.at[0].set(1.0)
     diagonals = diagonals.at[dim - 1].set(1.0)
     off_diagonals = jnp.ones([dim - 1], dtype=real_dtype) * (-1.0)
     L = jnp.diag(diagonals)
     L = L.at[jnp.arange(dim - 1), jnp.arange(1, dim)].set(off_diagonals)
     L = L.at[jnp.arange(1, dim), jnp.arange(dim - 1)].set(off_diagonals)
-    # Symmetric normalization: D^{-1/2} L D^{-1/2}
-    d_inv_sqrt = 1.0 / jnp.sqrt(diagonals)
-    L_sym = L * d_inv_sqrt[:, None] * d_inv_sqrt[None, :]
-    return L_sym
+    # Divide by spectral norm to guarantee sigma_max = 1.
+    sigma_max = jnp.linalg.norm(L, ord=2)
+    return L / sigma_max
 
 
 # ---------------------------------------------------------------------------
@@ -248,19 +246,20 @@ def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
 
     For a contraction A (||A|| <= 1), produces a unitary U of size 2N x 2N:
         U = [[A,  D_A*],
-             [D_A, -A*]]
-    where D_A = sqrt(I - A*A) is the defect operator.
+             [D_A, -A†]]
+    where D_A  = sqrt(I - A† A)   (right defect operator)
+          D_A* = sqrt(I - A A†)   (left  defect operator)
 
-    The result is unitary up to float64 precision (~1e-14).
+    The result is unitary for any contraction (not necessarily Hermitian).
+    It is Hermitian only when A is Hermitian AND A^2 = I (e.g. A = 0).
     """
     dim = A.shape[0]
     identity = jnp.eye(dim, dtype=complex_dtype)
-    # Defect operator: D_A = sqrt(I - A^dag A)
-    sqrt_I_minus_AdagA = jax.scipy.linalg.sqrtm(identity - A.conj().T @ A)
-    sqrt_I_minus_AAdagg = jax.scipy.linalg.sqrtm(identity - A @ A.conj().T)
+    D_A  = jax.scipy.linalg.sqrtm(identity - A.conj().T @ A)   # right defect
+    D_As = jax.scipy.linalg.sqrtm(identity - A @ A.conj().T)   # left defect
     U = jnp.block([
-        [A,                   sqrt_I_minus_AdagA],
-        [sqrt_I_minus_AAdagg, -A.conj().T       ],
+        [A,    D_As],
+        [D_A, -A.conj().T],
     ])
     return U
 
@@ -283,7 +282,11 @@ def random_halmos_dilation(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
 
 
 def hermitian_block_encoding(U: jnp.ndarray) -> jnp.ndarray:
-    """Convert any unitary block encoding U into a Hermitian unitary block encoding."""
+    """Convert any unitary block encoding U into a Hermitian unitary block encoding.
+
+    Constructs V = (|0><1| tensor U) + (|1><0| tensor U†), a 2N x 2N unitary
+    whose top-left N x N block is (U + U†)/2 = Re(U).
+    """
     hadamard = jnp.array([[1, 1], [1, -1]], dtype=real_dtype) / jnp.sqrt(2)
     zero_to_one = hadamard @ jnp.array([[0, 0], [1, 0]], dtype=real_dtype) @ hadamard
     one_to_zero = hadamard @ jnp.array([[0, 1], [0, 0]], dtype=real_dtype) @ hadamard
@@ -294,16 +297,14 @@ def hermitian_block_encoding(U: jnp.ndarray) -> jnp.ndarray:
 def get_block_encoded(U: jnp.ndarray, num_ancilla: int = 1) -> jnp.ndarray:
     """Extract the block-encoded matrix from a unitary U.
 
-    If U's size is not divisible by 2^num_ancilla, pads U with zeros to the
-    next multiple of 2^num_ancilla before extraction.
+    Raises ValueError if U's size is not divisible by 2^num_ancilla.
     """
     dim = U.shape[0]
     block = 2 ** num_ancilla
     if dim % block != 0:
-        # Pad to the next multiple of block
-        pad = block - (dim % block)
-        U = jnp.pad(U, ((0, pad), (0, pad)))
-        dim = U.shape[0]
+        raise ValueError(
+            f"Unitary size {dim} must be divisible by 2^{num_ancilla} = {block}."
+        )
     block_dim = dim // block
     return U[:block_dim, :block_dim]
 
@@ -348,8 +349,8 @@ def bitwise_parity_matrix(dim: int) -> jnp.ndarray:
 def is_unitary(U: jnp.ndarray, atol: float = 1e-6) -> bool:
     """Check whether U is unitary up to absolute tolerance.
 
-    Default atol raised from 1e-10 to 1e-6 to accommodate float64 rounding
-    accumulated in multi-step matrix products (e.g. Halmos dilation via sqrtm).
+    atol=1e-6 (not 1e-10) to accommodate float64 rounding from multi-step
+    matrix products such as Halmos dilation via sqrtm.
     """
     dim = U.shape[0]
     return bool(jnp.isclose(jnp.linalg.norm(U @ U.conj().T - jnp.eye(dim)), 0.0, atol=atol))

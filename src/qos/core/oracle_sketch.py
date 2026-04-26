@@ -128,7 +128,7 @@ def q_oracle_sketch_boolean_adaptive(
 
 
 # ---------------------------------------------------------------------------
-# Matrix oracle APIs (unchanged)
+# Matrix oracle APIs
 # ---------------------------------------------------------------------------
 
 def q_oracle_sketch_matrix_element(matrix: jax.Array, unit_num_samples: int) -> tuple[jax.Array, int]:
@@ -177,7 +177,12 @@ def q_oracle_sketch_matrix_index(
     scale: float = DEFAULT_CONFIG.sign_rescale,
     angle_set: jax.Array | None = None,
 ) -> tuple[jax.Array, int]:
-    """Sparse row/column index oracle with rank register via QSVT."""
+    """Sparse row/column index oracle with rank register via QSVT.
+
+    The cumulative probability CDF is used to define threshold comparisons
+    via the sign function QSVT: the k-th nonzero column j_k satisfies
+    CDF(j_k) in ((k-0.5)/s, (k+0.5)/s) where s = sparsity.
+    """
     from qos.qsvt.angles import get_qsvt_angles_sign
     from qos.qsvt.transform import apply_qsvt_diag
 
@@ -197,7 +202,10 @@ def q_oracle_sketch_matrix_index(
     prob = jnp.zeros_like(prob_matrix, dtype=real_dtype)
     prob = prob.at[prob_matrix != 0].set(1.0 / nnz)
     prob = jnp.pad(prob, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
-    prob = jnp.cumsum(prob, axis=1) - prob
+    # CDF: prob[i, j] = fraction of mass at columns <= j.
+    # This is the correct threshold for the sign-function rank register:
+    # the k-th nonzero column is detected where CDF crosses k/sparsity.
+    prob = jnp.cumsum(prob, axis=1)
 
     log_diag = jnp.log1p(prob * jnp.expm1(1j * t / unit_num_samples))
     log_diag = jnp.repeat(log_diag[:, None, :], sparsity, axis=1)

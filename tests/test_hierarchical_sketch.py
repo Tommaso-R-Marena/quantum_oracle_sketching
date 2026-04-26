@@ -52,7 +52,8 @@ def test_more_levels_fewer_samples(truth_table):
     """More hierarchy levels => fewer total samples (main theorem).
 
     The Q^{2-1/k} improvement over Q^2 is only visible for large Q.
-    At Q=2 the savings are negligible; use Q=32 where k=3 saves ~Q^{1/3} = 3.2x.
+    Using Q=32: k=1 uses N*Q^2=512*1024=524288 samples;
+                k=3 uses N*Q^{5/3}~512*101~51712 samples (~10x fewer).
     """
     Q = 32
     _, stats_k1 = HierarchicalOracleSketch.from_truth_table(

@@ -191,9 +191,9 @@ class HierarchicalOracleSketch:
         For k>=2 the exponent 2-1/k < 2 is strictly smaller.
         """
         k = len(self.levels)
-        n = self.truth_table.shape[0]
+        n = int(self.truth_table.shape[0])
         exponent = 2.0 - 1.0 / k
-        return max(100, int(n * (query_budget ** exponent) // n + query_budget ** exponent))
+        return max(1, int(n * (query_budget ** exponent)))
 
     def build(
         self,

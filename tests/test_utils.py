@@ -85,26 +85,35 @@ def test_generate_random_hermitian():
 
 
 def test_halmos_dilation():
+    """Halmos dilation of a Hermitian contraction is unitary;
+    the top-left N x N block recovers A.
+    Note: the dilation is NOT Hermitian in general -- only the block A is.
+    """
     key = random.PRNGKey(0)
     A = generate_random_hermitian(key, 5)
     U = halmos_dilation(A)
     assert is_unitary(U)
-    assert is_hermitian(U)
+    # The top-left block is A by construction.
     extracted = get_block_encoded(U, num_ancilla=1)
     assert jnp.allclose(extracted, A, atol=1e-5)
 
 
 def test_hermitian_block_encoding():
+    """hermitian_block_encoding(U) embeds (U + U†)/2 in the top-left N x N
+    block of a 2N x 2N unitary V.  Extract with num_ancilla=1.
+    """
     key = random.PRNGKey(0)
     U = generate_random_unitary(key, 5)
     V = hermitian_block_encoding(U)
     assert is_unitary(V)
     assert is_hermitian(V)
-    A = get_block_encoded(V, num_ancilla=2)
+    # V is 10x10; num_ancilla=1 extracts the top-left 5x5 block = (U+U†)/2.
+    A = get_block_encoded(V, num_ancilla=1)
     assert jnp.allclose(A, (U + U.conj().T) / 2, atol=1e-5)
 
 
 def test_get_block_encoded_raises():
+    """get_block_encoded raises ValueError when size is not divisible."""
     U = jnp.eye(5)
     with pytest.raises(ValueError, match="divisible"):
         get_block_encoded(U, num_ancilla=1)

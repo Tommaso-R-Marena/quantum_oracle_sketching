@@ -49,13 +49,17 @@ class TestStateSketchFlat:
 
 class TestStateSketchGeneral:
     def test_success_probability_and_error(self, key):
+        """QSVT arcsin approximation needs degree >= 40 to achieve prob > 0.5
+        for N=128 (the polynomial must approximate arcsin well enough on
+        [-sin(1), sin(1)] that the LCU amplification succeeds).
+        """
         N = 128
         num_samples = 100_000
         key, subkey = random.split(key)
         v = random.normal(subkey, (N,), dtype=real_dtype)
         v = v / jnp.linalg.norm(v)
 
-        state, _ = q_state_sketch(v, key, num_samples, degree=20)
+        state, _ = q_state_sketch(v, key, num_samples, degree=40)
         prob = float(jnp.linalg.norm(state) ** 2)
         assert prob > 0.5
 
