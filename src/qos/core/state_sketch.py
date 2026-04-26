@@ -124,9 +124,10 @@ def q_state_sketch(
         mode="constant",
         constant_values=0.0,
     )
-    norm = float(jnp.linalg.norm(vector_padded))
-    if norm == 0:
-        raise ValueError("Input vector has zero norm.")
+    # Use jnp.linalg.norm directly — do NOT call float() inside vmap/jit.
+    norm = jnp.linalg.norm(vector_padded)
+    # Safe normalize: if norm==0 return zeros (jnp.where keeps vmap-compatible).
+    vector_padded = jnp.where(norm > 0, vector_padded / norm, vector_padded)
 
     # Random sign scrambling to spread energy across WHT frequencies.
     key, subkey = random.split(key)
@@ -135,23 +136,10 @@ def q_state_sketch(
     ).astype(real_dtype)
     sv = random_signs * vector_padded  # scrambled vector
 
-    # WHT of sv: w[u] = sum_j (-1)^{popcount(j&u)} sv[j].
-    # For a unit vector, ||w||^2 = dim (Parseval), max|w[u]| ~ sqrt(dim).
-    # Choose t so that t * max|w[u]| / dim ~ pi/4, i.e. t ~ pi/4 * dim / sqrt(dim)
-    # = pi/4 * sqrt(dim).  But we normalize w by 1/dim in the phase below,
-    # so the effective argument is t * w[u] / dim ~ t / sqrt(dim) * (w[u]/sqrt(dim)).
-    # Simpler: set t = pi / 4 so that the *normalised* WHT component t*w[u]/dim
-    # has magnitude ~ (pi/4)*(1/sqrt(dim)) << 1, which is fine for arcsin.
-    # The key constraint is |B[u]| = |t * w[u] / dim| < pi/2 for all u.
-    # With t = pi/4 and |w[u]| <= dim (trivial upper bound), |B| <= pi/4 < pi/2. OK.
     t = jnp.pi / 4.0
 
     # Build the expected phase oracle diagonal in O(D^2) via the EU formula.
-    # prob[j] = 1/D (uniform over padded dimension).
-    # B[u] ~ t * (H @ sv)[u] / D  as  M -> infinity.
     prob = jnp.ones(dim, dtype=real_dtype) / dim
-    # phase increment per sample: delta = t / (M * dim) * sv[j] * chi(j,u)
-    # accumulated over M samples: log(diag[u]) = D * log(1 + sum_j prob[j]*expm1(i*delta*chi(j,u)))
     inner_prod_signs = bitwise_parity_matrix(dim).astype(real_dtype)  # (-1)^{popcount(j&u)}
     phase_inc = (t / (unit_num_samples * dim)) * sv  # shape (dim,)
     log_diag = jnp.log1p(
@@ -164,12 +152,8 @@ def q_state_sketch(
     diag = jnp.exp(log_diag)  # exp(i*B[u]) approximately
 
     # Unitary LCU block encoding of sin(B):
-    #   U = [[sin(B),   i*cos(B)],
-    #        [i*cos(B),  sin(B) ]]
-    # Verify: U†U = diag(sin^2+cos^2, sin^2+cos^2) = I. ✓
     sin_b = jnp.imag(diag)   # sin(B)
     cos_b = jnp.real(diag)   # cos(B)
-    # Shape for apply_qsvt_diag: (2, 2, dim) where last axis indexes diagonal entries.
     block_encoding = jnp.stack(
         [sin_b, 1j * cos_b, 1j * cos_b, sin_b], axis=0
     ).reshape(2, 2, dim).astype(complex_dtype)
@@ -186,19 +170,13 @@ def q_state_sketch(
         )
 
     block_out = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
-    # block_out[0,0] encodes (2/pi)*arcsin(sin(B)) ~ (2/pi)*B (for small B).
-    # Since B is real, signal is in the imaginary part.
     qsvt_out = jnp.imag(block_out[0, 0]).astype(real_dtype)  # (2/pi)*B[u], shape (dim,)
 
-    # Inverse WHT: fwht(w) = H @ w = D * sv  (since H @ H = D*I).
-    # fwht(qsvt_out) ~ (2/pi) * t * fwht(w) / D  <-- the /D is in phase_inc
-    # Actually qsvt_out[u] ~ (2/pi)*t*(H@sv)[u]/dim, so:
-    # fwht(qsvt_out)[j] ~ (2/pi)*t * dim * sv[j] / dim = (2/pi)*t * sv[j].
+    # Inverse WHT and undo sign scrambling + t*(2/pi) scale.
     inv_wht = fwht(qsvt_out)  # ~ (2/pi) * t * sv, shape (dim,)
-
-    # Undo sign scrambling and t*(2/pi) scaling to recover v.
     state = random_signs * inv_wht / (t * (2.0 / jnp.pi))
-    state = state[:orig_dim].astype(real_dtype)
+    # Re-apply original norm so the output lives in the same space as input.
+    state = state[:orig_dim].astype(real_dtype) * norm
 
     total_samples = int(unit_num_samples) * int(angle_set.shape[0] - 1)
     return state, total_samples
