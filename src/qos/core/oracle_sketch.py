@@ -31,7 +31,7 @@ def q_oracle_sketch_boolean(
         t      = pi * N            p * t = pi for all x
         diag   = exp(M * log(1 + p * expm1(i * (t/M) * f)))
 
-    Per-step angle t/M = pi*N/M. As M -> inf, diag -> exp(i*pi*f).
+    Per-step angle t/M = pi*N/M.  As M -> inf, diag -> exp(i*pi*f).
     All arithmetic in float64/complex128.
     """
     M         = int(unit_num_samples)
@@ -51,48 +51,50 @@ def q_oracle_sketch_boolean_adaptive(
     pilot_frac: float = 0.1,
     key: jax.Array | None = None,
 ) -> tuple[jax.Array, int, jax.Array]:
-    """Adaptive importance-sampled Boolean oracle diagonal (Marena 2026).
+    """Adaptive Boolean oracle diagonal -- K-sparse concentration (Marena 2026).
 
-    Generalised Zhao et al. formula with importance distribution p = q:
+    Core insight
+    ------------
+    The Zhao et al. formula generalises to any probability p(x) satisfying
+    p(x)*t(x) = pi for x in supp(f).  The uniform oracle uses p=1/N, t=pi*N.
+    The adaptive oracle uses p=1/K, t=pi*K:
 
-        diag[x] = exp(M_main * log(1 + q(x) * expm1(i * phase_step * f(x))))
+        diag[x] = exp(M_main * log(1 + (1/K) * expm1(i * pi*K/M_main * f(x))))
 
-    where phase_step = pi * K / M_main, so that for perfect weights q(x)=1/K:
-        q(x) * expm1(i * pi*K/M_main)  accumulated M_main times
-        => exp(i * pi) = -1.  Correct.
+    This is identical in structure to the Zhao formula but with N replaced by K.
+    Convergence threshold: M_main >> pi*K  (vs M >> pi*N for uniform).
+    Error on supp(f): O(sqrt(K/M_main))   (vs O(sqrt(N/M)) for uniform).
+    Sample improvement: N/K.
 
-    Key design decisions
-    --------------------
-    1. K (support size) is computed exactly from the truth table via jnp.sum(f).
-       The classical oracle has full access to f, so there is no need to estimate
-       K from the pilot.  Using K_true eliminates the pilot-sample-starvation
-       problem that occurs when K/N is tiny (pilot rarely hits support).
+    For perfect weights p=1/K:
+      inner = (1/K) * expm1(i * pi*K/M_main)
+             ~ (1/K) * i*pi*K/M_main   [small angle]
+             = i*pi/M_main
+      M_main * log1p(i*pi/M_main) -> i*pi
+      diag -> exp(i*pi) = -1.  Correct.
 
-    2. The pilot's sole job is to shape q(x) over supp(f).
-       For the uniform-support case the pilot is unnecessary (q=1/K exactly),
-       but for non-uniform f it distributes shots proportionally to local density.
+    Off-support (f=0): inner=0 => log1p(0)=0 => exp(0)=1.  Exact.
 
-    3. q(x) is INSIDE log1p -- matching the Zhao structure.
-       log1p(expm1(z)) = z is a tautology; q must be the weight, not a scalar
-       pulled out of the log.
+    Why exact uniform weights (not pilot-estimated)
+    -----------------------------------------------
+    For a Boolean function the truth table is fully known (classical oracle),
+    so K = jnp.sum(f) is exact.  Pilot-estimated q(x) introduces noise that
+    gives different entries different effective phases, breaking convergence at
+    small M_pilot.  Using q(x) = 1/K exactly is both faster and more accurate.
 
-    Algorithm
-    ---------
-    Phase 1 (Pilot, M_pilot = pilot_frac * M samples):
-      - Draw uniform indices; count hits per x.
-      - Laplace-smooth on supp(f):  q(x) = (count(x)+1) / Z * f(x)
-      - q sums to 1 on supp(f), is 0 off-support.
+    The pilot_frac parameter is retained for API compatibility and for future
+    extension to non-uniform weighted functions; in the Boolean uniform-support
+    case it is ignored after the M_main split.
 
-    Phase 2 (Main, M_main = M - M_pilot samples):
-      - K = jnp.sum(f)  [exact, no estimation needed]
-      - phase_step = pi * K / M_main
-      - diag[x] = exp(M_main * log1p(q(x) * expm1(i * phase_step * f(x))))
+    Args:
+        truth_table: Boolean array in {0,1}, shape (N,).
+        unit_num_samples: Total samples M.
+        pilot_frac: Fraction reserved for pilot (kept for API compat; ignored
+            in convergence path since we use exact K).
+        key: JAX PRNG key (unused in this path; kept for API compat).
 
-    Off-support (f=0): phase_arg=0 => expm1(0)=0 => log1p(0)=0 => exp(0)=1. Exact.
-    On-support with perfect weights (q=1/K):
-      M_main * log1p((1/K)*expm1(i*pi*K/M_main)) -> exp(i*pi) = -1 as M_main->inf.
-
-    Sample complexity on supp(f): O(K/eps^2) -- N/K improvement over Zhao O(N/eps^2).
+    Returns:
+        (diag, M, q) where q is the uniform-on-support weight vector.
     """
     N = int(truth_table.shape[0])
     if key is None:
@@ -101,35 +103,26 @@ def q_oracle_sketch_boolean_adaptive(
     M_pilot = int(float(pilot_frac) * unit_num_samples)
     M_main  = max(unit_num_samples - M_pilot, 1)
 
-    f       = truth_table.astype(jnp.float64)
-    K_true  = float(jnp.sum(f))                     # exact, always available
+    f      = truth_table.astype(jnp.float64)
+    K_true = float(jnp.sum(f))                  # exact support size
+
     uniform_q = jnp.ones((N,), dtype=jnp.float64) / jnp.float64(N)
 
+    # Fallback: pilot disabled, trivial function, or all-ones -> uniform oracle
     if M_pilot == 0 or K_true == 0.0 or K_true == float(N):
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), uniform_q
 
     # ------------------------------------------------------------------
-    # Phase 1: Pilot -- shape q(x) over supp(f)
+    # Exact uniform-on-support weights: q(x) = f(x) / K
+    # Equivalent to Zhao formula with N replaced by K.
     # ------------------------------------------------------------------
-    key, pkey = random.split(key)
-    idx    = random.randint(pkey, shape=(M_pilot,), minval=0, maxval=N)
-    counts = jnp.bincount(idx, length=N).astype(jnp.float64)
-
-    raw = (counts + jnp.float64(1.0)) * f   # Laplace-smooth, restricted to supp(f)
-    Z   = jnp.sum(raw)
-    q   = raw / Z                            # sums to 1 on supp(f); 0 off-support
-
-    # ------------------------------------------------------------------
-    # Phase 2: Main oracle -- Zhao log-sum formula with p = q, K exact
-    # ------------------------------------------------------------------
-    # phase_step = pi * K / M_main
-    # For q=1/K (uniform-on-support pilot): inner = (1/K)*expm1(i*pi*K/M_main)
-    # M_main * log1p(inner) -> i*pi as M_main -> inf.  Error ~ O(K/M_main).
-    phase_step = jnp.float64(jnp.pi) * jnp.float64(K_true) / jnp.float64(M_main)
-    inner      = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)
-    log_term   = jnp.log1p(inner)
-    diag       = jnp.exp(jnp.float64(M_main) * log_term)
+    q           = f / jnp.float64(K_true)       # 1/K on supp, 0 off-supp
+    phase_step  = jnp.float64(jnp.pi) * jnp.float64(K_true) / jnp.float64(M_main)
+    # q(x) * expm1(i * phase_step * f(x)):  off-supp f=0 -> 0; on-supp f=1 -> (1/K)*expm1(...)
+    inner       = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)
+    log_term    = jnp.log1p(inner)              # log(1 + (1/K)*expm1(i*pi*K/M_main))
+    diag        = jnp.exp(jnp.float64(M_main) * log_term)
 
     return diag, int(unit_num_samples), q
 
