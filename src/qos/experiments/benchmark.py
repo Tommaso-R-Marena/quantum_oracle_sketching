@@ -62,6 +62,7 @@ _color_indices = jnp.linspace(0.35, 1.0, 4)
 _colors = [_cmap(float(i)) for i in _color_indices]
 
 # Pre-compute arcsin angle set for general vector sketching.
+# arcsin is an odd function so parity=1 is required by pyqsp.
 _arcsin_degree = DEFAULT_CONFIG.arcsin_degree
 _arcsin_angle_set = get_qsvt_angles(
     func=lambda x: jnp.arcsin(x) / jnp.arcsin(1.0),
@@ -69,7 +70,7 @@ _arcsin_angle_set = get_qsvt_angles(
     rescale=1.0,
     cheb_domain=(-jnp.sin(1.0), jnp.sin(1.0)),
     ensure_bounded=False,
-    parity=0,
+    parity=1,
 )
 _target_norm = 1.0 / (jnp.arcsin(1.0) * 5.0)
 
@@ -322,9 +323,9 @@ def fit_sample_complexity(
     }
 
     print(
-        f"Fit: C={fit['C']:.3e}±{fit['C_std']:.1e}, "
-        f"alpha={fit['alpha']:.3f}±{fit['alpha_std']:.1e}, "
-        f"beta={fit['beta']:.3f}±{fit['beta_std']:.1e}, "
+        f"Fit: C={fit['C']:.3e}\u00b1{fit['C_std']:.1e}, "
+        f"alpha={fit['alpha']:.3f}\u00b1{fit['alpha_std']:.1e}, "
+        f"beta={fit['beta']:.3f}\u00b1{fit['beta_std']:.1e}, "
         f"rmse={fit['rmse']:.3e}"
     )
     return fit
