@@ -183,7 +183,9 @@ def get_qsvt_angles_inverse(
         np.array([1 / 4] + [1 / 2] * (phi_set.shape[0] - 2) + [1 / 4]) * np.pi
     )
     angle_set = phi_set + phi_to_angle
-    return jnp.array(angle_set, dtype=real_dtype), float(scale)
+    # scale may be a 1-element array from PolyOneOverX.generate(); squeeze to scalar.
+    scale_scalar = float(np.asarray(scale).squeeze())
+    return jnp.array(angle_set, dtype=real_dtype), scale_scalar
 
 
 def get_qsvt_angles_sign(

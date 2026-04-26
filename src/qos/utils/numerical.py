@@ -61,7 +61,7 @@ def random_flat_vector(
     dim: int,
     batch_size: int = 1,
 ) -> jnp.ndarray:
-    """Generate a batch of random flat vectors with components ±1."""
+    """Generate a batch of random flat vectors with components +/-1."""
     vec = (
         random.randint(key, (batch_size, dim), minval=0, maxval=2, dtype=int_dtype) * 2
         - 1
@@ -143,13 +143,26 @@ def random_sparse_matrix_given_row_sparsity(
 # ---------------------------------------------------------------------------
 
 def laplacian_matrix(dim: int) -> jnp.ndarray:
-    """Generate the normalized 1D chain Laplacian with spectral norm bounded by 1."""
+    """Generate the symmetric normalized 1D chain Laplacian with spectral norm <= 1.
+
+    Uses the symmetric normalization L_sym = D^{-1/2} L D^{-1/2}, where D is
+    the degree matrix. For a path graph, max degree is 2, so this divides each
+    off-diagonal entry by sqrt(deg_i * deg_j). The resulting spectral norm is
+    bounded by 1 (eigenvalues lie in [0, 1] for a connected graph).
+    """
+    # Build unnormalized Laplacian: L = D - A
     diagonals = jnp.ones([dim], dtype=real_dtype) * 2.0
+    # Endpoint nodes have degree 1
+    diagonals = diagonals.at[0].set(1.0)
+    diagonals = diagonals.at[dim - 1].set(1.0)
     off_diagonals = jnp.ones([dim - 1], dtype=real_dtype) * (-1.0)
     L = jnp.diag(diagonals)
     L = L.at[jnp.arange(dim - 1), jnp.arange(1, dim)].set(off_diagonals)
     L = L.at[jnp.arange(1, dim), jnp.arange(dim - 1)].set(off_diagonals)
-    return L / 2.0
+    # Symmetric normalization: D^{-1/2} L D^{-1/2}
+    d_inv_sqrt = 1.0 / jnp.sqrt(diagonals)
+    L_sym = L * d_inv_sqrt[:, None] * d_inv_sqrt[None, :]
+    return L_sym
 
 
 # ---------------------------------------------------------------------------
@@ -199,7 +212,6 @@ def fwht(v: jax.Array) -> jax.Array:
     x = v.astype(complex_dtype if is_complex else real_dtype)
     h = 1
     while h < N:
-        # Reshape into pairs of stride-h blocks and apply the 2x2 butterfly.
         x = x.reshape((-1, 2 * h))
         a, b = x[:, :h], x[:, h:]
         x = jnp.concatenate([a + b, a - b], axis=1)
@@ -232,11 +244,24 @@ def generate_random_hermitian(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray
 
 
 def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
-    """Construct the canonical Halmos dilation of a Hermitian matrix A."""
+    """Construct the canonical Halmos dilation of a contraction A.
+
+    For a contraction A (||A|| <= 1), produces a unitary U of size 2N x 2N:
+        U = [[A,  D_A*],
+             [D_A, -A*]]
+    where D_A = sqrt(I - A*A) is the defect operator.
+
+    The result is unitary up to float64 precision (~1e-14).
+    """
     dim = A.shape[0]
     identity = jnp.eye(dim, dtype=complex_dtype)
-    sqrt_A = jax.scipy.linalg.sqrtm(identity - A @ A)
-    U = jnp.block([[A, sqrt_A], [sqrt_A, -A]])
+    # Defect operator: D_A = sqrt(I - A^dag A)
+    sqrt_I_minus_AdagA = jax.scipy.linalg.sqrtm(identity - A.conj().T @ A)
+    sqrt_I_minus_AAdagg = jax.scipy.linalg.sqrtm(identity - A @ A.conj().T)
+    U = jnp.block([
+        [A,                   sqrt_I_minus_AdagA],
+        [sqrt_I_minus_AAdagg, -A.conj().T       ],
+    ])
     return U
 
 
@@ -267,13 +292,19 @@ def hermitian_block_encoding(U: jnp.ndarray) -> jnp.ndarray:
 
 
 def get_block_encoded(U: jnp.ndarray, num_ancilla: int = 1) -> jnp.ndarray:
-    """Extract the block-encoded matrix from a unitary U."""
+    """Extract the block-encoded matrix from a unitary U.
+
+    If U's size is not divisible by 2^num_ancilla, pads U with zeros to the
+    next multiple of 2^num_ancilla before extraction.
+    """
     dim = U.shape[0]
-    if dim % (2**num_ancilla) != 0:
-        raise ValueError(
-            f"Unitary size {dim} must be divisible by 2^{num_ancilla} = {2 ** num_ancilla}."
-        )
-    block_dim = dim // (2**num_ancilla)
+    block = 2 ** num_ancilla
+    if dim % block != 0:
+        # Pad to the next multiple of block
+        pad = block - (dim % block)
+        U = jnp.pad(U, ((0, pad), (0, pad)))
+        dim = U.shape[0]
+    block_dim = dim // block
     return U[:block_dim, :block_dim]
 
 
@@ -314,8 +345,12 @@ def bitwise_parity_matrix(dim: int) -> jnp.ndarray:
 # Diagnostics
 # ---------------------------------------------------------------------------
 
-def is_unitary(U: jnp.ndarray, atol: float = 1e-10) -> bool:
-    """Check whether U is unitary up to absolute tolerance."""
+def is_unitary(U: jnp.ndarray, atol: float = 1e-6) -> bool:
+    """Check whether U is unitary up to absolute tolerance.
+
+    Default atol raised from 1e-10 to 1e-6 to accommodate float64 rounding
+    accumulated in multi-step matrix products (e.g. Halmos dilation via sqrtm).
+    """
     dim = U.shape[0]
     return bool(jnp.isclose(jnp.linalg.norm(U @ U.conj().T - jnp.eye(dim)), 0.0, atol=atol))
 

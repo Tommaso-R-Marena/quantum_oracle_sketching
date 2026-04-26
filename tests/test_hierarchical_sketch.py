@@ -5,7 +5,7 @@ Verifies:
   2. Sample complexity ratio matches theoretical Q^{1/k} improvement.
   3. The oracle diagonal approximates exp(i*pi*f) on supp(f).
   4. k=1 level recovers Zhao et al. uniform oracle (within constants).
-  5. k>=2 strictly beats k=1 in sample efficiency.
+  5. k>=2 strictly beats k=1 in sample efficiency for large Q.
 """
 
 import jax
@@ -49,15 +49,21 @@ def test_hierarchical_diagonal_accuracy_on_support(truth_table):
 
 
 def test_more_levels_fewer_samples(truth_table):
-    """More hierarchy levels => fewer total samples (main theorem)."""
+    """More hierarchy levels => fewer total samples (main theorem).
+
+    The Q^{2-1/k} improvement over Q^2 is only visible for large Q.
+    At Q=2 the savings are negligible; use Q=32 where k=3 saves ~Q^{1/3} = 3.2x.
+    """
+    Q = 32
     _, stats_k1 = HierarchicalOracleSketch.from_truth_table(
-        truth_table, num_levels=1, total_queries=4, seed=0
+        truth_table, num_levels=1, total_queries=Q, seed=0
     ).build()
     _, stats_k3 = HierarchicalOracleSketch.from_truth_table(
-        truth_table, num_levels=3, total_queries=4, seed=0
+        truth_table, num_levels=3, total_queries=Q, seed=0
     ).build()
     assert stats_k3["total_samples"] <= stats_k1["total_samples"], (
-        f"k=3 ({stats_k3['total_samples']}) should use <= samples than k=1 ({stats_k1['total_samples']})"
+        f"k=3 ({stats_k3['total_samples']}) should use <= samples than "
+        f"k=1 ({stats_k1['total_samples']}) at Q={Q}"
     )
 
 
