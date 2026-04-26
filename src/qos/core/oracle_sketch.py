@@ -127,64 +127,80 @@ def q_oracle_sketch_matrix_index(
     scale: float = DEFAULT_CONFIG.sign_rescale,
     angle_set: jax.Array | None = None,
 ) -> tuple[jax.Array, int]:
-    """Sparse row/column index oracle with rank register via QSVT.
+    """Sparse row/column index oracle with rank register via QSVT sign function.
 
-    The CDF is built **per-row** so that each row's probability mass is
-    independent. Row i's CDF[i, j] = (number of nonzeros in row i at columns
-    0..j) / (total nonzeros in row i). Rows with no nonzeros get a uniform
-    CDF. This ensures the sign-QSVT threshold correctly identifies the k-th
-    nonzero column within each row independently.
+    For each row i and rank k (1..sparsity), this oracle identifies the k-th
+    nonzero column of row i. It works by:
+      1. Building the per-row CDF: CDF[i,j] = #{nonzeros in row i at cols 0..j}
+                                              / #{nonzeros in row i}
+      2. The QSVT sign function evaluates sign(CDF[i,j] - (k-0.5)/s) for each
+         (i, k, j). This is +1 for j >= j_k and -1 for j < j_k.
+      3. The difference sign_k[i,j] - sign_{k-1}[i,j] is +2 at column j=j_k
+         and 0 elsewhere (since the step moves up by exactly 1/s at each
+         nonzero column). Taking argmax over j gives j_k directly.
     """
     from qos.qsvt.angles import get_qsvt_angles_sign
     from qos.qsvt.transform import apply_qsvt_diag
 
-    num_rows = matrix.shape[axis]
-    bitlength_col = int(jnp.ceil(jnp.log2(matrix.shape[1 - axis])))
-    orig_num_cols = matrix.shape[1 - axis]
+    prob_matrix = matrix if axis == 0 else matrix.T
+    num_rows, orig_num_cols = prob_matrix.shape
+    bitlength_col = int(jnp.ceil(jnp.log2(orig_num_cols)))
     num_cols = 2**bitlength_col
-    sparsity = int(jnp.max(jnp.count_nonzero(matrix, axis=1 - axis)))
-    nnz = jnp.count_nonzero(matrix)
+    sparsity = int(jnp.max(jnp.count_nonzero(prob_matrix, axis=1)))
+    nnz = jnp.count_nonzero(prob_matrix)
     if nnz == 0:
         raise ValueError("Matrix has no non-zero elements.")
 
-    k_indices = jnp.arange(sparsity, dtype=int_dtype) + 1
-    t = jnp.pi * nnz / (2 * sparsity + 1)
-    k_phase_scale = jnp.pi / (2 * sparsity + 1)
-
-    prob_matrix = matrix if axis == 0 else matrix.T
-    # Per-row indicator: 1 where nonzero, 0 elsewhere.
-    indicator = (prob_matrix != 0).astype(real_dtype)
-    # Pad columns to next power of 2.
-    indicator = jnp.pad(indicator, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
     # Per-row CDF: normalize each row by its own row-sum, then cumsum.
-    row_sums = jnp.sum(indicator, axis=1, keepdims=True)  # (num_rows, 1)
-    # Avoid division by zero for empty rows.
+    indicator = (prob_matrix != 0).astype(real_dtype)  # (num_rows, orig_num_cols)
+    indicator_pad = jnp.pad(indicator, ((0, 0), (0, num_cols - orig_num_cols)), constant_values=0.0)
+    row_sums = jnp.sum(indicator_pad, axis=1, keepdims=True)
     row_sums_safe = jnp.where(row_sums == 0, 1.0, row_sums)
-    prob = indicator / row_sums_safe  # each row sums to 1 (or 0 if empty)
-    prob = jnp.cumsum(prob, axis=1)   # per-row CDF in [0, 1]
+    prob_norm = indicator_pad / row_sums_safe          # each row sums to 1
+    cdf = jnp.cumsum(prob_norm, axis=1)               # (num_rows, num_cols), values in [0,1]
 
-    log_diag = jnp.log1p(prob * jnp.expm1(1j * t / unit_num_samples))
-    log_diag = jnp.repeat(log_diag[:, None, :], sparsity, axis=1)
-    log_diag = log_diag - 1j * (k_indices[None, :, None] - 0.5) * k_phase_scale
-    diag = jnp.exp(unit_num_samples * log_diag).reshape(num_rows * sparsity * num_cols)
+    # For each rank k in 1..sparsity, threshold = (k - 0.5) / sparsity.
+    # sign_val[i, k, j] = sign(cdf[i,j] - threshold_k).
+    # We encode this as a flat block-encoding over (num_rows * sparsity * num_cols) elements.
+    k_indices = jnp.arange(1, sparsity + 1, dtype=real_dtype)          # (sparsity,)
+    thresholds = (k_indices - 0.5) / float(sparsity)                   # (sparsity,)
+    # cdf_expanded: (num_rows, sparsity, num_cols)
+    cdf_expanded = cdf[:, None, :] - thresholds[None, :, None]         # centered at threshold
 
-    sin = (diag - jnp.conj(diag)) / (2j)
-    cos = (diag + jnp.conj(diag)) / 2
-    block_encoding = jnp.stack([jnp.stack([sin, cos], axis=0), jnp.stack([cos, -sin], axis=0)], axis=0)
+    # Build block encoding of the centered CDF values.
+    # We map each entry x -> sin(pi/2 * x) approximately via log1p trick.
+    t_scale = jnp.pi / 2.0
+    flat = cdf_expanded.reshape(-1)  # (num_rows * sparsity * num_cols,)
+    log_diag = jnp.log1p(flat.astype(jnp.complex128) * jnp.expm1(1j * t_scale / unit_num_samples))
+    diag = jnp.exp(unit_num_samples * log_diag)
+    sin_val = ((diag - jnp.conj(diag)) / (2j)).real
+    cos_val = ((diag + jnp.conj(diag)) / 2).real
+    block_encoding = jnp.stack(
+        [jnp.stack([sin_val, cos_val], axis=0),
+         jnp.stack([cos_val, -sin_val], axis=0)],
+        axis=0
+    )
 
     if angle_set is None:
-        threshold = jnp.pi / (4 * sparsity + 2) * DEFAULT_CONFIG.sign_threshold_factor
-        angle_set, _ = get_qsvt_angles_sign(degree=degree, threshold=float(threshold), rescale=scale)
+        threshold_qsvt = 0.5 / float(sparsity) * DEFAULT_CONFIG.sign_threshold_factor
+        angle_set, _ = get_qsvt_angles_sign(
+            degree=degree, threshold=float(threshold_qsvt), rescale=scale
+        )
         angle_set = angle_set.astype(real_dtype)
 
     block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
-    block_encoding = jnp.real(block_encoding[0, 0]).reshape(num_rows, sparsity, num_cols)
+    # sign_grid[i, k, j] = sign(cdf[i,j] - threshold_k), shape (num_rows, sparsity, num_cols)
+    sign_grid = jnp.real(block_encoding[0, 0]).reshape(num_rows, sparsity, num_cols)
 
-    hadamard = jnp.array([[1, 1], [1, -1]], dtype=real_dtype) / jnp.sqrt(2)
-    cont = jnp.stack([jnp.ones_like(block_encoding), block_encoding], axis=-1)
-    xor = jnp.einsum("am,ijkm,mn->ijkan", hadamard, cont, hadamard)
-    state = xor[:, :, 0, :, 0]
-    for bit in range(1, bitlength_col):
-        state = jnp.einsum("ija,ijb->ijab", state, xor[:, :, bit, :, 0]).reshape(num_rows, sparsity, -1)
-    state = state[:, :, :orig_num_cols]
-    return (state, int(unit_num_samples * (angle_set.shape[0] - 1)))
+    # Column indicator: delta_k[i, k, j] = sign_k[i,j] - sign_{k-1}[i,j].
+    # Prepend a row of -1 (below the lowest threshold) as the k=0 sentinel.
+    sentinel = jnp.full((num_rows, 1, num_cols), -1.0, dtype=sign_grid.dtype)
+    sign_with_sentinel = jnp.concatenate([sentinel, sign_grid], axis=1)  # (num_rows, sparsity+1, num_cols)
+    delta = sign_with_sentinel[:, 1:, :] - sign_with_sentinel[:, :-1, :]  # (num_rows, sparsity, num_cols)
+
+    # delta[i, k, j] == +2 at j = j_k (the k-th nonzero column of row i), 0 elsewhere.
+    # Clip to orig_num_cols to remove padding.
+    delta = delta[:, :, :orig_num_cols]
+
+    total_samples = int(unit_num_samples * (angle_set.shape[0] - 1))
+    return delta, total_samples

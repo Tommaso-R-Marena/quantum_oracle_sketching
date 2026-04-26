@@ -71,7 +71,7 @@ def q_state_sketch(
 
     Uses 2 ancilla qubits:
         1. LCU + QSVT for arcsin inversion.
-        2. Second LCU to extract the real part.
+        2. Second LCU to extract the imaginary part (odd-parity polynomial).
 
     The dimension is padded to the next power of 2 internally to support the
     Walsh-Hadamard randomization.
@@ -82,7 +82,8 @@ def q_state_sketch(
         unit_num_samples: Number of effective samples per elementary gate.
         angle_set: Pre-computed QSVT angles. If ``None``, they are generated
             internally (adds overhead).
-        degree: Even polynomial degree for the arcsin(x) / arcsin(1) approximation.
+        degree: Polynomial degree for the arcsin(x)/(pi/2) approximation.
+            Must be odd (parity=1).
 
     Returns:
         ``(state, total_samples)`` where ``state`` has shape ``(dim,)`` and
@@ -93,10 +94,9 @@ def q_state_sketch(
         2. Random-sign Walsh-Hadamard transform (Johnson-Lindenstrauss style).
         3. Construct expected phase oracle  ``U = diag(exp(i B))``.
         4. LCU: ``sin(B) = (U - U\u2020)/(2i)``.
-        5. QSVT: apply polynomial approximation to ``arcsin(x) / (pi/2)``
-           on the full domain [-1, 1].
-        6. Extract real part via second LCU.
-        7. Inverse Walsh-Hadamard + sign unrandomization.
+        5. QSVT (parity=1, odd): block[0,0] = i * arcsin(x)/(pi/2).
+           Signal is in the imaginary part: ``imag(block[0,0])``.
+        6. Inverse Walsh-Hadamard + sign unrandomization.
     """
     from qos.qsvt.angles import get_qsvt_angles
 
@@ -144,9 +144,10 @@ def q_state_sketch(
     cos = (diag + jnp.conj(diag)) / 2
     block_encoding = jnp.stack([sin, cos, cos, -sin], axis=0).reshape(2, 2, dim)
 
-    # QSVT to approximate arcsin(x) / (pi/2) on the full domain [-1, 1].
-    # The LCU sine output lives in [-1, 1]; using cheb_domain=(-sin(1), sin(1))
-    # was wrong and caused the QSP optimizer to diverge.
+    # QSVT with parity=1 (odd): approximates arcsin(x)/(pi/2) on [-1, 1].
+    # For odd-parity QSVT, the signal sits in the IMAGINARY part of block[0,0]:
+    #   block[0,0] = i * p(x)  where p is the odd polynomial.
+    # Use jnp.imag to extract the signal.
     if angle_set is None:
         angle_set = get_qsvt_angles(
             func=lambda x: jnp.arcsin(x) / (jnp.pi / 2),
@@ -161,8 +162,8 @@ def q_state_sketch(
 
     block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
 
-    # Extract real part and prepare state.
-    state = jnp.real(block_encoding[0, 0]) / jnp.sqrt(dim)
+    # For odd-parity QSVT, signal is in imag(block[0,0]).
+    state = jnp.imag(block_encoding[0, 0]) / jnp.sqrt(dim)
 
     # Inverse randomized Hadamard transform.
     hadamard = unnormalized_hadamard_transform(int(jnp.round(jnp.log2(dim))))
