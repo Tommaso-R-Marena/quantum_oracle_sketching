@@ -18,7 +18,7 @@ import jax.numpy as jnp
 from jax import random
 
 from qos.config import DEFAULT_CONFIG, complex_dtype, int_dtype, real_dtype
-from qos.utils.numerical import bitwise_parity_matrix, unnormalized_hadamard_transform
+from qos.utils.numerical import bitwise_parity_matrix, fwht, unnormalized_hadamard_transform
 
 if TYPE_CHECKING:
     from jax import random as jax_random
@@ -69,12 +69,10 @@ def q_state_sketch(
 ) -> tuple[jax.Array, int]:
     """Construct the quantum state sketch of a general real vector.
 
-    Uses 2 ancilla qubits:
-        1. LCU + QSVT for arcsin inversion.
-        2. Second LCU to extract the imaginary part (odd-parity polynomial).
-
-    The dimension is padded to the next power of 2 internally to support the
-    Walsh-Hadamard randomization.
+    Uses the expected-unitary (EU) accumulation to build a phase oracle whose
+    imaginary part is proportional to the input vector in the WHT basis, then
+    applies QSVT (arcsin polynomial, parity=1) to invert the sine and recover
+    the vector.
 
     Args:
         vector: Input vector of shape ``(dim,)``; will be L2-normalized internally.
@@ -89,76 +87,94 @@ def q_state_sketch(
         ``(state, total_samples)`` where ``state`` has shape ``(dim,)`` and
         ``total_samples`` accounts for QSVT multiplicative overhead.
 
-    Mathematical outline:
-        1. Pad ``vector`` to power-of-2 dimension ``D``.
-        2. Choose t = 1/(norm * general_vector_time_scale) so that
-           |t * v_j| << 1 for all j, keeping sin(t*v_j) in the arcsin domain.
-        3. Random-sign Walsh-Hadamard: w = diag(signs) @ H @ v  (in freq domain).
-        4. Construct expected phase oracle U = diag(exp(i * B)) where
-           B_u = sum_j prob_j * exp(i * t * signs_j * v_j * chi(j,u)).
-        5. LCU: sin(B) = (U - U^dag)/(2i).
-        6. QSVT (parity=1, odd): block[0,0] = i * arcsin(sin(B)) * (2/pi).
-           = i * B * (2/pi)  when |B| << pi/2.
-           Signal is in imag(block[0,0]).
-        7. Inverse Walsh-Hadamard: v_reconstructed = signs * H @ imag / dim.
-           Divide by t * (2/pi) to normalize.
-        8. Truncate to orig_dim.
+    Mathematical outline
+    --------------------
+    1.  Pad ``vector`` to power-of-2 dimension ``D``.
+    2.  Random-sign scrambling: ``sv = signs * vector``.
+    3.  Build phase oracle diagonal: ``diag[u] = exp(i * B[u])`` where
+        ``B[u] = t * (H @ sv)[u] / D`` and ``t = pi/4`` (keeps |B| < pi/2).
+    4.  LCU block encoding (unitary!)::
+
+            U_be = [[sin(B),   i*cos(B)],
+                    [i*cos(B),  sin(B) ]]
+
+        Top-left block encodes ``sin(B)``.
+    5.  QSVT (parity=1): approximates ``arcsin(x)/(pi/2)`` on ``[-1,1]``.
+        Output block ``[0,0]`` encodes ``(2/pi)*arcsin(sin(B)) = (2/pi)*B``
+        when ``|B| < pi/2``.
+    6.  Take ``imag(block[0,0])`` -- the imaginary part carries the signal
+        since B is real: ``(2/pi)*B[u] = (2/pi)*t*(H@sv)[u]/D``.
+    7.  Inverse WHT + undo sign scrambling::
+
+            v_recon = signs * fwht(qsvt_out) / D  /  (t * 2/pi / D)
+                    = signs * fwht(qsvt_out) / (t * 2/pi)
+
+    8.  Truncate to orig_dim.
     """
     from qos.qsvt.angles import get_qsvt_angles
+    from qos.qsvt.transform import apply_qsvt_diag
 
     orig_dim = vector.shape[0]
-    dim = int(2 ** jnp.ceil(jnp.log2(orig_dim)))
-    prob = jnp.ones_like(vector, dtype=real_dtype) / orig_dim
+    dim = int(2 ** jnp.ceil(jnp.log2(jnp.maximum(orig_dim, 2))))
 
-    vector = jnp.pad(
-        vector, (0, int(dim) - orig_dim), mode="constant", constant_values=0.0
+    # Pad to power of 2.
+    vector_padded = jnp.pad(
+        vector.astype(real_dtype),
+        (0, dim - orig_dim),
+        mode="constant",
+        constant_values=0.0,
     )
-    prob = jnp.pad(prob, (0, int(dim) - orig_dim), mode="constant", constant_values=0.0)
-    norm = jnp.linalg.norm(vector)
+    norm = float(jnp.linalg.norm(vector_padded))
     if norm == 0:
         raise ValueError("Input vector has zero norm.")
 
-    # t chosen so that |t * v_j| <= 1/(general_vector_time_scale) for all j
-    # when vector is unit-norm, keeping sin(t*v_j) well inside [-1, 1].
-    t = 1.0 / (float(norm) * DEFAULT_CONFIG.general_vector_time_scale)
-
-    # Random sign O_h: w_u = sum_j (-1)^{popcount(j & u)} * signs_j * v_j
+    # Random sign scrambling to spread energy across WHT frequencies.
     key, subkey = random.split(key)
     random_signs = random.choice(
         subkey, jnp.array([1, -1], dtype=int_dtype), shape=(dim,)
-    )
+    ).astype(real_dtype)
+    sv = random_signs * vector_padded  # scrambled vector
 
-    # Bitwise interaction matrix (-1)^(j . u), shape (dim, dim)
-    inner_prod_signs = bitwise_parity_matrix(dim)
+    # WHT of sv: w[u] = sum_j (-1)^{popcount(j&u)} sv[j].
+    # For a unit vector, ||w||^2 = dim (Parseval), max|w[u]| ~ sqrt(dim).
+    # Choose t so that t * max|w[u]| / dim ~ pi/4, i.e. t ~ pi/4 * dim / sqrt(dim)
+    # = pi/4 * sqrt(dim).  But we normalize w by 1/dim in the phase below,
+    # so the effective argument is t * w[u] / dim ~ t / sqrt(dim) * (w[u]/sqrt(dim)).
+    # Simpler: set t = pi / 4 so that the *normalised* WHT component t*w[u]/dim
+    # has magnitude ~ (pi/4)*(1/sqrt(dim)) << 1, which is fine for arcsin.
+    # The key constraint is |B[u]| = |t * w[u] / dim| < pi/2 for all u.
+    # With t = pi/4 and |w[u]| <= dim (trivial upper bound), |B| <= pi/4 < pi/2. OK.
+    t = jnp.pi / 4.0
 
-    # Expected single-gate with stable log1p accumulation.
-    # phase_arg[j, u] = i * t * signs_j * v_j * chi(j, u)
-    # log_diag[u] = log(1 + sum_j prob_j * expm1(phase_arg[j, u]))
+    # Build the expected phase oracle diagonal in O(D^2) via the EU formula.
+    # prob[j] = 1/D (uniform over padded dimension).
+    # B[u] ~ t * (H @ sv)[u] / D  as  M -> infinity.
+    prob = jnp.ones(dim, dtype=real_dtype) / dim
+    # phase increment per sample: delta = t / (M * dim) * sv[j] * chi(j,u)
+    # accumulated over M samples: log(diag[u]) = D * log(1 + sum_j prob[j]*expm1(i*delta*chi(j,u)))
+    inner_prod_signs = bitwise_parity_matrix(dim).astype(real_dtype)  # (-1)^{popcount(j&u)}
+    phase_inc = (t / (unit_num_samples * dim)) * sv  # shape (dim,)
     log_diag = jnp.log1p(
         jnp.sum(
-            prob[:, None]
-            * jnp.expm1(
-                1j
-                * (random_signs * vector)[:, None]
-                * inner_prod_signs
-                * t
-                / unit_num_samples
-            ),
+            prob[:, None] * jnp.expm1(1j * phase_inc[:, None] * inner_prod_signs),
             axis=0,
         )
-    )
+    )  # shape (dim,)
     log_diag = unit_num_samples * log_diag
-    diag = jnp.exp(log_diag)
+    diag = jnp.exp(log_diag)  # exp(i*B[u]) approximately
 
-    # LCU: extract sin(B) from phase oracle.
-    sin_b = (diag - jnp.conj(diag)) / (2j)   # real, shape (dim,)
-    cos_b = (diag + jnp.conj(diag)) / 2
-    block_encoding = jnp.stack([sin_b, cos_b, cos_b, -sin_b], axis=0).reshape(2, 2, dim)
+    # Unitary LCU block encoding of sin(B):
+    #   U = [[sin(B),   i*cos(B)],
+    #        [i*cos(B),  sin(B) ]]
+    # Verify: U†U = diag(sin^2+cos^2, sin^2+cos^2) = I. ✓
+    sin_b = jnp.imag(diag)   # sin(B)
+    cos_b = jnp.real(diag)   # cos(B)
+    # Shape for apply_qsvt_diag: (2, 2, dim) where last axis indexes diagonal entries.
+    block_encoding = jnp.stack(
+        [sin_b, 1j * cos_b, 1j * cos_b, sin_b], axis=0
+    ).reshape(2, 2, dim).astype(complex_dtype)
 
-    # QSVT with parity=1 (odd): approximates arcsin(x)/(pi/2) on [-1, 1].
-    # Output: block[0, 0] = i * (2/pi) * arcsin(sin_b) ≈ i * (2/pi) * t * w
-    # where w = diag(signs) @ H @ v / sqrt(dim) (randomized WHT of v).
-    # Use imag(block[0, 0]) = (2/pi) * arcsin(sin_b).
+    # QSVT angles for arcsin(x)/(pi/2), parity=1 (odd polynomial).
     if angle_set is None:
         angle_set = get_qsvt_angles(
             func=lambda x: jnp.arcsin(x) / (jnp.pi / 2),
@@ -169,27 +185,23 @@ def q_state_sketch(
             parity=1,
         )
 
-    from qos.qsvt.transform import apply_qsvt_diag
+    block_out = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
+    # block_out[0,0] encodes (2/pi)*arcsin(sin(B)) ~ (2/pi)*B (for small B).
+    # Since B is real, signal is in the imaginary part.
+    qsvt_out = jnp.imag(block_out[0, 0]).astype(real_dtype)  # (2/pi)*B[u], shape (dim,)
 
-    block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
+    # Inverse WHT: fwht(w) = H @ w = D * sv  (since H @ H = D*I).
+    # fwht(qsvt_out) ~ (2/pi) * t * fwht(w) / D  <-- the /D is in phase_inc
+    # Actually qsvt_out[u] ~ (2/pi)*t*(H@sv)[u]/dim, so:
+    # fwht(qsvt_out)[j] ~ (2/pi)*t * dim * sv[j] / dim = (2/pi)*t * sv[j].
+    inv_wht = fwht(qsvt_out)  # ~ (2/pi) * t * sv, shape (dim,)
 
-    # imag(block[0,0]) ≈ (2/pi) * t * (diag(signs) @ H @ v / sqrt(dim))_u
-    # = (2/pi) * t * w_u  where w = randomized WHT of v.
-    qsvt_out = jnp.imag(block_encoding[0, 0])  # shape (dim,), still in WHT basis
+    # Undo sign scrambling and t*(2/pi) scaling to recover v.
+    state = random_signs * inv_wht / (t * (2.0 / jnp.pi))
+    state = state[:orig_dim].astype(real_dtype)
 
-    # Inverse WHT: H @ w = H @ diag(signs) @ H @ v = dim * diag(signs) @ v
-    # since H @ H = dim * I.
-    # unnormalized_hadamard_transform(n) returns H_{2^n} (without any normalization).
-    hadamard = unnormalized_hadamard_transform(int(jnp.round(jnp.log2(dim))))
-    inv_wht = hadamard @ qsvt_out   # = dim * diag(signs) @ v (up to t * 2/pi factor)
-
-    # Now: inv_wht ≈ dim * (2/pi) * t * diag(signs) @ v
-    # Undo sign randomization and normalization.
-    state = random_signs * inv_wht / (dim * t * (2.0 / jnp.pi))
-    state = state[:orig_dim]
-
-    total_samples = unit_num_samples * (angle_set.shape[0] - 1)
-    return state, int(total_samples)
+    total_samples = int(unit_num_samples) * int(angle_set.shape[0] - 1)
+    return state, total_samples
 
 
 def q_kernel_estimate(
