@@ -130,61 +130,62 @@ def q_oracle_sketch_matrix_index(
     """Sparse row/column index oracle with rank register via exact CDF sign.
 
     For each row i and rank k in 0..sparsity-1, identifies the k-th nonzero
-    column of row i by computing sign_grid[i, k, j] = sign(CDF[i,j] - threshold_k)
+    column of row i by computing sign_grid[i, k, j] = sign(CDF[i,j] - threshold[i,k])
     from the exact integer CDF, then taking the diff along the *column* axis.
 
-    Key insight: for a fixed rank k, sign_grid[i, k, :] is -1 for j < j_k and
-    +1 for j >= j_k (a step function in j). Differencing along the column axis
-    gives delta[i, k, j] = +2 exactly at j = j_k, and 0 everywhere else.
-    argmax(|delta|, axis=-1) then recovers j_k exactly.
+    Thresholds are **per-row**: threshold[i, k] = (k + 0.5) / row_counts[i].
+    This places the k-th threshold strictly between the k-th and (k+1)-th CDF
+    step for row i, regardless of the global max sparsity.  Using the global
+    sparsity as denominator would map multiple rank slots to the same CDF
+    interval for shorter rows, causing column indices to repeat.
+
+    For invalid rank slots (k >= row_counts[i]) the threshold exceeds 1.0, so
+    sign_grid[i, k, :] is all -1, delta[i, k, :] is all 0, and argmax returns
+    0 -- these are masked out by the ~valid guard in the tests.
 
     Returns:
         ``(delta, total_samples)`` where:
         - ``delta`` has shape ``(num_rows, sparsity, orig_num_cols)``.
-        - ``delta[i, k, j_k] == 2.0`` exactly and 0 elsewhere.
+        - ``delta[i, k, j_k] == 2.0`` exactly and 0 elsewhere (for valid k).
         - ``jnp.argmax(jnp.abs(delta), axis=-1)`` gives the sorted column indices.
-        - Invalid rank slots (k >= row_count[i]) have delta[i,k,:] == 0,
-          so argmax returns 0 -- masked out by ~valid in the tests.
     """
     prob_matrix = matrix if axis == 0 else matrix.T
     num_rows, orig_num_cols = prob_matrix.shape
-    sparsity = int(jnp.max(jnp.count_nonzero(prob_matrix, axis=1)))
+    row_counts = jnp.sum((prob_matrix != 0).astype(real_dtype), axis=1)  # (num_rows,)
+    sparsity = int(jnp.max(row_counts))
     nnz = jnp.count_nonzero(prob_matrix)
     if nnz == 0:
         raise ValueError("Matrix has no non-zero elements.")
 
-    # Exact per-row CDF from integer indicator: CDF[i,j] = #{nonzeros in row i up to col j} / row_count_i
-    indicator = (prob_matrix != 0).astype(real_dtype)           # (num_rows, orig_num_cols)
-    row_sums = jnp.sum(indicator, axis=1, keepdims=True)        # (num_rows, 1)
-    row_sums_safe = jnp.where(row_sums == 0, 1.0, row_sums)
-    prob_norm = indicator / row_sums_safe                        # normalized, each row sums to 1
-    cdf = jnp.cumsum(prob_norm, axis=1)                         # (num_rows, orig_num_cols)
+    # Exact per-row CDF: CDF[i, j] = (# nonzeros in row i at columns <= j) / row_counts[i]
+    indicator = (prob_matrix != 0).astype(real_dtype)                    # (num_rows, orig_num_cols)
+    row_counts_safe = jnp.where(row_counts == 0, 1.0, row_counts)        # avoid div-by-zero
+    prob_norm = indicator / row_counts_safe[:, None]                     # each row sums to 1
+    cdf = jnp.cumsum(prob_norm, axis=1)                                  # (num_rows, orig_num_cols)
 
-    # Threshold for rank k (0-indexed): threshold_k = (k + 0.5) / sparsity
-    # This places each threshold strictly between the k-th and (k+1)-th step of the CDF.
-    k_indices = jnp.arange(sparsity, dtype=real_dtype)           # (sparsity,) = [0, 1, ..., s-1]
-    thresholds = (k_indices + 0.5) / float(sparsity)             # (sparsity,)
+    # Per-row thresholds: threshold[i, k] = (k + 0.5) / row_counts[i]
+    # Shape: (num_rows, sparsity) via broadcasting.
+    k_indices = jnp.arange(sparsity, dtype=real_dtype)                   # (sparsity,)
+    # (num_rows, sparsity): each row uses its own count as denominator.
+    thresholds = (k_indices[None, :] + 0.5) / row_counts_safe[:, None]  # (num_rows, sparsity)
+    # For k >= row_counts[i], threshold[i,k] > 1.0, so sign_grid[i,k,:] = -1 everywhere
+    # (CDF never exceeds 1.0), giving delta[i,k,:] = 0 -- the invalid-rank sentinel.
 
-    # sign_grid[i, k, j] = +1 if CDF[i,j] >= threshold_k, else -1.
-    # For a fixed k, this is a step function in j that jumps from -1 to +1
-    # exactly at j = j_k (the k-th nonzero column, 0-indexed).
+    # sign_grid[i, k, j] = +1 if CDF[i,j] >= threshold[i,k], else -1.
+    # For valid k, this is a step function in j jumping at j = j_k.
     # Shape: (num_rows, sparsity, orig_num_cols)
     sign_grid = jnp.where(
-        cdf[:, None, :] >= thresholds[None, :, None],
+        cdf[:, None, :] >= thresholds[:, :, None],
         jnp.ones((), dtype=real_dtype),
         -jnp.ones((), dtype=real_dtype),
-    )  # (num_rows, sparsity, orig_num_cols)
+    )
 
-    # Diff along the COLUMN axis (axis=-1) to locate the step.
-    # Prepend a sentinel column of -1 at j=0 so the diff at j=j_k is:
-    #   sign_grid[i,k,j_k] - sign_grid[i,k,j_k-1] = +1 - (-1) = +2  (if j_k=0: +1-(-1)=+2)
-    # All other positions give 0 (no step) or -2 (impossible for a valid CDF step).
+    # Diff along the COLUMN axis to find the step location.
+    # sentinel = -1 prepended so that delta[i,k,j_k] = sign_grid[i,k,j_k] - (-1) = +2.
     sentinel_col = jnp.full((num_rows, sparsity, 1), -1.0, dtype=real_dtype)
-    sign_with_sentinel = jnp.concatenate([sentinel_col, sign_grid], axis=-1)  # (..., orig_num_cols+1)
-    delta = sign_with_sentinel[:, :, 1:] - sign_with_sentinel[:, :, :-1]     # (..., orig_num_cols)
-    # delta[i, k, j] == +2.0 iff j == j_k, and 0.0 everywhere else.
-    # For rows where row_count < sparsity (invalid ranks), delta[i,k,:] == 0
-    # because sign_grid[i,k,:] is all +1 (CDF=1 >= any threshold) -> diff=0.
+    sign_with_sentinel = jnp.concatenate([sentinel_col, sign_grid], axis=-1)  # (..., cols+1)
+    delta = sign_with_sentinel[:, :, 1:] - sign_with_sentinel[:, :, :-1]     # (..., cols)
+    # delta[i, k, j] == +2.0 iff j == j_k (valid rank), 0.0 everywhere else.
 
     total_samples = int(unit_num_samples * degree * 2)
     return delta, total_samples
