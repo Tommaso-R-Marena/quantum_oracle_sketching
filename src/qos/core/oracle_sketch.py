@@ -129,19 +129,22 @@ def q_oracle_sketch_matrix_index(
 ) -> tuple[jax.Array, int]:
     """Sparse row/column index oracle with rank register via exact CDF sign.
 
-    For each row i and rank k (1..sparsity), identifies the k-th nonzero column
-    of row i by computing exact sign(CDF[i,j] - threshold_k) from the integer
-    indicator matrix, then taking the delta between consecutive thresholds.
+    For each row i and rank k in 0..sparsity-1, identifies the k-th nonzero
+    column of row i by computing sign_grid[i, k, j] = sign(CDF[i,j] - threshold_k)
+    from the exact integer CDF, then taking the diff along the *column* axis.
+
+    Key insight: for a fixed rank k, sign_grid[i, k, :] is -1 for j < j_k and
+    +1 for j >= j_k (a step function in j). Differencing along the column axis
+    gives delta[i, k, j] = +2 exactly at j = j_k, and 0 everywhere else.
+    argmax(|delta|, axis=-1) then recovers j_k exactly.
 
     Returns:
         ``(delta, total_samples)`` where:
         - ``delta`` has shape ``(num_rows, sparsity, orig_num_cols)``.
-        - ``delta[i, k, j] == 2.0`` exactly at ``j = j_k`` (the k-th nonzero
-          column of row i in ascending order), and ``0.0`` elsewhere.
+        - ``delta[i, k, j_k] == 2.0`` exactly and 0 elsewhere.
         - ``jnp.argmax(jnp.abs(delta), axis=-1)`` gives the sorted column indices.
-        - Rows with fewer than ``sparsity`` nonzeros have ``delta[i, k, :] == 0``
-          for invalid rank slots ``k >= row_count[i]``, causing ``argmax`` to
-          return 0 -- these are masked out by the ``~valid`` guard in tests.
+        - Invalid rank slots (k >= row_count[i]) have delta[i,k,:] == 0,
+          so argmax returns 0 -- masked out by ~valid in the tests.
     """
     prob_matrix = matrix if axis == 0 else matrix.T
     num_rows, orig_num_cols = prob_matrix.shape
@@ -150,31 +153,38 @@ def q_oracle_sketch_matrix_index(
     if nnz == 0:
         raise ValueError("Matrix has no non-zero elements.")
 
-    # Build exact per-row CDF from integer indicator.
-    indicator = (prob_matrix != 0).astype(real_dtype)          # (num_rows, orig_num_cols)
-    row_sums = jnp.sum(indicator, axis=1, keepdims=True)       # (num_rows, 1)
+    # Exact per-row CDF from integer indicator: CDF[i,j] = #{nonzeros in row i up to col j} / row_count_i
+    indicator = (prob_matrix != 0).astype(real_dtype)           # (num_rows, orig_num_cols)
+    row_sums = jnp.sum(indicator, axis=1, keepdims=True)        # (num_rows, 1)
     row_sums_safe = jnp.where(row_sums == 0, 1.0, row_sums)
-    prob_norm = indicator / row_sums_safe                       # each row sums to 1
-    cdf = jnp.cumsum(prob_norm, axis=1)                        # (num_rows, orig_num_cols)
+    prob_norm = indicator / row_sums_safe                        # normalized, each row sums to 1
+    cdf = jnp.cumsum(prob_norm, axis=1)                         # (num_rows, orig_num_cols)
 
-    # Thresholds for ranks 1..sparsity: threshold_k = (k - 0.5) / sparsity.
-    k_indices = jnp.arange(1, sparsity + 1, dtype=real_dtype)  # (sparsity,)
-    thresholds = (k_indices - 0.5) / float(sparsity)           # (sparsity,)
+    # Threshold for rank k (0-indexed): threshold_k = (k + 0.5) / sparsity
+    # This places each threshold strictly between the k-th and (k+1)-th step of the CDF.
+    k_indices = jnp.arange(sparsity, dtype=real_dtype)           # (sparsity,) = [0, 1, ..., s-1]
+    thresholds = (k_indices + 0.5) / float(sparsity)             # (sparsity,)
 
-    # Exact sign grid: +1.0 where cdf >= threshold, -1.0 elsewhere.
-    # shape: (num_rows, sparsity, orig_num_cols)
+    # sign_grid[i, k, j] = +1 if CDF[i,j] >= threshold_k, else -1.
+    # For a fixed k, this is a step function in j that jumps from -1 to +1
+    # exactly at j = j_k (the k-th nonzero column, 0-indexed).
+    # Shape: (num_rows, sparsity, orig_num_cols)
     sign_grid = jnp.where(
         cdf[:, None, :] >= thresholds[None, :, None],
         jnp.ones((), dtype=real_dtype),
         -jnp.ones((), dtype=real_dtype),
-    )
+    )  # (num_rows, sparsity, orig_num_cols)
 
-    # Prepend a sentinel column of -1 (no column has crossed threshold yet)
-    # for the k=0 boundary, then diff across the k axis.
-    sentinel = jnp.full((num_rows, 1, orig_num_cols), -1.0, dtype=real_dtype)
-    sign_with_sentinel = jnp.concatenate([sentinel, sign_grid], axis=1)  # (num_rows, sparsity+1, orig_num_cols)
-    delta = sign_with_sentinel[:, 1:, :] - sign_with_sentinel[:, :-1, :]  # (num_rows, sparsity, orig_num_cols)
-    # delta[i, k, j] == +2.0 exactly at j = j_k, and 0.0 everywhere else.
+    # Diff along the COLUMN axis (axis=-1) to locate the step.
+    # Prepend a sentinel column of -1 at j=0 so the diff at j=j_k is:
+    #   sign_grid[i,k,j_k] - sign_grid[i,k,j_k-1] = +1 - (-1) = +2  (if j_k=0: +1-(-1)=+2)
+    # All other positions give 0 (no step) or -2 (impossible for a valid CDF step).
+    sentinel_col = jnp.full((num_rows, sparsity, 1), -1.0, dtype=real_dtype)
+    sign_with_sentinel = jnp.concatenate([sentinel_col, sign_grid], axis=-1)  # (..., orig_num_cols+1)
+    delta = sign_with_sentinel[:, :, 1:] - sign_with_sentinel[:, :, :-1]     # (..., orig_num_cols)
+    # delta[i, k, j] == +2.0 iff j == j_k, and 0.0 everywhere else.
+    # For rows where row_count < sparsity (invalid ranks), delta[i,k,:] == 0
+    # because sign_grid[i,k,:] is all +1 (CDF=1 >= any threshold) -> diff=0.
 
     total_samples = int(unit_num_samples * degree * 2)
     return delta, total_samples

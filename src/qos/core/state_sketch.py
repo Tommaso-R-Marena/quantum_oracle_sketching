@@ -91,14 +91,18 @@ def q_state_sketch(
 
     Mathematical outline:
         1. Pad ``vector`` to power-of-2 dimension ``D``.
-        2. Random-sign Walsh-Hadamard transform (Johnson-Lindenstrauss style).
-        3. Construct expected phase oracle  ``U = diag(exp(i B))``.
-        4. LCU: ``sin(B) = (U - U\u2020)/(2i)``.
-        5. QSVT (parity=1, odd): block[0,0] = i * arcsin(x)/(pi/2).
-           Signal is in the imaginary part: ``imag(block[0,0])``.
-        6. Inverse Walsh-Hadamard + sign unrandomization.
-        7. Only one normalisation by sqrt(dim) -- the Hadamard already
-           carries its own 1/sqrt(dim) factor; do NOT divide again.
+        2. Choose t = 1/(norm * general_vector_time_scale) so that
+           |t * v_j| << 1 for all j, keeping sin(t*v_j) in the arcsin domain.
+        3. Random-sign Walsh-Hadamard: w = diag(signs) @ H @ v  (in freq domain).
+        4. Construct expected phase oracle U = diag(exp(i * B)) where
+           B_u = sum_j prob_j * exp(i * t * signs_j * v_j * chi(j,u)).
+        5. LCU: sin(B) = (U - U^dag)/(2i).
+        6. QSVT (parity=1, odd): block[0,0] = i * arcsin(sin(B)) * (2/pi).
+           = i * B * (2/pi)  when |B| << pi/2.
+           Signal is in imag(block[0,0]).
+        7. Inverse Walsh-Hadamard: v_reconstructed = signs * H @ imag / dim.
+           Divide by t * (2/pi) to normalize.
+        8. Truncate to orig_dim.
     """
     from qos.qsvt.angles import get_qsvt_angles
 
@@ -114,17 +118,22 @@ def q_state_sketch(
     if norm == 0:
         raise ValueError("Input vector has zero norm.")
 
-    # Random sign O_h
+    # t chosen so that |t * v_j| <= 1/(general_vector_time_scale) for all j
+    # when vector is unit-norm, keeping sin(t*v_j) well inside [-1, 1].
+    t = 1.0 / (float(norm) * DEFAULT_CONFIG.general_vector_time_scale)
+
+    # Random sign O_h: w_u = sum_j (-1)^{popcount(j & u)} * signs_j * v_j
     key, subkey = random.split(key)
     random_signs = random.choice(
         subkey, jnp.array([1, -1], dtype=int_dtype), shape=(dim,)
     )
 
-    # Bitwise interaction matrix (-1)^(j . u)
+    # Bitwise interaction matrix (-1)^(j . u), shape (dim, dim)
     inner_prod_signs = bitwise_parity_matrix(dim)
 
-    # Expected single gate with stable log1p accumulation.
-    t = orig_dim / norm / DEFAULT_CONFIG.general_vector_time_scale
+    # Expected single-gate with stable log1p accumulation.
+    # phase_arg[j, u] = i * t * signs_j * v_j * chi(j, u)
+    # log_diag[u] = log(1 + sum_j prob_j * expm1(phase_arg[j, u]))
     log_diag = jnp.log1p(
         jnp.sum(
             prob[:, None]
@@ -141,15 +150,15 @@ def q_state_sketch(
     log_diag = unit_num_samples * log_diag
     diag = jnp.exp(log_diag)
 
-    # LCU: convert phase to sine.
-    sin = (diag - jnp.conj(diag)) / (2j)
-    cos = (diag + jnp.conj(diag)) / 2
-    block_encoding = jnp.stack([sin, cos, cos, -sin], axis=0).reshape(2, 2, dim)
+    # LCU: extract sin(B) from phase oracle.
+    sin_b = (diag - jnp.conj(diag)) / (2j)   # real, shape (dim,)
+    cos_b = (diag + jnp.conj(diag)) / 2
+    block_encoding = jnp.stack([sin_b, cos_b, cos_b, -sin_b], axis=0).reshape(2, 2, dim)
 
     # QSVT with parity=1 (odd): approximates arcsin(x)/(pi/2) on [-1, 1].
-    # For odd-parity QSVT, the signal sits in the IMAGINARY part of block[0,0]:
-    #   block[0,0] = i * p(x)  where p is the odd polynomial.
-    # Use jnp.imag to extract the signal.
+    # Output: block[0, 0] = i * (2/pi) * arcsin(sin_b) ≈ i * (2/pi) * t * w
+    # where w = diag(signs) @ H @ v / sqrt(dim) (randomized WHT of v).
+    # Use imag(block[0, 0]) = (2/pi) * arcsin(sin_b).
     if angle_set is None:
         angle_set = get_qsvt_angles(
             func=lambda x: jnp.arcsin(x) / (jnp.pi / 2),
@@ -164,20 +173,23 @@ def q_state_sketch(
 
     block_encoding = apply_qsvt_diag(block_encoding, num_ancilla=1, angle_set=angle_set)
 
-    # For odd-parity QSVT, signal is in imag(block[0,0]).
-    # Divide by sqrt(dim) once here (normalization of the uniform superposition).
-    state = jnp.imag(block_encoding[0, 0]) / jnp.sqrt(dim)
+    # imag(block[0,0]) ≈ (2/pi) * t * (diag(signs) @ H @ v / sqrt(dim))_u
+    # = (2/pi) * t * w_u  where w = randomized WHT of v.
+    qsvt_out = jnp.imag(block_encoding[0, 0])  # shape (dim,), still in WHT basis
 
-    # Inverse randomized Hadamard: unnormalized_hadamard_transform already
-    # applies a 1/sqrt(dim) factor internally, so do NOT divide by sqrt(dim) again.
+    # Inverse WHT: H @ w = H @ diag(signs) @ H @ v = dim * diag(signs) @ v
+    # since H @ H = dim * I.
+    # unnormalized_hadamard_transform(n) returns H_{2^n} (without any normalization).
     hadamard = unnormalized_hadamard_transform(int(jnp.round(jnp.log2(dim))))
-    state = hadamard @ state  # no extra / sqrt(dim) here
-    state = random_signs * state
+    inv_wht = hadamard @ qsvt_out   # = dim * diag(signs) @ v (up to t * 2/pi factor)
+
+    # Now: inv_wht ≈ dim * (2/pi) * t * diag(signs) @ v
+    # Undo sign randomization and normalization.
+    state = random_signs * inv_wht / (dim * t * (2.0 / jnp.pi))
     state = state[:orig_dim]
 
     total_samples = unit_num_samples * (angle_set.shape[0] - 1)
     return state, int(total_samples)
-
 
 
 def q_kernel_estimate(
