@@ -21,24 +21,12 @@ def q_oracle_sketch_boolean(
     truth_table: jax.Array,
     unit_num_samples: int,
 ) -> tuple[jax.Array, int]:
-    """Uniform Boolean phase-oracle diagonal via expected-unitary accumulation.
-
-    Target: diag[x] = exp(i*pi*f(x)).
-
-    Zhao et al. formula::
-
-        p      = 1/N               uniform probability
-        t      = pi * N            p * t = pi for all x
-        diag   = exp(M * log(1 + p * expm1(i * (t/M) * f)))
-
-    Per-step angle t/M = pi*N/M.  As M -> inf, diag -> exp(i*pi*f).
-    All arithmetic in float64/complex128.
-    """
+    """Uniform Boolean phase-oracle diagonal via expected-unitary accumulation."""
     M         = int(unit_num_samples)
     f         = truth_table.astype(jnp.float64)
     N         = f.shape[0]
     p         = jnp.float64(1.0) / jnp.float64(N)
-    t_over_M  = jnp.float64(jnp.pi * N) / jnp.float64(M)   # pi*N/M
+    t_over_M  = jnp.float64(jnp.pi * N) / jnp.float64(M)
     phase_arg = jnp.complex128(1j) * t_over_M * f
     log_diag  = jnp.log1p(p * jnp.expm1(phase_arg))
     diag      = jnp.exp(jnp.float64(M) * log_diag)
@@ -90,12 +78,9 @@ def q_oracle_sketch_matrix_element(
     vmap-safe: no Python-level bool/float conversion of traced arrays.
     """
     dims = matrix.shape
-    # nnz as a JAX scalar -- do NOT call float() or use in if-branches.
     nnz = jnp.sum((matrix != 0).astype(real_dtype))
-    # Safe denominator: if nnz==0 the whole matrix is zero, prob stays 0.
     nnz_safe = jnp.where(nnz > 0, nnz, jnp.ones((), dtype=real_dtype))
     prob = jnp.where(matrix != 0, 1.0 / nnz_safe, 0.0).astype(real_dtype)
-    # t is the total "angle budget"; keep it as a JAX scalar.
     t = nnz_safe
     log_diag = jnp.log1p(
         prob * jnp.expm1(1j * t / unit_num_samples * jnp.arcsin(matrix))
@@ -108,16 +93,29 @@ def q_oracle_sketch_matrix_element(
 def q_oracle_sketch_matrix_row_index(
     matrix: jax.Array,
     unit_num_samples: int,
+    max_row_sparsity: int | None = None,
 ) -> tuple[jax.Array, int]:
     """Sparse matrix row-index oracle via expected phase accumulation.
 
-    vmap-safe: sparsity derived from static shape, not a traced max().
+    NOT vmapped -- called from a Python loop in the benchmark, so
+    .item() concretization of traced scalars is safe here.
+
+    Args:
+        matrix: 2-D array of shape (rows, cols).
+        unit_num_samples: Sample budget M.
+        max_row_sparsity: If provided, caps the sparsity dimension to avoid
+            allocating a full rows x cols tensor. Defaults to the true max
+            nonzero count per row (computed eagerly via .item()).
     """
     dims = matrix.shape
-    # Derive max sparsity from the *static* column dimension as an upper bound.
-    # This avoids int(jnp.max(...)) which is not vmap-safe.
-    # Actual sparsity per row is handled by masking in downstream steps.
-    sparsity = dims[1]  # static Python int -- always safe
+    if max_row_sparsity is not None:
+        sparsity = int(max_row_sparsity)
+    else:
+        # .item() forces eager evaluation -- safe because this function is
+        # never traced under vmap/jit.
+        sparsity = int(jnp.max(jnp.sum(matrix != 0, axis=1)).item())
+        sparsity = max(sparsity, 1)  # guard against all-zero matrix
+
     bitlength_col = int(jnp.ceil(jnp.log2(max(dims[1], 2))))
     nz_col_indices = jnp.argsort(matrix != 0, axis=1, descending=True)[:, :sparsity]
     bit_positions = jnp.arange(bitlength_col - 1, -1, -1)
@@ -147,36 +145,26 @@ def q_oracle_sketch_matrix_index(
     scale: float = DEFAULT_CONFIG.sign_rescale,
     angle_set: jax.Array | None = None,
 ) -> tuple[jax.Array, int]:
-    """Sparse row/column index oracle with rank register via exact CDF sign.
-
-    For each row i and rank k in 0..sparsity-1, identifies the k-th nonzero
-    column of row i by computing sign_grid[i, k, j] = sign(CDF[i,j] - threshold[i,k])
-    from the exact integer CDF, then taking the diff along the *column* axis.
-    """
+    """Sparse row/column index oracle with rank register via exact CDF sign."""
     prob_matrix = matrix if axis == 0 else matrix.T
     num_rows, orig_num_cols = prob_matrix.shape
-    row_counts = jnp.sum((prob_matrix != 0).astype(real_dtype), axis=1)  # (num_rows,)
-    # Use static column dim as sparsity upper bound (vmap-safe).
-    sparsity = orig_num_cols
+    row_counts = jnp.sum((prob_matrix != 0).astype(real_dtype), axis=1)
+    sparsity = orig_num_cols  # static upper bound; valid for non-vmapped calls
 
-    # Exact per-row CDF.
     indicator = (prob_matrix != 0).astype(real_dtype)
     row_counts_safe = jnp.where(row_counts == 0, 1.0, row_counts)
     prob_norm = indicator / row_counts_safe[:, None]
-    cdf = jnp.cumsum(prob_norm, axis=1)  # (num_rows, orig_num_cols)
+    cdf = jnp.cumsum(prob_norm, axis=1)
 
-    # Per-row thresholds: threshold[i, k] = (k + 0.5) / row_counts[i]
     k_indices = jnp.arange(sparsity, dtype=real_dtype)
-    thresholds = (k_indices[None, :] + 0.5) / row_counts_safe[:, None]  # (num_rows, sparsity)
+    thresholds = (k_indices[None, :] + 0.5) / row_counts_safe[:, None]
 
-    # sign_grid[i, k, j] = +1 if CDF[i,j] >= threshold[i,k], else -1.
     sign_grid = jnp.where(
         cdf[:, None, :] >= thresholds[:, :, None],
         jnp.ones((), dtype=real_dtype),
         -jnp.ones((), dtype=real_dtype),
     )
 
-    # Diff along column axis to find step location.
     sentinel_col = jnp.full((num_rows, sparsity, 1), -1.0, dtype=real_dtype)
     sign_with_sentinel = jnp.concatenate([sentinel_col, sign_grid], axis=-1)
     delta = sign_with_sentinel[:, :, 1:] - sign_with_sentinel[:, :, :-1]
