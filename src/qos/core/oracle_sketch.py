@@ -149,7 +149,10 @@ def q_oracle_sketch_matrix_index(
     prob_matrix = matrix if axis == 0 else matrix.T
     num_rows, orig_num_cols = prob_matrix.shape
     row_counts = jnp.sum((prob_matrix != 0).astype(real_dtype), axis=1)
-    sparsity = orig_num_cols  # static upper bound; valid for non-vmapped calls
+    # Use the true max per-row support so output rank dimension matches the
+    # sparse structure (and test expectations) instead of always using num_cols.
+    sparsity = int(jnp.max(row_counts).item())
+    sparsity = max(sparsity, 1)
 
     indicator = (prob_matrix != 0).astype(real_dtype)
     row_counts_safe = jnp.where(row_counts == 0, 1.0, row_counts)
