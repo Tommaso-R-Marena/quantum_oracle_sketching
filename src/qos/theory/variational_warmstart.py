@@ -43,7 +43,7 @@ import jax
 import jax.numpy as jnp
 from jax import grad, jit, random
 
-from qos.config import real_dtype
+from qos.config import real_dtype, complex_dtype
 from qos.core.oracle_sketch import q_oracle_sketch_boolean
 
 
@@ -76,8 +76,18 @@ class VariationalWarmstart:
         num_steps: int = 500,
         key: Optional[jax.Array] = None,
     ):
-        self.truth_table = truth_table.astype(real_dtype)
-        self.n = truth_table.shape[0]
+        truth_arr = jnp.asarray(truth_table)
+        self.n = truth_arr.shape[0]
+        self.truth_table = truth_arr.astype(real_dtype)
+        if jnp.iscomplexobj(truth_arr):
+            # Accept direct phase targets on the unit circle e^{i theta}.
+            phase_norm = jnp.where(jnp.abs(truth_arr) > 0, jnp.abs(truth_arr), 1.0)
+            self._target_phases = (truth_arr / phase_norm).astype(complex_dtype)
+            self._is_boolean_target = False
+        else:
+            # Boolean-or-real truth table path used by benchmark notebooks.
+            self._target_phases = jnp.exp(1j * jnp.pi * self.truth_table).astype(complex_dtype)
+            self._is_boolean_target = True
         self.K_F = max(1, min(num_fourier_modes, self.n // 2))
         self.lr = learning_rate
         self.num_steps = num_steps
@@ -85,6 +95,8 @@ class VariationalWarmstart:
         self._theta: Optional[jax.Array] = None
         self._basis: Optional[jax.Array] = None
         self._losses: list[float] = []
+        self.baseline_error: Optional[float] = None
+        self.variational_error: Optional[float] = None
 
     def _build_fourier_basis(self, key: jax.Array) -> jax.Array:
         """Build K_F random Fourier features for the N-dimensional oracle.
@@ -114,25 +126,21 @@ class VariationalWarmstart:
         phi = basis @ theta  # shape (N,)
         return jnp.exp(1j * phi)
 
-    def _diamond_loss(
-        self,
-        theta: jax.Array,
-        basis: jax.Array,
-        target_diag: jax.Array,
-    ) -> jax.Array:
-        """Proxy loss: operator-norm error ||diag_theta - target||_inf.
+    def _make_loss(self, basis: jax.Array, f_target_phases: jax.Array) -> Callable[[jax.Array], jax.Array]:
+        """Create periodic chordal loss on the unit circle.
 
-        Uses L2 as a differentiable proxy (L-inf not differentiable).
-        This is an upper bound on diamond distance for diagonal unitaries.
+        f_target_phases has shape (N,) with entries on the unit circle.
         """
-        pred = self._phase_ansatz(theta, basis)
-        diff = pred - target_diag
-        return jnp.mean(jnp.abs(diff) ** 2)
+        def loss_fn(theta: jax.Array) -> jax.Array:
+            f_pred = self._phase_ansatz(theta, basis)
+            return jnp.mean(jnp.abs(f_pred - f_target_phases) ** 2)
+
+        return loss_fn
 
     def fit(
         self,
         unit_num_samples: int = 500,
-    ) -> "VariationalWarmstart":
+    ) -> dict[str, float]:
         """Fit the variational oracle to classical samples.
 
         1. Compute uniform oracle sketch (cold start).
@@ -149,30 +157,33 @@ class VariationalWarmstart:
         -------
         self
         """
-        # Cold start: uniform oracle sketch
+        # Cold start: uniform oracle sketch (boolean mode only)
         key = self.key
-        diag_uniform, _ = q_oracle_sketch_boolean(self.truth_table.astype(jnp.int32),
-                                                   unit_num_samples)
+        if self._is_boolean_target:
+            diag_uniform, _ = q_oracle_sketch_boolean(
+                self.truth_table.astype(jnp.int32),
+                unit_num_samples,
+            )
+        else:
+            diag_uniform = self._target_phases
         # Build Fourier basis
         key, sk = random.split(key)
         self._basis = self._build_fourier_basis(sk)
         basis = self._basis
 
-        # Initialize theta by projecting diag_uniform onto Fourier basis
-        # Solve min_theta ||basis @ theta - angle(diag_uniform)||^2
-        angles = jnp.angle(diag_uniform).astype(real_dtype)  # shape (N,)
-        # Least squares: theta_0 = (B^T B)^{-1} B^T * angles
+        # Initialize theta by projecting complex phases and taking angles.
         BtB = basis.T @ basis  # (K_F, K_F)
-        Bta = basis.T @ angles  # (K_F,)
+        Bta = basis.T @ diag_uniform.astype(complex_dtype)  # (K_F,)
         reg = 1e-4 * jnp.eye(self.K_F, dtype=real_dtype)
-        theta = jnp.linalg.solve(BtB + reg, Bta)  # shape (K_F,)
+        least_squares_solution = jnp.linalg.solve((BtB + reg).astype(complex_dtype), Bta)
+        theta = jnp.angle(least_squares_solution).astype(real_dtype)
+        theta_init = theta
 
-        # Target: true oracle diagonal
-        exact = jnp.exp(1j * jnp.pi * self.truth_table).astype(jnp.complex128)
+        exact = self._target_phases
 
-        # Gradient descent with fixed learning rate
-        loss_fn = jit(lambda t: self._diamond_loss(t, basis, exact).real)
-        grad_fn = jit(grad(lambda t: self._diamond_loss(t, basis, exact).real))
+        periodic_loss = self._make_loss(basis, exact)
+        loss_fn = jit(lambda t: periodic_loss(t).real)
+        grad_fn = jit(grad(lambda t: periodic_loss(t).real))
 
         losses = []
         for step in range(self.num_steps):
@@ -184,7 +195,13 @@ class VariationalWarmstart:
             theta = theta - self.lr * g
         self._theta = theta
         self._losses = losses
-        return self
+        baseline_diag = self._phase_ansatz(theta_init, basis)
+        self.baseline_error = float(jnp.mean(jnp.abs(baseline_diag - exact) ** 2))
+        self.variational_error = float(jnp.mean(jnp.abs(self.predict() - exact) ** 2))
+        return {
+            "baseline_error": self.baseline_error,
+            "variational_error": self.variational_error,
+        }
 
     def predict(self) -> jax.Array:
         """Return the variational oracle diagonal."""

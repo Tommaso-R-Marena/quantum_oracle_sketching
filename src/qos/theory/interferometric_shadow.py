@@ -92,18 +92,19 @@ class InterferometricClassicalShadow:
             # Sample random Clifford-like rotation: random phase+permutation.
             phases = jnp.exp(1j * random.uniform(k1, (n,), dtype=real_dtype) * 2 * jnp.pi)
             perm = random.permutation(k2, jnp.arange(n, dtype=int_dtype))
-            # Apply U = phases * perm to |w>
-            rotated = phases * self.weight_state[perm]
-            # Hadamard test: prob(0) = (1 + Re<w|U|w>) / 2
-            overlap_re = float(jnp.real(jnp.dot(jnp.conj(self.weight_state), rotated)))
-            overlap_im = float(jnp.imag(jnp.dot(jnp.conj(self.weight_state), rotated)))
-            p0_re = (1.0 + overlap_re) / 2.0
+            rotated_w = phases * self.weight_state[perm]
             key, k3, k4 = random.split(key, 3)
-            # Dual Hadamard test (Marena 2026 extension): extract Re and Im simultaneously
-            # using X-basis (Re) and Y-basis (Im) ancilla measurements.
-            bit_re = int(random.bernoulli(k3, p=jnp.clip(1.0 - p0_re, 0.0, 1.0)))
-            p0_im = (1.0 + overlap_im) / 2.0
-            bit_im = int(random.bernoulli(k4, p=jnp.clip(1.0 - p0_im, 0.0, 1.0)))
+
+            prob_1_re = 0.5 * (
+                1.0 - float(jnp.real(jnp.dot(jnp.conj(rotated_w), self.weight_state)))
+            )
+            bit_re = int(random.bernoulli(k3, p=jnp.clip(prob_1_re, 0.0, 1.0)))
+
+            rotated_w_im = (-1j) * rotated_w
+            prob_1_im = 0.5 * (
+                1.0 - float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), self.weight_state)))
+            )
+            bit_im = int(random.bernoulli(k4, p=jnp.clip(prob_1_im, 0.0, 1.0)))
             shadow_bits.append((bit_re, bit_im))
             shadow_ops.append((phases, perm))
         self._shadow_bits = shadow_bits
@@ -141,18 +142,13 @@ class InterferometricClassicalShadow:
         for x in test_vectors:
             re_vals, im_vals = [], []
             for (bit_re, bit_im), (phases, perm) in zip(self._shadow_bits, self._shadow_ops):
-                # Shadow inversion estimator: use the measured Hadamard bits
-                # to form unbiased overlap signs and combine with U^\dagger x.
-                # This keeps per-sample contributions bounded by ||x||_2 <= 1
-                # (for normalized inputs), restoring the advertised
-                # O(sqrt(s / num_shadows)) concentration scaling.
-                shadow_re = (1 - 2 * bit_re)  # unbiased estimator of Re<w|U|w>
-                shadow_im = (1 - 2 * bit_im)  # unbiased estimator of Im<w|U|w>
+                rotated_w = phases * self.weight_state[perm]
+                channel_re = float(jnp.real(jnp.dot(jnp.conj(rotated_w), x)))
+                re_vals.append((1 - 2 * bit_re) * channel_re)
 
-                x_rot = jnp.conj(phases) * x[perm]
-                overlap = jnp.dot(jnp.conj(self.weight_state), x_rot)
-                re_vals.append(float(shadow_re * jnp.real(overlap)))
-                im_vals.append(float(shadow_im * jnp.imag(overlap)))
+                rotated_w_im = (-1j) * rotated_w
+                channel_im = float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), x)))
+                im_vals.append((1 - 2 * bit_im) * channel_im)
             preds.append([float(jnp.mean(jnp.array(re_vals))),
                           float(jnp.mean(jnp.array(im_vals)))])
         return jnp.array(preds, dtype=real_dtype)
