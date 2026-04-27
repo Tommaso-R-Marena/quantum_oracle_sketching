@@ -39,6 +39,7 @@ class QOSConfig(BaseModel):
     Attributes:
         precision: Numerical precision (32 or 64 bits).
         arcsin_degree: Default polynomial degree for arcsin QSVT approximation.
+            Must be **odd** because arcsin is an odd function (parity=1 in pyqsp).
         sign_degree: Default polynomial degree for sign-function QSVT approximation.
         sign_threshold_factor: Multiplicative factor for sign threshold relative to sparsity.
         sign_rescale: Target magnitude of the sign function approximation.
@@ -47,7 +48,7 @@ class QOSConfig(BaseModel):
         amplitude_amplification_target_norm: Target norm after amplitude amplification.
         flat_vector_time_scale: Time parameter t = jnp.pi * dim for flat vector sketching.
         general_vector_time_scale: Time parameter scaling for general vector sketching.
-        matrix_element_time_scale: Time parameter scaling for matrix element oracle.
+        matrix_element_time_scale: Time parameter scaling for matrix elements.
         matrix_index_time_scale: Time parameter scaling for matrix index oracle.
         logspace_fit_npts: Number of points for log-space fit visualization.
         random_seed: Default random seed for reproducibility.
@@ -57,7 +58,8 @@ class QOSConfig(BaseModel):
         default=64 if _PRECISION_ENV == "64" else 32,
         description="Numerical precision in bits.",
     )
-    arcsin_degree: int = Field(default=20, ge=2, description="Degree of arcsin polynomial.")
+    # arcsin is an odd function -> QSVT polynomial must have parity=1 (odd degree).
+    arcsin_degree: int = Field(default=21, ge=1, description="Degree of arcsin polynomial (must be odd).")
     sign_degree: int = Field(default=101, ge=1, description="Degree of sign polynomial.")
     sign_threshold_factor: float = Field(
         default=0.8, gt=0, lt=1, description="Threshold factor for sign function."
@@ -91,9 +93,14 @@ class QOSConfig(BaseModel):
 
     @field_validator("arcsin_degree")
     @classmethod
-    def _arcsin_must_be_even(cls, v: int) -> int:  # noqa: N805
-        if v % 2 != 0:
-            raise ValueError("arcsin_degree must be even.")
+    def _arcsin_must_be_odd(cls, v: int) -> int:  # noqa: N805
+        """arcsin(x) is an odd function; QSVT requires parity=1, i.e. odd degree."""
+        if v % 2 == 0:
+            raise ValueError(
+                f"arcsin_degree must be odd (got {v}). "
+                "arcsin is an odd function so pyqsp requires parity=1, "
+                "which demands an odd-degree polynomial."
+            )
         return v
 
     @field_validator("sign_degree")
