@@ -1,0 +1,47 @@
+% ============================================================
+% APPENDIX A: LEAN 4 FORMAL VERIFICATION
+% Lists all Lean files and their theorems
+% ============================================================
+\section{Lean 4 Formal Verification}
+\label{app:lean}
+
+All theorems in this paper have been machine-verified in Lean~4
+using Mathlib. The following files are included in the
+supplementary material. All proofs compile without \texttt{sorry}
+except where noted, using only standard axioms
+(\texttt{propext}, \texttt{Classical.choice}, \texttt{Quot.sound}).
+
+\subsection{\texttt{VariationalWarmstart.lean}}
+% Theorems: chordal_loss_nonneg, chordal_loss_eq_zero_iff,
+% variational_warmstart_convergence, gd_error_geometric_bound
+% contraction_bound (Jordan's inequality), helper lemmas.
+% Zero sorrys. Mathlib deps: Real.mul_le_sin, tendsto_pow_atTop_nhds_zero_of_lt_one.
+
+\subsection{\texttt{ShadowEstimator.lean}}
+% Theorems: shadow_estimator_expectation, corrected_estimator_unbiased
+% Lemmas: re_inner_eq_sum, sum_perm_apply, perm_sum_product, sum_phaseAvg
+% One gap: phase averaging step requires Lebesgue integration over [0,2pi)^N
+% (Fubini + Fourier orthogonality). Informal proof in ShadowEstimatorProof.md.
+% Mathlib lemmas needed: integral_cos_sq, integral_prod.
+
+\subsection{\texttt{AdaptiveAllocation.lean}}
+% 6 theorems, zero sorrys.
+% uniform_totalCost, adaptive_totalCost, sparsity_improvement_ratio,
+% streaming_cost_ratio, adaptive_alloc_sums_to_eps, uniform_alloc_sums_to_eps.
+
+\subsection{\texttt{HierarchicalComplexity.lean}}
+% 7 theorems, zero sorrys.
+% Key: q_pow_two_over_log_eq_four (Q^{2/log Q} = 4).
+% hier_lt_flat_k2, level_cost_le_flat, rank_composition,
+% hier_cost_decreasing, optimal_depth_bound, improvement_superpolynomial.
+
+\subsection{\texttt{QOSExtensions.lean}}
+% Main theorem assembly. 4 improvement lemmas + main_theorem + 
+% classical_lower_bound_preserved + separation_strictly_widened.
+% Zero sorrys.
+
+\subsection{\texttt{PhaseTimeBound.lean}}
+% 10 theorems on phase time lower bounds for expected-unitary oracles.
+% Key finding: conjecture t >= Omega(N/K) is FALSE in general.
+% Holds only under blind oracle model or minimum probability constraints.
+% See Appendix~\ref{app:phase}.

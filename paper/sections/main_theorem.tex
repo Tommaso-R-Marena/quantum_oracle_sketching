@@ -1,0 +1,35 @@
+% ============================================================
+% SECTION 3: MAIN THEOREM
+% Source: RequestProject/QOSExtensions.lean + PaperText.md
+% TODO: paste Main Theorem and Classical Lower Bound Preservation
+% from PaperText.md introduction section
+% ============================================================
+\section{Main Results}
+\label{sec:main}
+
+\begin{theorem}[Extended QOS Resource Profile]
+\label{thm:main}
+% TODO: paste Theorem 1 statement from PaperText.md
+% Should state:
+%   (1) Qubit count with variational warmstart K_F reduction
+%   (2) Sample complexity O(K*Q^2 + N) adaptive, O(k*N*Q^{2/k}) hierarchical
+%   (3) Circuit depth halved by dual-Hadamard shadow
+%   (4) Oracle approximation error epsilon achieved
+%   (5) Exponential separation from classical preserved
+\end{theorem}
+
+\begin{proof}
+% Assembles four lemmas from QOSExtensions.lean:
+%   adaptive_sample_le, hierarchical_factor_le,
+%   warmstart_qubit_le, shadow_depth_le
+% All machine-verified in Lean 4 (see Appendix~\ref{app:lean}).
+\end{proof}
+
+\begin{proposition}[Classical Lower Bound Preservation]
+\label{prop:lb}
+% TODO: paste from PaperText.md
+% Addresses three sub-arguments:
+%   (a) adaptive/hierarchical reduce quantum cost, classical hardness unchanged
+%   (b) variational warmstart makes quantum strictly more accurate
+%   (c) shadow extension preserves same output, same classical comm. lower bound
+\end{proposition}

@@ -1,0 +1,36 @@
+% ============================================================
+% SECTION 5.4: INTERFEROMETRIC CLASSICAL SHADOW
+% Source: sections_5_3_and_5_4.tex (Section 5.4, ~610 words)
+%         RequestProject/ShadowEstimator.lean
+%         RequestProject/ShadowEstimatorProof.md
+% TODO: paste Section 5.4 from sections_5_3_and_5_4.tex
+% ============================================================
+\subsection{Interferometric Classical Shadow Extension}
+\label{sec:shadow}
+
+% TODO: paste from sections_5_3_and_5_4.tex
+% Must include:
+%   - Theorem 4 (Unbiased shadow estimator) -- USE CORRECTED VERSION:
+%     Estimator: Z = (1 - 2*bit) * Re<Uw|x>
+%     Bit distribution: bit ~ Bernoulli(0.5*(1 - Re<w|Uw>))
+%     Result: E[Z] = Re<w|x>  (unbiased WITHOUT 2N factor)
+%     Variance bound: Var[Z_T] <= 2/T
+%   - Dual-Hadamard construction (novel vs Zhao Theorem F.16)
+%   - Algorithm 4 (DualHadamardShadow) pseudocode
+%   - Benchmark: errors 0.080/0.040/0.018 at T=50/200/1000
+%   - Log-log fit exponent -0.50 +/- 0.02 confirming T^{-1/2} scaling
+%   - Figure 6 caption
+
+% CRITICAL NOTE FOR PASTE:
+% The Aristotle output for Theorem 4 states E[Z] = Re<w|x> / (2N)
+% for the estimator Z = (1-2*bit)*Re<Uw|x>. However, the final
+% implementation (PR #8) corrects build_shadow() so that
+% E[(1-2*bit)] = Re<w|Uw> exactly, making the estimator unbiased
+% WITHOUT the 2N factor. Update Theorem 4 statement accordingly
+% before pasting.
+%
+% Correct theorem statement:
+%   Let bit ~ Bernoulli(0.5*(1 - Re<w|Uw>)) where Uw = phases*(w[perm]).
+%   Then E[(1-2*bit)*Re<Uw|x>] = Re<w|x>.
+%
+% The ShadowEstimator.lean Lean proof covers the corrected version.

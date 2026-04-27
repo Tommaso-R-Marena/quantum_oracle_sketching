@@ -1,0 +1,21 @@
+% ============================================================
+% APPENDIX C: DATASET DETAILS AND EXPERIMENTAL SETUP
+% ============================================================
+\section{Dataset Details}
+\label{app:datasets}
+
+\subsection{Datasets}
+\begin{itemize}
+  \item \textbf{IMDb} (sentiment): $N_{\text{train}}=25000$, $D=89527$, $s=\text{variable}$. $\alpha=10$. Zhao Fig.~2a.
+  \item \textbf{PBMC68k} (cell type): $\alpha=200$. Zhao Fig.~2b.
+  \item \textbf{20 Newsgroups}: $\alpha=1$. Zhao Fig.~4a.
+  \item \textbf{Dorothea}: $\alpha=200$. Zhao Fig.~4b.
+  \item \textbf{Splice} (novel): $\alpha=10$. No Zhao baseline. Marena 2026.
+\end{itemize}
+
+\subsection{Machine Size Computation}
+We compute machine size using Equations~\eqref{eq:A1}--\eqref{eq:A3}
+from \Zhao, implemented and verified in \texttt{compute\_space\_metrics()}
+(\texttt{src/qos/experiments/real\_datasets/shared.py}).
+Equation correctness is asserted at notebook startup via
+\texttt{\_verify\_zhao\_equations()}.
