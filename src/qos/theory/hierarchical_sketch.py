@@ -76,14 +76,7 @@ from qos.core.oracle_sketch import q_oracle_sketch_boolean_adaptive
 
 @dataclass
 class HierarchyLevel:
-    """One level in the sparse hierarchy.
-
-    Attributes:
-        support_indices: Indices in {0,...,N-1} belonging to this level.
-        sparsity: K_l = len(support_indices).
-        query_budget: Q_l allocated to this level.
-        pilot_frac: Fraction of M_l used as pilot.
-    """
+    """One level in the sparse hierarchy."""
     support_indices: jax.Array
     sparsity: int
     query_budget: int
@@ -94,16 +87,11 @@ class HierarchyLevel:
 class HierarchicalOracleSketch:
     """Multi-level oracle sketching that beats the Q^2 sample complexity barrier.
 
-    This implements **Theorem 1 (Marena 2026)**: for k-level hierarchically
-    sparse Boolean oracles, the total sample complexity is
-
-        M = O(N * Q^{2 - 1/k})
-
-    instead of the Zhao et al. worst-case M = O(N * Q^2).
+    Implements Theorem 1 (Marena 2026): M = O(N * Q^{2 - 1/k}).
 
     Usage
     -----
-    >>> import jax.numpy as jnp, jax
+    >>> import jax.numpy as jnp
     >>> truth = jnp.zeros(1024, dtype=jnp.int32).at[:10].set(1)
     >>> sketch = HierarchicalOracleSketch.from_truth_table(
     ...     truth, num_levels=2, total_queries=4, seed=0
@@ -112,18 +100,13 @@ class HierarchicalOracleSketch:
     >>> print(stats['total_samples'], stats['sample_complexity_ratio'])
     """
 
-    truth_table: jax.Array          # Boolean f: {0,1}^N -> {0,1}
-    levels: list[HierarchyLevel]    # k hierarchy levels
-    total_queries: int              # Q total quantum queries
+    truth_table: jax.Array
+    levels: list[HierarchyLevel]
+    total_queries: int
     seed: int = 0
 
-    # Populated after build()
     _diag: Optional[jax.Array] = field(default=None, repr=False)
     _stats: Optional[dict] = field(default=None, repr=False)
-
-    # ------------------------------------------------------------------
-    # Factory
-    # ------------------------------------------------------------------
 
     @classmethod
     def from_truth_table(
@@ -164,34 +147,14 @@ class HierarchicalOracleSketch:
         return cls(truth_table=truth_table, levels=levels,
                    total_queries=Q, seed=seed)
 
-    # ------------------------------------------------------------------
-    # Core: hierarchical sketching with improved sample complexity
-    # ------------------------------------------------------------------
-
     def _samples_for_level(self, l_idx: int, query_budget: int) -> int:
-        """Compute M_l for level l.
-
-        Formula: M_l = N * Q_l^{2 - 1/k}  (Theorem 1 main term).
-        """
         k = len(self.levels)
         n = int(self.truth_table.shape[0])
         exponent = 2.0 - 1.0 / k
         return max(1, int(n * (query_budget ** exponent)))
 
-    def build(
-        self,
-        key: Optional[jax.Array] = None,
-    ) -> tuple[jax.Array, dict]:
-        """Execute the hierarchical oracle sketch.
-
-        Returns
-        -------
-        diag : jax.Array, shape (N,), complex
-            The approximate oracle diagonal exp(i*pi*f(x)).
-        stats : dict
-            Diagnostic information including sample counts per level,
-            total samples, and the improvement ratio over Zhao et al.
-        """
+    def build(self, key: Optional[jax.Array] = None) -> tuple[jax.Array, dict]:
+        """Execute the hierarchical oracle sketch."""
         if key is None:
             key = random.PRNGKey(self.seed)
 
@@ -247,12 +210,7 @@ class HierarchicalOracleSketch:
         self._stats = stats
         return diag, stats
 
-    # ------------------------------------------------------------------
-    # Verification
-    # ------------------------------------------------------------------
-
     def verify_improvement(self) -> bool:
-        """Return True if total samples < Zhao et al. reference."""
         if self._stats is None:
             self.build()
         return self._stats["total_samples"] < self._stats["zhao_reference_samples"]
@@ -261,52 +219,63 @@ class HierarchicalOracleSketch:
 def compute_hierarchical_sample_complexity(
     N: int,
     Q: int,
-    k: int,
+    k: int | None = None,
+    *,
+    num_levels: int | None = None,
     return_zhao_reference: bool = True,
 ) -> dict[str, float]:
     """Compute theoretical sample complexity for the Q^{2-1/k} barrier.
 
-    Computes the predicted sample counts from Theorem 1 (Marena 2026) and
-    contrasts them with the Zhao et al. (2025) O(N * Q^2) baseline.
+    Accepts the number of hierarchy levels as either ``k`` (positional) or
+    ``num_levels`` (keyword) -- both spellings are equivalent.
 
     Args:
-        N: Oracle dimension (number of input bits / rows).
+        N: Oracle dimension.
         Q: Number of coherent quantum queries.
-        k: Number of hierarchy levels.  k=1 recovers Zhao et al. exactly;
-           k>=2 achieves the Q^{2-1/k} improvement.
-        return_zhao_reference: If True, also compute and return the Zhao et al.
-           reference complexity M_ref = N * Q^2.
+        k: Number of hierarchy levels (positional spelling).
+        num_levels: Number of hierarchy levels (keyword spelling, alias for k).
+        return_zhao_reference: Include Zhao et al. O(N*Q^2) baseline.
 
     Returns:
         Dictionary with keys:
 
-        - ``marena_samples``:   M = N * Q^{2 - 1/k}  (Theorem 1 leading term)
-        - ``exponent``:         The actual exponent 2 - 1/k
-        - ``improvement_factor``: Q^{1/k}  (ratio Zhao/Marena)
-        - ``zhao_samples``:     N * Q^2  (only if return_zhao_reference=True)
-        - ``N``, ``Q``, ``k``:  Echo of input parameters
-
-    Example::
-
-        >>> from qos.theory.hierarchical_sketch import compute_hierarchical_sample_complexity
-        >>> result = compute_hierarchical_sample_complexity(N=1024, Q=16, k=2)
-        >>> print(result['marena_samples'], result['improvement_factor'])
-        # 1024 * 16^1.5 = 65536,  improvement = 16^0.5 = 4.0
+        - ``total_samples`` / ``marena_samples``: M = N * Q^{2 - 1/k}
+        - ``exponent``:           2 - 1/k
+        - ``improvement_factor``: Q^{1/k}
+        - ``zhao_samples``:       N * Q^2  (if return_zhao_reference=True)
+        - ``zhao_reference_samples``: same as zhao_samples (alias)
+        - ``N``, ``Q``, ``k`` / ``num_levels``: echo of inputs
     """
-    exponent = 2.0 - 1.0 / max(k, 1)
-    marena_samples = N * (Q ** exponent)
-    improvement_factor = Q ** (1.0 / max(k, 1)) if k >= 2 else 1.0
+    # Resolve the level count -- accept either spelling.
+    if k is None and num_levels is None:
+        raise TypeError(
+            "compute_hierarchical_sample_complexity() requires either "
+            "'k' or 'num_levels' to be specified."
+        )
+    resolved_k = int(k if k is not None else num_levels)  # type: ignore[arg-type]
+    resolved_k = max(resolved_k, 1)
+
+    exponent = 2.0 - 1.0 / resolved_k
+    marena_samples = float(N * (Q ** exponent))
+    improvement_factor = float(Q ** (1.0 / resolved_k)) if resolved_k >= 2 else 1.0
 
     result: dict[str, float] = {
+        # Primary keys used by the notebook
+        "total_samples": marena_samples,
+        # Aliases / additional keys
         "marena_samples": marena_samples,
         "exponent": exponent,
         "improvement_factor": improvement_factor,
         "N": float(N),
         "Q": float(Q),
-        "k": float(k),
+        "k": float(resolved_k),
+        "num_levels": float(resolved_k),
     }
     if return_zhao_reference:
-        result["zhao_samples"] = float(N * Q * Q)
+        zhao = float(N * Q * Q)
+        result["zhao_samples"] = zhao
+        result["zhao_reference_samples"] = zhao
+        result["sample_complexity_ratio"] = zhao / max(marena_samples, 1.0)
 
     return result
 
