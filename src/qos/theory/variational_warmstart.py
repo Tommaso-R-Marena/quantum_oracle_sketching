@@ -72,13 +72,13 @@ class VariationalWarmstart:
         self,
         truth_table: jax.Array,
         num_fourier_modes: int = 32,
-        learning_rate: float = 0.01,
-        num_steps: int = 100,
+        learning_rate: float = 0.001,
+        num_steps: int = 500,
         key: Optional[jax.Array] = None,
     ):
         self.truth_table = truth_table.astype(real_dtype)
         self.n = truth_table.shape[0]
-        self.K_F = min(num_fourier_modes, self.n)
+        self.K_F = max(1, min(num_fourier_modes, self.n // 2))
         self.lr = learning_rate
         self.num_steps = num_steps
         self.key = key if key is not None else random.PRNGKey(0)
@@ -179,6 +179,8 @@ class VariationalWarmstart:
             loss = float(loss_fn(theta))
             losses.append(loss)
             g = grad_fn(theta)
+            g_norm = jnp.linalg.norm(g)
+            g = jnp.where(g_norm > 1.0, g / g_norm, g)
             theta = theta - self.lr * g
         self._theta = theta
         self._losses = losses
