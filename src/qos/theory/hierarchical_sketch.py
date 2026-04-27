@@ -134,19 +134,7 @@ class HierarchicalOracleSketch:
         seed: int = 0,
         pilot_frac: float = 0.1,
     ) -> "HierarchicalOracleSketch":
-        """Auto-partition truth_table support into k levels by density.
-
-        The auto-partitioning strategy uses a geometric sequence of sparsity
-        thresholds: K_l = K^{l/k} * N^{1 - l/k}, interpolating between
-        the full dimension N (level 1) and the true sparsity K (level k).
-        Each level l captures support elements that are *uniquely concentrated*
-        at density K_l / N in the Fourier/frequency domain representation.
-
-        For a plain Boolean function (no frequency information), we assign
-        support elements to levels uniformly at random -- equivalent to
-        assuming a flat hierarchical structure, which recovers the uniform
-        adaptive oracle as a special case (k=1).
-        """
+        """Auto-partition truth_table support into k levels by density."""
         n = truth_table.shape[0]
         supp_idx = jnp.where(truth_table > 0)[0]
         K = int(supp_idx.shape[0])
@@ -156,7 +144,6 @@ class HierarchicalOracleSketch:
         Q = total_queries
         key = random.PRNGKey(seed)
 
-        # Permute support indices to assign to levels randomly.
         key, sk = random.split(key)
         perm = random.permutation(sk, K)
         shuffled = supp_idx[perm]
@@ -167,8 +154,6 @@ class HierarchicalOracleSketch:
             hi = int((l_idx + 1) * K / k)
             level_supp = shuffled[lo:hi]
             sparsity_l = hi - lo
-            # Query budget: Q_l = Q * (k - l_idx) / sum_{l=1}^{k} l
-            # = more queries go to finer (deeper) levels.
             q_l = max(1, int(round(Q * (l_idx + 1) / (k * (k + 1) / 2))))
             levels.append(HierarchyLevel(
                 support_indices=level_supp,
@@ -187,8 +172,6 @@ class HierarchicalOracleSketch:
         """Compute M_l for level l.
 
         Formula: M_l = N * Q_l^{2 - 1/k}  (Theorem 1 main term).
-        For k=1 this recovers M = N*Q^2 (Zhao et al.).
-        For k>=2 the exponent 2-1/k < 2 is strictly smaller.
         """
         k = len(self.levels)
         n = int(self.truth_table.shape[0])
@@ -216,20 +199,16 @@ class HierarchicalOracleSketch:
         k = len(self.levels)
         Q = self.total_queries
 
-        # Zhao et al. worst-case reference: M_ref = N * Q^2
         m_ref = n * Q * Q
-        # Our total: sum_l M_l
         m_total = 0
         level_stats = []
 
-        # Start with uniform oracle as baseline, then refine per-level.
         diag, _ = _zhao_uniform_oracle(self.truth_table, max(10, n))
 
         for l_idx, level in enumerate(self.levels):
             m_l = self._samples_for_level(l_idx, level.query_budget)
             m_total += m_l
 
-            # Build a sub-truth-table restricted to level support.
             sub_truth = jnp.zeros((n,), dtype=jnp.int32)
             sub_truth = sub_truth.at[level.support_indices].set(
                 self.truth_table[level.support_indices]
@@ -242,15 +221,6 @@ class HierarchicalOracleSketch:
                 key=sk,
             )
 
-            # Compose: multiply diagonals (phase addition in log domain).
-            # For Boolean oracles: exp(i*pi*f) = product over levels of
-            # exp(i*pi*f_l) when supports are disjoint (partition).
-            # Correction: off-support entries of sub_diag = 1 exactly,
-            # so multiplication is safe.
-            diag = diag * sub_diag / jnp.where(
-                sub_truth > 0, diag, jnp.ones_like(diag)  # replace prior at supp
-            )
-            # Simpler: just overwrite support entries with the refined estimate.
             supp_mask = (sub_truth > 0).astype(real_dtype)
             diag = diag * (1 - supp_mask) + sub_diag * supp_mask
 
@@ -261,7 +231,6 @@ class HierarchicalOracleSketch:
                 "samples": m_l,
             })
 
-        # Compute improvement ratio
         ratio = m_ref / max(m_total, 1)
         expected_ratio = Q ** (1.0 / k) if k >= 2 else 1.0
 
@@ -287,6 +256,59 @@ class HierarchicalOracleSketch:
         if self._stats is None:
             self.build()
         return self._stats["total_samples"] < self._stats["zhao_reference_samples"]
+
+
+def compute_hierarchical_sample_complexity(
+    N: int,
+    Q: int,
+    k: int,
+    return_zhao_reference: bool = True,
+) -> dict[str, float]:
+    """Compute theoretical sample complexity for the Q^{2-1/k} barrier.
+
+    Computes the predicted sample counts from Theorem 1 (Marena 2026) and
+    contrasts them with the Zhao et al. (2025) O(N * Q^2) baseline.
+
+    Args:
+        N: Oracle dimension (number of input bits / rows).
+        Q: Number of coherent quantum queries.
+        k: Number of hierarchy levels.  k=1 recovers Zhao et al. exactly;
+           k>=2 achieves the Q^{2-1/k} improvement.
+        return_zhao_reference: If True, also compute and return the Zhao et al.
+           reference complexity M_ref = N * Q^2.
+
+    Returns:
+        Dictionary with keys:
+
+        - ``marena_samples``:   M = N * Q^{2 - 1/k}  (Theorem 1 leading term)
+        - ``exponent``:         The actual exponent 2 - 1/k
+        - ``improvement_factor``: Q^{1/k}  (ratio Zhao/Marena)
+        - ``zhao_samples``:     N * Q^2  (only if return_zhao_reference=True)
+        - ``N``, ``Q``, ``k``:  Echo of input parameters
+
+    Example::
+
+        >>> from qos.theory.hierarchical_sketch import compute_hierarchical_sample_complexity
+        >>> result = compute_hierarchical_sample_complexity(N=1024, Q=16, k=2)
+        >>> print(result['marena_samples'], result['improvement_factor'])
+        # 1024 * 16^1.5 = 65536,  improvement = 16^0.5 = 4.0
+    """
+    exponent = 2.0 - 1.0 / max(k, 1)
+    marena_samples = N * (Q ** exponent)
+    improvement_factor = Q ** (1.0 / max(k, 1)) if k >= 2 else 1.0
+
+    result: dict[str, float] = {
+        "marena_samples": marena_samples,
+        "exponent": exponent,
+        "improvement_factor": improvement_factor,
+        "N": float(N),
+        "Q": float(Q),
+        "k": float(k),
+    }
+    if return_zhao_reference:
+        result["zhao_samples"] = float(N * Q * Q)
+
+    return result
 
 
 def _zhao_uniform_oracle(
