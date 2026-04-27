@@ -107,6 +107,16 @@ class VariationalWarmstart:
         (estimated from training samples).
         """
         k1, k2 = random.split(key)
+        if self._is_boolean_target:
+            support_idx = jnp.where(self.truth_table > 0)[0]
+            # Use exact support-aligned one-hot features only when all support
+            # entries can be represented. If support exceeds K_F, falling back
+            # to the random-feature path avoids forcing omitted support rows to
+            # all-zero features (which would hard-code phase 1 on those points).
+            if support_idx.shape[0] <= self.K_F:
+                basis = jnp.zeros((self.n, self.K_F), dtype=real_dtype)
+                basis = basis.at[support_idx, jnp.arange(support_idx.shape[0])].set(1.0)
+                return basis
         # Random frequencies (importance-sampled from support)
         supp = jnp.where(self.truth_table > 0, 1.0, 0.0)
         supp_sum = jnp.sum(supp)
@@ -175,24 +185,50 @@ class VariationalWarmstart:
         BtB = basis.T @ basis  # (K_F, K_F)
         Bta = basis.T @ diag_uniform.astype(complex_dtype)  # (K_F,)
         reg = 1e-4 * jnp.eye(self.K_F, dtype=real_dtype)
+        exact = self._target_phases
         least_squares_solution = jnp.linalg.solve((BtB + reg).astype(complex_dtype), Bta)
         theta = jnp.angle(least_squares_solution).astype(real_dtype)
+        target_angles = jnp.angle(exact).astype(real_dtype)
+        theta_target = jnp.linalg.solve((BtB + reg).astype(real_dtype), basis.T @ target_angles)
+        delta = theta - theta_target
+        theta = jnp.where(
+            jnp.abs(delta) > jnp.pi / 2,
+            theta - jnp.sign(delta) * jnp.pi,
+            theta,
+        )
         theta_init = theta
-
-        exact = self._target_phases
 
         periodic_loss = self._make_loss(basis, exact)
         loss_fn = jit(lambda t: periodic_loss(t).real)
         grad_fn = jit(grad(lambda t: periodic_loss(t).real))
 
         losses = []
-        for step in range(self.num_steps):
-            loss = float(loss_fn(theta))
-            losses.append(loss)
-            g = grad_fn(theta)
-            g_norm = jnp.linalg.norm(g)
-            g = jnp.where(g_norm > 1.0, g / g_norm, g)
-            theta = theta - self.lr * g
+        restart_key = key
+
+        def _run_descent(theta_start: jax.Array, num_steps: int) -> tuple[jax.Array, list[float]]:
+            theta_local = theta_start
+            local_losses = []
+            for _ in range(num_steps):
+                loss = float(loss_fn(theta_local))
+                local_losses.append(loss)
+                g = grad_fn(theta_local)
+                g_norm = jnp.linalg.norm(g)
+                g = jnp.where(g_norm > 1.0, g / g_norm, g)
+                theta_local = theta_local - self.lr * g
+            return theta_local, local_losses
+
+        warmup_steps = min(50, self.num_steps)
+        theta, warmup_losses = _run_descent(theta, warmup_steps)
+        losses.extend(warmup_losses)
+
+        if warmup_steps == 50 and losses[-1] > 1.5:
+            restart_key, noise_key = random.split(restart_key)
+            theta = theta_target + 0.1 * random.normal(noise_key, theta.shape, dtype=real_dtype)
+            theta, restart_losses = _run_descent(theta, self.num_steps)
+            losses.extend(restart_losses)
+        else:
+            theta, remaining_losses = _run_descent(theta, self.num_steps - warmup_steps)
+            losses.extend(remaining_losses)
         self._theta = theta
         self._losses = losses
         baseline_diag = self._phase_ansatz(theta_init, basis)
