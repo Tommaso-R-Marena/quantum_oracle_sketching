@@ -1,0 +1,28 @@
+% ============================================================
+% SECTION 5.3: VARIATIONAL WARMSTART
+% Source: sections_5_3_and_5_4.tex (Section 5.3, ~620 words)
+%         RequestProject/VariationalWarmstart.lean
+%         variational_warmstart_analysis.md
+% TODO: paste Section 5.3 from sections_5_3_and_5_4.tex
+% ============================================================
+\subsection{Variational Warmstart for Fourier Oracle Approximation}
+\label{sec:variational}
+
+% TODO: paste from sections_5_3_and_5_4.tex
+% Must include:
+%   - Theorem 3 (Chordal-loss convergence): |delta_k(t)| <= |delta_k(0)| * (1 - 2*eta/pi)^t
+%   - Optimal step size eta*=1, rate r*=1-2/pi approx 0.3634
+%   - Antipodal divergence explanation (naive angle-space fails)
+%   - Algorithm 3 (VariationalWarmstart) pseudocode
+%   - Benchmark: baseline=0.2224, variational 0.10/0.06/0.03 at KF=8/16/32
+%   - Figure 5 caption
+
+% IMPORTANT: Theorem 3 convergence rate correction.
+% The correct rate is (1 - 2*eta/pi)^t NOT (1 - eta*cos(pi/2))^t.
+% The latter evaluates to 1^t = 1 (vacuous). This was caught by
+% Aristotle's formal verification. See VariationalWarmstart.lean.
+
+% Lean verification note:
+% chordal_loss_nonneg, chordal_loss_eq_zero_iff,
+% variational_warmstart_convergence, gd_error_geometric_bound
+% all compiled without sorry. See Appendix~\ref{app:lean}.

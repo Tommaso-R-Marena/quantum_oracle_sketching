@@ -1,0 +1,115 @@
+\documentclass[twocolumn,prl,showpacs,preprintnumbers,amsmath,amssymb]{revtex4-2}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{algorithm, algpseudocode}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{braket}
+\usepackage{mathtools}
+\usepackage{cleveref}
+
+% ============================================================
+% THEOREM ENVIRONMENTS
+% ============================================================
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+
+% ============================================================
+% CUSTOM COMMANDS
+% ============================================================
+\newcommand{\ket}[1]{\left|#1\right\rangle}
+\newcommand{\bra}[1]{\left\langle#1\right|}
+\newcommand{\brakett}[2]{\left\langle#1\middle|#2\right\rangle}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\newcommand{\abs}[1]{\left|#1\right|}
+\newcommand{\ceil}[1]{\left\lceil#1\right\rceil}
+\newcommand{\Re}{\operatorname{Re}}
+\newcommand{\Im}{\operatorname{Im}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\QOS}{\textsc{QOS}}
+\newcommand{\Zhao}{Zhao et al.~\cite{zhao2025}}
+
+% ============================================================
+% DOCUMENT
+% ============================================================
+\begin{document}
+
+\title{Quantum Oracle Sketching: Extensions and Formal Verification}
+
+\author{Tommaso R. Marena}
+\affiliation{Department of Physics, The Catholic University of America, Washington, DC 20064}
+\email{marena@cua.edu}
+
+\date{\today}
+
+% ============================================================
+% ABSTRACT — paste content from PaperText.md (149 words)
+% ============================================================
+\begin{abstract}
+% TODO: paste abstract from RequestProject/PaperText.md
+\end{abstract}
+
+\maketitle
+
+% ============================================================
+% SECTION 1: INTRODUCTION
+% ============================================================
+\input{sections/introduction}
+
+% ============================================================
+% SECTION 2: BACKGROUND
+% ============================================================
+\input{sections/background}
+
+% ============================================================
+% SECTION 3: MAIN THEOREM
+% ============================================================
+\input{sections/main_theorem}
+
+% ============================================================
+% SECTION 4: CORE QOS SCALING (Zhao et al. replication)
+% ============================================================
+\input{sections/core_scaling}
+
+% ============================================================
+% SECTION 5: NOVEL CONTRIBUTIONS
+% ============================================================
+\input{sections/sec51_adaptive}
+\input{sections/sec52_hierarchical}
+\input{sections/sec53_variational}
+\input{sections/sec54_shadow}
+
+% ============================================================
+% SECTION 6: EXPERIMENTS
+% ============================================================
+\input{sections/experiments}
+
+% ============================================================
+% SECTION 7: CONCLUSION
+% ============================================================
+\input{sections/conclusion}
+
+% ============================================================
+% APPENDICES
+% ============================================================
+\appendix
+\input{sections/appendix_lean}
+\input{sections/appendix_phase_time}
+\input{sections/appendix_datasets}
+
+% ============================================================
+% BIBLIOGRAPHY
+% ============================================================
+\bibliography{references}
+
+\end{document}

@@ -1,0 +1,24 @@
+% ============================================================
+% SECTION 2: BACKGROUND
+% Covers Zhao et al. (2025) QOS construction and baseline results
+% ============================================================
+\section{Background: Quantum Oracle Sketching}
+\label{sec:background}
+
+\subsection{Problem Setting}
+% TODO: define N-dimensional classical data, streaming model,
+% machine size definition (Equations A1--A3)
+
+\subsection{Zhao et al.\ Baseline}
+% TODO: state Zhao et al. Theorem 1 resource counts:
+%   - Logical qubits: S_QOS = 2*ceil(log2(N+2D)) + ceil(log2(s+1)) + 4  (Eq. A3)
+%   - Sample complexity: O(N*Q^2) for rank-Q oracle
+%   - Classical lower bounds: Omega(N_nnz) sparse, Omega(D) streaming (Eqs. A1, A2)
+
+\subsection{Machine Size Definitions}
+% Equations A1, A2, A3 from Zhao et al. (2025) Appendix A
+\begin{align}
+  S_{c,\text{sparse}},\, S_{\text{QRAM}} &\geq N_{\text{nnz}} \label{eq:A1} \\
+  S_{c,\text{streaming}} &\geq D \label{eq:A2} \\
+  S_{\text{QOS}}^{\text{LS-SVM}} &= 2\ceil{\log_2(N+2D)} + \ceil{\log_2(s+1)} + 4 \label{eq:A3}
+\end{align}
