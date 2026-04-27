@@ -62,7 +62,6 @@ _color_indices = jnp.linspace(0.35, 1.0, 4)
 _colors = [_cmap(float(i)) for i in _color_indices]
 
 # Pre-compute arcsin angle set for general vector sketching.
-# arcsin is an odd function so parity=1 is required by pyqsp.
 _arcsin_degree = DEFAULT_CONFIG.arcsin_degree
 _arcsin_angle_set = get_qsvt_angles(
     func=lambda x: jnp.arcsin(x) / jnp.arcsin(1.0),
@@ -73,6 +72,10 @@ _arcsin_angle_set = get_qsvt_angles(
     parity=1,
 )
 _target_norm = 1.0 / (jnp.arcsin(1.0) * 5.0)
+
+# QSVT overhead multiplier: total_samples = unit_num_samples * _qsvt_overhead.
+# angle_set has shape (degree+1,), so overhead = degree (number of SU(2) gates).
+_qsvt_overhead: int = int(_arcsin_angle_set.shape[0] - 1)
 
 # Vectorized wrappers.
 _q_state_sketch_vec = jax.vmap(
@@ -105,36 +108,39 @@ def benchmark_random_vector(
 ) -> dict[str, float]:
     """Benchmark general-vector state sketching.
 
-    Error is measured as the L2 distance between the *unit-normalized*
-    sketch output and the unit-normalized target vector.  Both sides are
-    brought to the same scale before comparison so that the residual
-    reflects angular (directional) error only, independent of the
-    internal ``_target_norm`` rescaling used by ``q_state_sketch``.
+    ``num_samples`` in the returned dict is set to ``unit_num_samples``
+    (the *input* sample budget), **not** the QSVT-inflated total returned by
+    ``q_state_sketch``.  The QSVT overhead is a fixed multiplicative constant
+    (``_qsvt_overhead``) that does not vary with the input; folding it into the
+    x-axis makes the regression matrix singular and destroys the fit.  The raw
+    total is stored separately under ``qsvt_total_samples`` for reference.
+
+    Error is the L2 distance between unit-normalized sketch output and
+    unit-normalized target, measuring pure angular/directional fidelity.
     """
     key, subkey = random.split(key)
-    # Draw random unit vectors of shape (repetition, dim).
     vector = random_unit_vector(subkey, dim, batch_size=repetition)
 
     keys = random.split(key, repetition)
-    state_sketch, num_samples = _q_state_sketch_vec(vector, keys, unit_num_samples)
+    state_sketch, qsvt_total = _q_state_sketch_vec(vector, keys, unit_num_samples)
 
-    # Normalize both sketch output and target to unit norm before
-    # computing error.  This removes the _target_norm scale mismatch
-    # that caused the benchmark to report O(1) error regardless of M.
+    # Unit-normalize both sides to measure angular error independently of
+    # the q_state_sketch internal rescaling.
     sketch_unit = _unit_normalize(jnp.real(state_sketch))
     target_unit = _unit_normalize(vector)
-
     error = jnp.linalg.norm(sketch_unit - target_unit, axis=-1)
-    norm_error = jnp.abs(
-        jnp.linalg.norm(state_sketch, axis=-1) - _target_norm
-    )
+
+    norm_error = jnp.abs(jnp.linalg.norm(state_sketch, axis=-1) - _target_norm)
 
     return {
         "error_mean": float(jnp.mean(error)),
         "error_std": float(jnp.std(error) / jnp.sqrt(repetition)),
         "norm_error_mean": float(jnp.mean(norm_error)),
         "norm_error_std": float(jnp.std(norm_error) / jnp.sqrt(repetition)),
-        "num_samples": float(jnp.mean(num_samples)),
+        # Use unit_num_samples as the canonical x-axis for fitting.
+        # QSVT overhead (_qsvt_overhead) is constant and must NOT be folded in.
+        "num_samples": float(unit_num_samples),
+        "qsvt_total_samples": float(jnp.mean(qsvt_total)),
     }
 
 
