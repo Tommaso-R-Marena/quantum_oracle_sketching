@@ -41,21 +41,23 @@ COLORS: dict[str, str] = {
     "quantum": "#CD591A",
     "streaming": "#2657AF",
     "sparse": "#606060",
+    "qram": "#808080",
 }
 
 LABELS: dict[str, str] = {
     "streaming": "Classical streaming",
-    "sparse": "Classical sparse / QRAM",
+    "sparse": "Classical sparse-matrix",
+    "qram": "QRAM-based quantum",
     "quantum": "Quantum oracle sketching",
 }
 
-MARKERS: dict[str, str] = {"streaming": "P", "sparse": "X", "quantum": "D"}
+MARKERS: dict[str, str] = {"streaming": "P", "sparse": "X", "qram": "o", "quantum": "D"}
 
 FIGSIZE: tuple[float, float] = (3.5, 3.5)
 
-MARKERSIZE: dict[str, int] = {"streaming": 50, "sparse": 50, "quantum": 30}
+MARKERSIZE: dict[str, int] = {"streaming": 50, "sparse": 50, "qram": 20, "quantum": 30}
 
-LINEWIDTH_MARKER: dict[str, int] = {"streaming": 0, "sparse": 0, "quantum": 0}
+LINEWIDTH_MARKER: dict[str, int] = {"streaming": 0, "sparse": 0, "qram": 0, "quantum": 0}
 
 NUM_MARKERS: int = 40
 

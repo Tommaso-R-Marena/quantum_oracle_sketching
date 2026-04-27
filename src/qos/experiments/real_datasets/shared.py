@@ -20,6 +20,8 @@ from qos.experiments.plotting import (
     COLORS,
     LABELS,
     MARKERS,
+    MARKERSIZE,
+    LINEWIDTH_MARKER,
     add_text_annotations,
     finalize_accuracy_plot,
     get_sorted_arrays,
