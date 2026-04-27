@@ -28,25 +28,36 @@ def test_variational_warmstart_beats_baseline():
 
 
 def test_shadow_error_decays_with_T():
-    """Shadow error should improve as T increases (with tolerance for randomness)."""
+    """Shadow error should shrink with T and converge to the true Re<w|x> value."""
     key = jax.random.PRNGKey(1)
     N = 32
     k1, k2, k3 = jax.random.split(key, 3)
     w = jax.random.normal(k1, (N,)) + 1j * jax.random.normal(k2, (N,))
     w = w / jnp.linalg.norm(w)
     x = jax.random.normal(k3, (1, N))
+    x = x / jnp.linalg.norm(x)
     gt = float(jnp.real(jnp.dot(jnp.conj(w), x[0])))
+
+    shadow = InterferometricClassicalShadow(w, num_shadows=5000, key=jax.random.PRNGKey(0))
+    shadow.build_shadow()
+    full_bits = shadow._shadow_bits
+    full_ops = shadow._shadow_ops
 
     errors = []
     for T in [50, 200, 1000]:
-        shadow = InterferometricClassicalShadow(w, num_shadows=T, key=jax.random.PRNGKey(T))
-        shadow.build_shadow()
+        shadow._shadow_bits = full_bits[:T]
+        shadow._shadow_ops = full_ops[:T]
         pred = shadow.predict(x)[0, 0]
         errors.append(abs(float(pred) - gt))
+        shadow._shadow_bits = full_bits
+        shadow._shadow_ops = full_ops
 
     assert errors[1] < errors[0] * 1.1, (
         f"T=200 error {errors[1]:.4f} not < T=50 error {errors[0]:.4f}"
     )
     assert errors[2] < errors[1] * 1.1, (
         f"T=1000 error {errors[2]:.4f} not < T=200 error {errors[1]:.4f}"
+    )
+    assert abs(errors[-1] - 0.0) < 0.15, (
+        f"T=1000 absolute error {errors[-1]:.4f} not close to 0"
     )
