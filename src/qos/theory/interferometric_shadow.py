@@ -138,6 +138,7 @@ class InterferometricClassicalShadow:
         if not self._shadow_built:
             self.build_shadow()
         m = test_vectors.shape[0]
+        n = len(self.weight_state)
         preds = []
         for x in test_vectors:
             re_vals, im_vals = [], []
@@ -149,8 +150,12 @@ class InterferometricClassicalShadow:
                 rotated_w_im = (-1j) * rotated_w
                 channel_im = float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), x)))
                 im_vals.append((1 - 2 * bit_im) * channel_im)
-            preds.append([float(jnp.mean(jnp.array(re_vals))),
-                          float(jnp.mean(jnp.array(im_vals)))])
+            preds.append(
+                [
+                    float(2 * n * jnp.mean(jnp.array(re_vals))),
+                    float(2 * n * jnp.mean(jnp.array(im_vals))),
+                ]
+            )
         return jnp.array(preds, dtype=real_dtype)
 
     def prediction_error_bound(self, sparsity: int) -> float:

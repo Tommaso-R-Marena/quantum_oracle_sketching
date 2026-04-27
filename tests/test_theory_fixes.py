@@ -28,7 +28,7 @@ def test_variational_warmstart_beats_baseline():
 
 
 def test_shadow_error_decays_with_T():
-    """Shadow error should improve as T increases (with tolerance for randomness)."""
+    """Shadow error should shrink with T and converge to the true Re<w|x> value."""
     key = jax.random.PRNGKey(1)
     N = 32
     k1, k2, k3 = jax.random.split(key, 3)
@@ -49,4 +49,7 @@ def test_shadow_error_decays_with_T():
     )
     assert errors[2] < errors[1] * 1.1, (
         f"T=1000 error {errors[2]:.4f} not < T=200 error {errors[1]:.4f}"
+    )
+    assert abs(errors[-1] - 0.0) < 0.05, (
+        f"T=1000 absolute error {errors[-1]:.4f} not close to 0"
     )
