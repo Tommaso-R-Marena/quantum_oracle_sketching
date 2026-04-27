@@ -109,10 +109,13 @@ class VariationalWarmstart:
         k1, k2 = random.split(key)
         if self._is_boolean_target:
             support_idx = jnp.where(self.truth_table > 0)[0]
-            if support_idx.shape[0] >= self.K_F:
-                chosen = support_idx[: self.K_F]
+            # Use exact support-aligned one-hot features only when all support
+            # entries can be represented. If support exceeds K_F, falling back
+            # to the random-feature path avoids forcing omitted support rows to
+            # all-zero features (which would hard-code phase 1 on those points).
+            if support_idx.shape[0] <= self.K_F:
                 basis = jnp.zeros((self.n, self.K_F), dtype=real_dtype)
-                basis = basis.at[chosen, jnp.arange(self.K_F)].set(1.0)
+                basis = basis.at[support_idx, jnp.arange(support_idx.shape[0])].set(1.0)
                 return basis
         # Random frequencies (importance-sampled from support)
         supp = jnp.where(self.truth_table > 0, 1.0, 0.0)
