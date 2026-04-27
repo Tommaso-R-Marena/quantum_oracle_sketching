@@ -94,17 +94,15 @@ class InterferometricClassicalShadow:
             perm = random.permutation(k2, jnp.arange(n, dtype=int_dtype))
             rotated_w = phases * self.weight_state[perm]
             key, k3, k4 = random.split(key, 3)
+            # Re channel: Hadamard test of Re<w|U|w>.
+            overlap_re = float(jnp.real(jnp.dot(jnp.conj(self.weight_state), rotated_w)))
+            prob_1_re = jnp.clip(0.5 * (1.0 - overlap_re), 0.0, 1.0)
+            bit_re = int(random.bernoulli(k3, p=prob_1_re))
 
-            prob_1_re = 0.5 * (
-                1.0 - float(jnp.real(jnp.dot(jnp.conj(rotated_w), self.weight_state)))
-            )
-            bit_re = int(random.bernoulli(k3, p=jnp.clip(prob_1_re, 0.0, 1.0)))
-
-            rotated_w_im = (-1j) * rotated_w
-            prob_1_im = 0.5 * (
-                1.0 - float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), self.weight_state)))
-            )
-            bit_im = int(random.bernoulli(k4, p=jnp.clip(prob_1_im, 0.0, 1.0)))
+            # Im channel: Hadamard test with S† gate.
+            overlap_im = float(jnp.imag(jnp.dot(jnp.conj(self.weight_state), rotated_w)))
+            prob_1_im = jnp.clip(0.5 * (1.0 - overlap_im), 0.0, 1.0)
+            bit_im = int(random.bernoulli(k4, p=prob_1_im))
             shadow_bits.append((bit_re, bit_im))
             shadow_ops.append((phases, perm))
         self._shadow_bits = shadow_bits
@@ -149,8 +147,7 @@ class InterferometricClassicalShadow:
                 rotated_w_im = (-1j) * rotated_w
                 channel_im = float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), x)))
                 im_vals.append((1 - 2 * bit_im) * channel_im)
-            preds.append([float(jnp.mean(jnp.array(re_vals))),
-                          float(jnp.mean(jnp.array(im_vals)))])
+            preds.append([float(jnp.mean(jnp.array(re_vals))), float(jnp.mean(jnp.array(im_vals)))])
         return jnp.array(preds, dtype=real_dtype)
 
     def prediction_error_bound(self, sparsity: int) -> float:
