@@ -91,25 +91,43 @@ _q_oracle_matrix_element_vec = jax.vmap(
 )
 
 
+def _unit_normalize(v: jax.Array) -> jax.Array:
+    """Normalize rows of v to unit L2 norm, safe against zero vectors."""
+    norms = jnp.linalg.norm(v, axis=-1, keepdims=True)
+    return v / jnp.where(norms > 0, norms, jnp.ones_like(norms))
+
+
 def benchmark_random_vector(
     key: random.PRNGKeyArray,
     dim: int,
     unit_num_samples: int,
     repetition: int = 10,
 ) -> dict[str, float]:
-    """Benchmark general-vector state sketching."""
+    """Benchmark general-vector state sketching.
+
+    Error is measured as the L2 distance between the *unit-normalized*
+    sketch output and the unit-normalized target vector.  Both sides are
+    brought to the same scale before comparison so that the residual
+    reflects angular (directional) error only, independent of the
+    internal ``_target_norm`` rescaling used by ``q_state_sketch``.
+    """
     key, subkey = random.split(key)
+    # Draw random unit vectors of shape (repetition, dim).
     vector = random_unit_vector(subkey, dim, batch_size=repetition)
-    original_norm = jnp.linalg.norm(vector, axis=-1)
 
     keys = random.split(key, repetition)
     state_sketch, num_samples = _q_state_sketch_vec(vector, keys, unit_num_samples)
-    norm = jnp.linalg.norm(state_sketch, axis=-1)
 
-    error = jnp.linalg.norm(
-        state_sketch - vector / original_norm[:, None] * _target_norm, axis=-1
+    # Normalize both sketch output and target to unit norm before
+    # computing error.  This removes the _target_norm scale mismatch
+    # that caused the benchmark to report O(1) error regardless of M.
+    sketch_unit = _unit_normalize(jnp.real(state_sketch))
+    target_unit = _unit_normalize(vector)
+
+    error = jnp.linalg.norm(sketch_unit - target_unit, axis=-1)
+    norm_error = jnp.abs(
+        jnp.linalg.norm(state_sketch, axis=-1) - _target_norm
     )
-    norm_error = jnp.abs(norm - _target_norm)
 
     return {
         "error_mean": float(jnp.mean(error)),
@@ -242,20 +260,7 @@ def run_benchmark_sweep(
     matrix_dim: int | None = None,
     verbose: bool = False,
 ) -> dict[int, dict[int, dict[str, float]]]:
-    """Run a full sweep over dimensions and sample counts.
-
-    Args:
-        key: JAX PRNGKey.
-        benchmark_fn: One of the ``benchmark_*`` functions above.
-        dim_list: List of dimensions (or nnz values for matrix benchmarks).
-        unit_num_samples_list: List of sample counts.
-        repetition: Number of repetitions per configuration.
-        matrix_dim: For matrix benchmarks, the fixed square dimension.
-        verbose: Whether to print intermediate results.
-
-    Returns:
-        Nested dict ``results[dim][unit_num_samples] = {metrics...}``.
-    """
+    """Run a full sweep over dimensions and sample counts."""
     results: dict[int, dict[int, dict[str, float]]] = {}
     for dim in tqdm(dim_list, desc="Dimensions", position=0):
         results[int(dim)] = {}
@@ -280,15 +285,7 @@ def fit_sample_complexity(
     results: dict[int, dict[int, dict[str, float]]],
     dim_transform: Callable[[int], float] = lambda x: float(x),
 ) -> dict[str, float]:
-    """Fit the ansatz ``M = C * dim^alpha / epsilon^beta`` via log-space least squares.
-
-    Args:
-        results: Nested dict from ``run_benchmark_sweep``.
-        dim_transform: Optional transformation of dimension (e.g. ``N log N``).
-
-    Returns:
-        Dict with keys ``C``, ``alpha``, ``beta``, ``rmse``, and standard errors.
-    """
+    """Fit the ansatz ``M = C * dim^alpha / epsilon^beta`` via log-space least squares."""
     num_samples_list: list[float] = []
     dims_list: list[float] = []
     errors_list: list[float] = []
