@@ -1,9 +1,10 @@
 """Quantum state sketching: prepare quantum states from classical vector samples.
 
-This module implements the expected-unitary (deterministic) QOS path used for
-benchmarking. It provides a conservative (pessimistic) upper bound on the error
-of the real-world random-channel scenario (see ``qos.core.sampling`` for the
-latter).
+This module implements state sketching primitives for benchmarking.
+
+For general vectors, ``q_state_sketch`` uses an explicit finite-sample Monte Carlo
+phase-oracle construction so the reconstruction error properly scales with the
+input sample budget ``unit_num_samples``.
 
 All functions are JAX-transformable (jit/vmap-friendly) and use 64-bit precision
 by default.
@@ -69,10 +70,9 @@ def q_state_sketch(
 ) -> tuple[jax.Array, int]:
     """Construct the quantum state sketch of a general real vector.
 
-    Uses the expected-unitary (EU) accumulation to build a phase oracle whose
-    imaginary part is proportional to the input vector in the WHT basis, then
-    applies QSVT (arcsin polynomial, parity=1) to invert the sine and recover
-    the vector.
+    Uses a finite-sample random-channel phase oracle (Monte Carlo over sampled
+    coordinates) so output quality depends on ``unit_num_samples``. The QSVT
+    arcsin path then inverts the sine nonlinearity to recover the vector.
 
     Args:
         vector: Input vector of shape ``(dim,)``; will be L2-normalized internally.
@@ -138,18 +138,13 @@ def q_state_sketch(
 
     t = jnp.pi / 4.0
 
-    # Build the expected phase oracle diagonal in O(D^2) via the EU formula.
-    prob = jnp.ones(dim, dtype=real_dtype) / dim
+    # Finite-sample random channel: sample indices ~ Uniform([0, dim)).
+    # This preserves the intended M-dependent concentration behavior.
+    counts = random.multinomial(key, n=unit_num_samples, p=jnp.ones(dim) / dim)
     inner_prod_signs = bitwise_parity_matrix(dim).astype(real_dtype)  # (-1)^{popcount(j&u)}
-    phase_inc = (t / (unit_num_samples * dim)) * sv  # shape (dim,)
-    log_diag = jnp.log1p(
-        jnp.sum(
-            prob[:, None] * jnp.expm1(1j * phase_inc[:, None] * inner_prod_signs),
-            axis=0,
-        )
-    )  # shape (dim,)
-    log_diag = unit_num_samples * log_diag
-    diag = jnp.exp(log_diag)  # exp(i*B[u]) approximately
+    weighted_sv = counts.astype(real_dtype) * sv
+    phase = (t / (unit_num_samples * dim)) * (weighted_sv @ inner_prod_signs)
+    diag = jnp.exp(1j * phase)
 
     # Unitary LCU block encoding of sin(B):
     sin_b = jnp.imag(diag)   # sin(B)
@@ -174,7 +169,7 @@ def q_state_sketch(
 
     # Inverse WHT and undo sign scrambling + t*(2/pi) scale.
     inv_wht = fwht(qsvt_out)  # ~ (2/pi) * t * sv, shape (dim,)
-    state = random_signs * inv_wht / (t * (2.0 / jnp.pi))
+    state = -random_signs * inv_wht / (t * (2.0 / jnp.pi))
     # Re-apply original norm so the output lives in the same space as input.
     state = state[:orig_dim].astype(real_dtype) * norm
 
