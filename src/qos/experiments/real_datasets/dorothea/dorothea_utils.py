@@ -4,37 +4,57 @@ Downloads the Dorothea dataset from the UCI ML Repository on first call
 and caches it locally.
 
 Reference: Guyon et al. (2005), NIPS 2003 Feature Selection Challenge.
-URL: https://archive.ics.uci.edu/ml/datasets/dorothea
+
+Note: The Dorothea validation labels were never publicly released (competition
+holdout). We use the 800-sample training set only, which matches the labelled
+portion used by Zhao et al. (2025) Figure 4b.
 
 Follows Zhao et al. (2025) Appendix A / Figure 4b preprocessing:
-  - Binary feature matrix (1900 samples x 100k sparse features)
+  - Binary feature matrix (800 samples x 100k sparse features)
   - Labels: +1 -> 1  (active compound), -1 -> 0 (inactive)
 """
 from __future__ import annotations
 
 import os
-import io
 import urllib.request
 import numpy as np
 import scipy.sparse as sp
 
 _CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "qos", "dorothea")
-_BASE_URL  = "https://archive.ics.uci.edu/ml/machine-learning-databases/dorothea/DOROTHEA/"
+
+# UCI moved to a new URL structure; try both in order
+_URL_CANDIDATES = [
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/dorothea/DOROTHEA/{filename}",
+    "https://archive.ics.uci.edu/static/public/116/data/{filename}",
+]
 
 
 def _download(filename: str, cache_dir: str) -> str:
     os.makedirs(cache_dir, exist_ok=True)
     local = os.path.join(cache_dir, filename)
-    if not os.path.exists(local):
-        url = _BASE_URL + filename
-        print(f"  Downloading {url} ...")
-        urllib.request.urlretrieve(url, local)
-    return local
+    if os.path.exists(local):
+        return local
+    last_err = None
+    for url_template in _URL_CANDIDATES:
+        url = url_template.format(filename=filename)
+        try:
+            print(f"  Downloading {url} ...")
+            urllib.request.urlretrieve(url, local)
+            return local
+        except Exception as e:
+            last_err = e
+            if os.path.exists(local):
+                os.remove(local)  # remove partial download
+    raise RuntimeError(
+        f"Could not download {filename} from any known UCI URL. "
+        f"Last error: {last_err}"
+    )
 
 
 def _parse_sparse(path: str, n_features: int = 100_000) -> sp.csr_matrix:
-    """Parse Dorothea sparse feature file (each line = space-separated col indices)."""
+    """Parse Dorothea sparse feature file (each line = space-separated 1-indexed col indices)."""
     rows, cols = [], []
+    i = 0
     with open(path) as fh:
         for i, line in enumerate(fh):
             for tok in line.split():
@@ -51,31 +71,25 @@ def _parse_sparse(path: str, n_features: int = 100_000) -> sp.csr_matrix:
 def load_dorothea(
     cache_dir: str = _CACHE_DIR,
 ) -> tuple[sp.csr_matrix, np.ndarray]:
-    """Return (X, y) for the Dorothea dataset.
+    """Return (X, y) for the Dorothea dataset (train split only, 800 samples).
 
     Returns
     -------
-    X : scipy.sparse.csr_matrix, shape (1950, 100_000)
-        Binary feature matrix (train + valid concatenated, matching Zhao et al.).
-    y : np.ndarray, shape (1950,), dtype int
-        0 = inactive, 1 = active.
+    X : scipy.sparse.csr_matrix, shape (800, 100_000)
+        Binary feature matrix.
+    y : np.ndarray, shape (800,), dtype int
+        0 = inactive compound, 1 = active compound.
     """
-    # Train split
     train_data_path  = _download("dorothea_train.data",   cache_dir)
     train_label_path = _download("dorothea_train.labels", cache_dir)
-    # Validation split (Zhao et al. concatenate train+valid for the full sweep)
-    valid_data_path  = _download("dorothea_valid.data",   cache_dir)
-    valid_label_path = _download("dorothea_valid.labels", cache_dir)
 
-    X_train = _parse_sparse(train_data_path)
-    X_valid = _parse_sparse(valid_data_path)
-    X = sp.vstack([X_train, X_valid], format="csr")
+    X = _parse_sparse(train_data_path)
 
-    def _load_labels(path: str) -> np.ndarray:
-        with open(path) as fh:
-            vals = [int(v.strip()) for v in fh if v.strip()]
-        return np.array([(1 if v > 0 else 0) for v in vals], dtype=np.int64)
+    with open(train_label_path) as fh:
+        vals = [int(v.strip()) for v in fh if v.strip()]
+    y = np.array([(1 if v > 0 else 0) for v in vals], dtype=np.int64)
 
-    y = np.concatenate([_load_labels(train_label_path),
-                        _load_labels(valid_label_path)])
+    assert X.shape[0] == len(y), (
+        f"Shape mismatch: X has {X.shape[0]} rows but y has {len(y)} labels"
+    )
     return X, y
