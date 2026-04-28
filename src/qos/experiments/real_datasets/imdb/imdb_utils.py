@@ -37,14 +37,18 @@ def load_imdb_data(
             "Install it with: pip install datasets"
         ) from exc
 
+    def _col_to_list(col):
+        """Safely convert a HF Column or list to a plain Python list."""
+        return col.to_pylist() if hasattr(col, "to_pylist") else list(col)
+
     if split == "all":
         ds_train = load_dataset("imdb", split="train", cache_dir=cache_dir)
         ds_test  = load_dataset("imdb", split="test",  cache_dir=cache_dir)
-        texts  = ds_train["text"]  + ds_test["text"]
-        labels = ds_train["label"] + ds_test["label"]
+        texts  = _col_to_list(ds_train["text"])  + _col_to_list(ds_test["text"])
+        labels = _col_to_list(ds_train["label"]) + _col_to_list(ds_test["label"])
     else:
         ds = load_dataset("imdb", split=split, cache_dir=cache_dir)
-        texts  = ds["text"]
-        labels = ds["label"]
+        texts  = _col_to_list(ds["text"])
+        labels = _col_to_list(ds["label"])
 
     return texts, np.asarray(labels, dtype=np.int64)
