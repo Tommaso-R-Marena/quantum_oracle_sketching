@@ -9,7 +9,7 @@ Provides two loaders:
 Both return (adata, labels) where labels are binary:
   1 = CD14+ Monocyte, 0 = all other cell types
 
-Requires: scanpy, anndata  (pip install scanpy anndata)
+Requires: scanpy, anndata, leidenalg  (pip install scanpy anndata leidenalg)
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import numpy as np
 
 def _binarise_labels(adata) -> np.ndarray:
     """Extract binary CD14+ Monocyte labels from an AnnData object."""
-    for col in ("bulk_labels", "cell_type", "celltype", "CellType", "louvain", "leiden"):
+    for col in ("bulk_labels", "cell_type", "celltype", "CellType", "leiden", "louvain"):
         if col in adata.obs.columns:
             vals = adata.obs[col].astype(str)
             mask = vals.str.contains("CD14", case=False, na=False)
@@ -54,7 +54,7 @@ def load_pbmc3k(
     try:
         import scanpy as sc
     except ImportError as exc:
-        raise ImportError("pip install scanpy anndata") from exc
+        raise ImportError("pip install scanpy anndata leidenalg") from exc
 
     if cache_dir is not None:
         os.makedirs(cache_dir, exist_ok=True)
@@ -69,10 +69,10 @@ def load_pbmc3k(
     adata = adata[:, adata.var["highly_variable"]].copy()
     adata = _ensure_sparse(adata)
 
-    if "louvain" not in adata.obs.columns:
+    if "leiden" not in adata.obs.columns:
         sc.pp.pca(adata, n_comps=10)
         sc.pp.neighbors(adata)
-        sc.tl.louvain(adata)
+        sc.tl.leiden(adata)  # requires leidenalg; was louvain (needs unmaintained 'louvain' pkg)
 
     labels = _binarise_labels(adata)
     return adata, labels
@@ -93,7 +93,7 @@ def load_pbmc68k(
     --------
     The scanpy toy object ``pbmc68k_reduced`` contains 700 pre-selected cells
     with gold-standard ``bulk_labels``.  We use it solely to build a label
-    mapping (louvain cluster -> cell type), then apply that mapping to the
+    mapping (leiden cluster -> cell type), then apply that mapping to the
     full dataset after clustering.
 
     Download: ~500 MB of per-cell-type h5 matrices from 10x public S3.
@@ -110,7 +110,7 @@ def load_pbmc68k(
         import scanpy as sc
         import anndata as ad
     except ImportError as exc:
-        raise ImportError("pip install scanpy anndata") from exc
+        raise ImportError("pip install scanpy anndata leidenalg") from exc
 
     if cache_dir is None:
         cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "qos", "pbmc68k")
@@ -118,26 +118,15 @@ def load_pbmc68k(
     sc.settings.datasetdir = cache_dir
 
     print("  Loading PBMC68k via scanpy (downloads ~500 MB on first run) ...")
-    # sc.datasets.pbmc68k_reduced() is the 700-cell toy object.
-    # sc.datasets.pbmc68k_singleR() is NOT available in all versions.
-    # The most robust public approach: use the scanpy-provided helper that
-    # downloads all 11 purified 10x h5 files and concatenates them.
-    # This is the same data Zhao et al. use.
     try:
         adata = sc.datasets.pbmc68k_reduced()
-        # If we got the reduced 700-cell object, try to get the full version
         if adata.n_obs < 10_000:
             raise AttributeError("reduced")
     except AttributeError:
         pass
 
-    # Attempt to load the full dataset using the scanpy recipe
-    # pbmc68k_reduced is always available; for the full 68k we use
-    # the 10x public download via scanpy's external API
     try:
-        # scanpy >= 1.9 exposes this via sc.datasets
         adata = sc.datasets.pbmc68k_reduced()
-        # Fall back: use the reduced set but warn
         if adata.n_obs < 10_000:
             print(
                 "  WARNING: scanpy returned the 700-cell reduced subset. "
@@ -150,7 +139,6 @@ def load_pbmc68k(
     except Exception as e:
         raise RuntimeError(f"Could not load PBMC68k: {e}") from e
 
-    # Standard preprocessing
     sc.pp.filter_cells(adata, min_genes=50)
     sc.pp.filter_genes(adata, min_cells=3)
     sc.pp.normalize_total(adata, target_sum=1e4)
