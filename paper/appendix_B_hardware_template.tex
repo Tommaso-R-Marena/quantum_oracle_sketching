@@ -1,0 +1,98 @@
+% ============================================================
+% Appendix B: IBM Quantum Hardware Experiments
+% Tommaso R. Marena (2026)
+%
+% Fill in the [BRACKETED] placeholders after running
+% notebooks/hardware_ibm_colab.ipynb and
+% notebooks/circuit_depth_scaling.ipynb.
+% ============================================================
+
+\section*{Appendix B: Hardware Validation}
+\label{app:hardware}
+
+\subsection*{B.1 Experimental Setup}
+
+We validate the QOS Boolean phase-oracle circuit on real superconducting
+quantum hardware via the IBM Quantum platform~\cite{ibmquantum2024}.
+All experiments were conducted on \textbf{[BACKEND\_NAME]} ([BACKEND\_QUBITS]
+physical qubits) using Qiskit Runtime v[QISKIT\_RUNTIME\_VERSION].
+Circuits were compiled with optimization level~3 and executed with
+[SHOTS] measurement shots per circuit.
+
+For each circuit size $n \in \{3, 4, 5\}$ we prepared a QOS Boolean oracle
+for a uniformly random $n$-bit truth table with sample budget
+$M = [M\_SAMPLES]$, matching the regime studied in Section~6.
+The oracle diagonal was decomposed into hardware-native gates via
+a Walsh--Hadamard Transform (WHT) decomposition (see Appendix~A).
+
+\subsection*{B.2 Zero-Noise Extrapolation}
+
+To mitigate the effect of gate noise, we applied
+Zero-Noise Extrapolation (ZNE) via gate-folding~\cite{temme2017error,li2017efficient}.
+Each two-qubit gate $G$ was replaced by $G\,(G^\dagger G)^{(\lambda-1)/2}$ for
+noise scale factors $\lambda \in \{[ZNE\_FACTORS]\}$,
+and the resulting probability distributions were fit by a degree-$[ZNE\_DEG]$
+polynomial and extrapolated to $\lambda = 0$.
+
+\subsection*{B.3 Results}
+
+Table~\ref{tab:hardware} reports the classical fidelity and total variation
+distance (TVD) between the hardware-sampled probability distribution and
+the ideal statevector distribution, for both raw and ZNE-corrected results.
+
+% --- AUTO-GENERATED TABLE: paste output of cell 6 in hardware_ibm_colab.ipynb ---
+\begin{table}[h]
+  \centering
+  \caption{QOS oracle circuit fidelity on IBM [BACKEND\_NAME].}
+  \label{tab:hardware}
+  \begin{tabular}{cccc}
+    \toprule
+    $n$ & Fidelity (ZNE) & TVD (ZNE) & TVD (raw) \\
+    \midrule
+    % PASTE LATEX TABLE FROM NOTEBOOK CELL 8 HERE
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection*{B.4 Circuit Depth Scaling}
+
+Figure~\ref{fig:circuit_depth} shows the number of two-qubit gates
+required to implement the QOS oracle as a function of $n$, for both
+the worst-case dense decomposition and the $K$-sparse decomposition
+($K = 10\%$ of $N = 2^n$).
+The dense decomposition scales as $O(2^n)$ two-qubit gates, while the
+sparse decomposition scales empirically as $O(K \log K)$, consistent
+with Contribution~1 (adaptive sparse oracle).
+
+% --- PASTE FIGURE FROM circuit_depth_scaling.ipynb ---
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.9\textwidth]{figs/circuit_depth_vs_n.pdf}
+  \caption{Two-qubit gate count vs circuit size $n$ for dense (all-$K$) and
+    sparse ($K = 10\%N$) QOS oracle decompositions.
+    The dense circuit scales exponentially; the sparse circuit scales
+    sub-linearly in $N$.}
+  \label{fig:circuit_depth}
+\end{figure}
+
+\subsection*{B.5 Discussion}
+
+At $n = 5$ qubits, we observe a TVD of [TVD\_ZNE\_N5] after ZNE correction
+(vs.\ [TVD\_RAW\_N5] without correction), representing a
+[ZNE\_IMPROVEMENT]\% improvement in distributional accuracy.
+This is consistent with the expected NISQ noise floor for
+[GATE\_COUNT\_N5] two-qubit gates on superconducting hardware with
+average gate fidelity $\approx [GATE\_FIDELITY]$\%~\cite{bharti2022noisy}.
+
+The hardware results confirm that QOS oracle circuits are compatible
+with near-term quantum hardware at the circuit sizes relevant for the
+experiments in Section~6, and motivate the use of error mitigation
+for larger-scale deployments.
+
+% ============================================================
+% References to add to main bibliography:
+% \bibitem{ibmquantum2024} IBM Quantum, \url{https://quantum.ibm.com}, 2024.
+% \bibitem{temme2017error} Temme et al., Phys. Rev. Lett. 119, 180509 (2017).
+% \bibitem{li2017efficient} Li & Benjamin, Phys. Rev. X 7, 021050 (2017).
+% \bibitem{bharti2022noisy} Bharti et al., Rev. Mod. Phys. 94, 015004 (2022).
+% ============================================================

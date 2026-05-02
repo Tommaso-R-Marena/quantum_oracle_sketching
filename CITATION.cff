@@ -1,0 +1,49 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Quantum Oracle Sketching: Extensions and Real-Dataset Experiments"
+authors:
+  - family-names: Marena
+    given-names: Tommaso R.
+    affiliation: "The Catholic University of America"
+    email: marena@cua.edu
+version: "1.3.1"
+date-released: "2026-04-28"
+repository-code: "https://github.com/Tommaso-R-Marena/quantum_oracle_sketching"
+license: MIT
+type: software
+keywords:
+  - quantum computing
+  - oracle sketching
+  - quantum advantage
+  - variational quantum algorithms
+  - protein folding
+  - data loading
+  - QRAM
+abstract: >
+  This repository implements Quantum Oracle Sketching (QOS) and introduces
+  four novel theoretical extensions (Marena 2026) over the baseline of
+  Zhao et al. (2025): adaptive sparse oracles (N/K speedup), hierarchical
+  sketching (Q^{1/k} barrier break), variational warmstart, and
+  interferometric classical shadows. Includes real-dataset experiments on
+  IMDb, 20 Newsgroups, PBMC3k, PBMC68k, Dorothea, and Splice, plus
+  IBM quantum hardware benchmarks.
+references:
+  - type: article
+    title: "Exponential quantum advantage in processing massive classical data"
+    authors:
+      - family-names: Zhao
+        given-names: Haimeng
+      - family-names: Zlokapa
+        given-names: Alexander
+      - family-names: Neven
+        given-names: Hartmut
+      - family-names: Babbush
+        given-names: Ryan
+      - family-names: Preskill
+        given-names: John
+      - family-names: McClean
+        given-names: "Jarrod R."
+      - family-names: Huang
+        given-names: Hsin-Yuan
+    year: 2026
+    url: "https://arxiv.org/abs/2604.07639"
