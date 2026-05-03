@@ -11,7 +11,6 @@ These tests guard against regressions in:
 
 from __future__ import annotations
 
-import builtins
 import warnings
 
 import jax
@@ -21,6 +20,13 @@ import pytest
 
 from qos.core.oracle_sketch import q_oracle_sketch_boolean
 from qos.theory.variational_warmstart import VariationalWarmstart
+
+# numpy.exceptions.ComplexWarning was introduced in NumPy 2.0;
+# fall back to numpy.ComplexWarning for NumPy 1.x.
+try:
+    from numpy.exceptions import ComplexWarning as _ComplexWarning
+except ImportError:
+    from numpy import ComplexWarning as _ComplexWarning  # type: ignore[no-redef]
 
 
 # ---------------------------------------------------------------------------
@@ -122,12 +128,12 @@ class TestTvdDiag:
     def test_no_complex_warning_on_complex_input(self, d_ideal_sparse):
         """tvd_diag must not raise ComplexWarning when given complex input.
 
-        Uses builtins.ComplexWarning instead of np.ComplexWarning,
-        which was removed in NumPy 2.0.
+        Uses a version-agnostic _ComplexWarning shim (numpy.exceptions on
+        NumPy 2.x, numpy on NumPy 1.x) instead of the removed np.ComplexWarning.
         """
         complex_input = jnp.exp(1j * jnp.pi * (1.0 - d_ideal_sparse) / 2)
         with warnings.catch_warnings():
-            warnings.simplefilter("error", builtins.ComplexWarning)
+            warnings.simplefilter("error", _ComplexWarning)
             tvd = tvd_diag(complex_input, d_ideal_sparse)
         assert tvd < 0.1
 
@@ -182,8 +188,8 @@ class TestPredictRealConversion:
     def test_no_complexwarning_when_tvd_called_on_predict(self, sparse_tt, d_ideal_sparse):
         """The full pipeline: predict -> sign(real) -> tvd_diag must not warn.
 
-        Uses builtins.ComplexWarning instead of np.ComplexWarning,
-        which was removed in NumPy 2.0.
+        Uses a version-agnostic _ComplexWarning shim (numpy.exceptions on
+        NumPy 2.x, numpy on NumPy 1.x) instead of the removed np.ComplexWarning.
         """
         vw = VariationalWarmstart(
             sparse_tt, num_fourier_modes=8, learning_rate=0.02,
@@ -191,7 +197,7 @@ class TestPredictRealConversion:
         )
         vw.fit(unit_num_samples=N)
         with warnings.catch_warnings():
-            warnings.simplefilter("error", builtins.ComplexWarning)
+            warnings.simplefilter("error", _ComplexWarning)
             d_warm = predict_real(vw)
             tvd = tvd_diag(d_warm, d_ideal_sparse)
         assert 0.0 <= tvd <= 1.0
