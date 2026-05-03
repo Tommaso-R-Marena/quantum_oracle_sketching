@@ -2,7 +2,7 @@
 
 All tests use synthetic truth tables (no external datasets required).
 These tests guard against regressions in:
-  - tvd_diag correctness (identical diagonals -> TVD=0, opposite -> TVD=1)
+  - tvd_diag correctness (identical diagonals -> TVD=0, distinct -> TVD>0)
   - tvd_diag handling complex input without ComplexWarning
   - VariationalWarmstart.predict() converted to real +-1 diagonal
   - Binary search direction in find_M_cold / find_M_warm logic
@@ -11,6 +11,7 @@ These tests guard against regressions in:
 
 from __future__ import annotations
 
+import builtins
 import warnings
 
 import jax
@@ -26,7 +27,7 @@ from qos.theory.variational_warmstart import VariationalWarmstart
 # Fixtures
 # ---------------------------------------------------------------------------
 
-N_BITS = 6  # N = 64 — small enough to be fast, large enough to be meaningful
+N_BITS = 6  # N = 64 -- small enough to be fast, large enough to be meaningful
 N = 2 ** N_BITS
 SEED = 0
 
@@ -92,12 +93,20 @@ class TestTvdDiag:
         tvd = tvd_diag(d_ideal_sparse, d_ideal_sparse)
         assert tvd == pytest.approx(0.0, abs=1e-10)
 
-    def test_opposite_diagonals_give_one(self, d_ideal_sparse):
-        """TVD of d vs -d must be 1 (maximally distinguishable)."""
-        tvd = tvd_diag(-d_ideal_sparse, d_ideal_sparse)
-        assert tvd == pytest.approx(1.0, abs=1e-10)
+    def test_distinct_diagonals_give_positive_tvd(self, d_ideal_sparse, d_ideal_random):
+        """Two structurally different diagonals must give TVD > 0.
 
-    def test_tvd_bounded_between_zero_and_one(self, d_ideal_random, random_tt):
+        NOTE: TVD(d, -d) = 0 by Parseval symmetry -- negating the diagonal
+        only flips the sign of every Walsh coefficient, leaving |coeff|^2
+        (i.e. the measurement probabilities) unchanged.  We therefore test
+        with two *different* truth tables instead.
+        """
+        tvd = tvd_diag(d_ideal_sparse, d_ideal_random)
+        assert tvd > 0.0, (
+            "TVD between two distinct diagonals must be positive"
+        )
+
+    def test_tvd_bounded_between_zero_and_one(self, d_ideal_random):
         """TVD must always be in [0, 1]."""
         rng = np.random.default_rng(SEED)
         noise = jnp.array(rng.choice([-1.0, 1.0], size=N))
@@ -111,12 +120,15 @@ class TestTvdDiag:
         assert tvd_ab == pytest.approx(tvd_ba, abs=1e-10)
 
     def test_no_complex_warning_on_complex_input(self, d_ideal_sparse):
-        """tvd_diag must not raise ComplexWarning when given complex input."""
+        """tvd_diag must not raise ComplexWarning when given complex input.
+
+        Uses builtins.ComplexWarning instead of np.ComplexWarning,
+        which was removed in NumPy 2.0.
+        """
         complex_input = jnp.exp(1j * jnp.pi * (1.0 - d_ideal_sparse) / 2)
         with warnings.catch_warnings():
-            warnings.simplefilter("error", np.ComplexWarning)
+            warnings.simplefilter("error", builtins.ComplexWarning)
             tvd = tvd_diag(complex_input, d_ideal_sparse)
-        # Result should be near-zero since complex_input encodes d_ideal_sparse
         assert tvd < 0.1
 
     def test_partial_overlap_gives_intermediate_tvd(self, d_ideal_sparse):
@@ -168,14 +180,18 @@ class TestPredictRealConversion:
         assert d_real.shape == (N,)
 
     def test_no_complexwarning_when_tvd_called_on_predict(self, sparse_tt, d_ideal_sparse):
-        """The full pipeline: predict -> sign(real) -> tvd_diag must not warn."""
+        """The full pipeline: predict -> sign(real) -> tvd_diag must not warn.
+
+        Uses builtins.ComplexWarning instead of np.ComplexWarning,
+        which was removed in NumPy 2.0.
+        """
         vw = VariationalWarmstart(
             sparse_tt, num_fourier_modes=8, learning_rate=0.02,
             num_steps=30, key=jax.random.PRNGKey(3)
         )
         vw.fit(unit_num_samples=N)
         with warnings.catch_warnings():
-            warnings.simplefilter("error", np.ComplexWarning)
+            warnings.simplefilter("error", builtins.ComplexWarning)
             d_warm = predict_real(vw)
             tvd = tvd_diag(d_warm, d_ideal_sparse)
         assert 0.0 <= tvd <= 1.0
@@ -258,8 +274,6 @@ class TestBinarySearchContract:
         tt = sparse_tt
         _N = int(tt.shape[0])
         d_ideal = (-1.0) ** tt
-        rng = np.random.default_rng(SEED)
-        idx = rng.choice(_N, size=_N, replace=False)
         tt_sub = tt  # full truth table
         vw = VariationalWarmstart(
             tt_sub, num_fourier_modes=8,
