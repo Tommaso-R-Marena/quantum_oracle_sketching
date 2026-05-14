@@ -1,0 +1,27 @@
+# Python bytecode / build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Notebook scratch outputs accidentally written to ./notebooks/
+notebooks/results/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/

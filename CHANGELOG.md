@@ -5,6 +5,52 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.2] — 2026-05-13
+
+### Fixed
+- **`VariationalWarmstart.__init__` complex→real silent cast (JAX 0.10
+  deprecation).** Previously `self.truth_table = truth_arr.astype(real_dtype)`
+  was called unconditionally; when the input was a complex phase oracle
+  this silently dropped the imaginary part and produced a
+  `DeprecationWarning` on JAX ≥ 0.10 (promoted to an error under
+  `-W error`). The constructor now branches: for complex input it stores
+  `|truth_arr|` as the support indicator and keeps the full complex
+  phases in `_target_phases`; for real/boolean input the original behavior
+  is preserved verbatim (`src/qos/theory/variational_warmstart.py`).
+- `src/qos/qsvt/angles.py` debug `print()` calls replaced by `logging.debug`
+  so library imports stay silent under publication-mode CLI invocations.
+
+### Added
+- **`tests/test_tvd_core.py`** — 33 parametric tests pinning the exact
+  Hadamard-induced TVD formula (factors, normalization, identity,
+  Parseval symmetry `TVD(d,-d) = 0`, triangle inequality, orthogonal
+  diagonals → 1, and silent complex-input handling).
+- **`tests/test_warmstart_e2e.py`** — 5 end-to-end tests exercising the
+  full warmstart→TVD pipeline on synthetic Boolean truth tables, plus a
+  no-false-convergence regression check for the `diagnose_warmstart`
+  gate.
+- **`scripts/verify_tvd_convergence.py`**, **`verify_sample_complexity.py`**,
+  **`verify_warmstart_ablation.py`**, **`verify_noise_robustness.py`**,
+  **`verify_circuit_depth.py`**, and **`generate_all_figures.py`** — one
+  reproducible driver per claim; outputs CSV under `results/raw_data/`
+  and PNG/PDF under `results/figures/`.
+- **`scripts/run_notebooks_headless.py`** — patches Colab-only cells
+  (pip install, drive mount, IBM Quantum token prompt) and executes
+  every notebook under `notebooks/` to `results/notebooks_executed/`,
+  emitting `.ipynb` and `.html` alongside a one-line run log.
+- `AUDIT_REPORT.md` — commit forensics for #12–#19 plus a complete
+  reproducibility checklist.
+
+### Changed
+- `pyproject.toml`: dependency upper bounds added for `jax`, `jaxlib`,
+  `numpy`, `scipy`, `matplotlib`, `scikit-learn`, `pydantic`, `qiskit`,
+  `qiskit-aer`; `dev` extra now ships `nbformat`/`nbclient`/`nbconvert`.
+- `.github/workflows/ci.yml`: install split into the two-step strategy
+  (`[dev]` then `[dev,noise,kernel]`), pytest output captured as a CI
+  artifact, JUnit XML emitted per Python version.
+
+---
+
 ## [1.3.1] — 2026-04-25
 
 ### Added

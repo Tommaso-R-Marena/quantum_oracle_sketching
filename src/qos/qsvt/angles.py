@@ -6,6 +6,7 @@ numerical stability for high-degree polynomials.
 
 from __future__ import annotations
 
+import logging
 from typing import Callable
 
 import jax.numpy as jnp
@@ -15,6 +16,8 @@ from pyqsp import angle_sequence
 from pyqsp.poly import PolyGenerator
 
 from qos.config import real_dtype
+
+_logger = logging.getLogger(__name__)
 
 
 class PolyTaylorSeries(PolyGenerator):
@@ -82,18 +85,22 @@ class PolyTaylorSeries(PolyGenerator):
             pmax_vals = [abs(cheb_poly(res_1.x[0])), abs(cheb_poly(res_2.x[0]))]
             scale = max_scale / max(pmax_vals)
             cheb_poly = scale * cheb_poly
-            print(
-                f"[PolyTaylorSeries] max {scale:.4f} at "
-                f"{res_1.x[0] if pmax_vals[0] > pmax_vals[1] else res_2.x[0]:.4f}: normalizing"
+            _logger.debug(
+                "[PolyTaylorSeries] max %.4f at %.4f: normalizing",
+                scale,
+                res_1.x[0] if pmax_vals[0] > pmax_vals[1] else res_2.x[0],
             )
 
         adat = np.linspace(cheb_domain[0], cheb_domain[1], npts)
         pdat = cheb_poly(adat)
         edat = scale * func(adat)
         avg_err = abs(edat - pdat).mean()
-        print(
-            f"[PolyTaylorSeries] avg error = {avg_err:.3e} in "
-            f"[{cheb_domain[0]}, {cheb_domain[1]}] using degree {degree}"
+        _logger.debug(
+            "[PolyTaylorSeries] avg error = %.3e in [%g, %g] using degree %d",
+            avg_err,
+            cheb_domain[0],
+            cheb_domain[1],
+            degree,
         )
 
         if ensure_bounded and return_scale:

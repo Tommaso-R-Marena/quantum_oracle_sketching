@@ -78,14 +78,19 @@ class VariationalWarmstart:
     ):
         truth_arr = jnp.asarray(truth_table)
         self.n = truth_arr.shape[0]
-        self.truth_table = truth_arr.astype(real_dtype)
         if jnp.iscomplexobj(truth_arr):
             # Accept direct phase targets on the unit circle e^{i theta}.
+            # NOTE: real projection is intentional only on the boolean path
+            # below; for complex input we keep the magnitude on the real
+            # `truth_table` slot (used as a support indicator) so we never
+            # implicitly drop the imaginary part (JAX 0.10 deprecates that).
+            self.truth_table = jnp.abs(truth_arr).astype(real_dtype)
             phase_norm = jnp.where(jnp.abs(truth_arr) > 0, jnp.abs(truth_arr), 1.0)
             self._target_phases = (truth_arr / phase_norm).astype(complex_dtype)
             self._is_boolean_target = False
         else:
             # Boolean-or-real truth table path used by benchmark notebooks.
+            self.truth_table = truth_arr.astype(real_dtype)
             self._target_phases = jnp.exp(1j * jnp.pi * self.truth_table).astype(complex_dtype)
             self._is_boolean_target = True
         self.K_F = max(1, min(num_fourier_modes, self.n // 2))

@@ -1,0 +1,10 @@
+3352732 fix(notebook): avoid NumPy/SciPy version conflict on Colab (#19)
+ef40337 fix(notebook): address Codex P1 comments on install cell and diagnose budget (#18)
+126e95d fix(notebook): tune warmstart hyperparams + add convergence diagnostics (#17)
+7953894 fix(tests): version-agnostic ComplexWarning shim (NumPy 1.x + 2.x) (#16)
+219f459 fix(tests): correct 3 failing assertions in test_ablation_helpers (#15)
+19ba3e5 fix: convert complex predict() to real ±1 diagonal in find_M_warm (#14)
+0011cc6 Merge pull request #13 from Tommaso-R-Marena/codex/fix-failing-tests-and-warmstart-ablation-bug
+7bc1425 fix: remove abs() from tvd_diag — phase sign was being destroyed
+c45cfd7 Reformat warmstart ablation notebook JSON for readability
+b6d273f Merge pull request #12 from Tommaso-R-Marena/codex/fix-d_ideal-computation-in-helpers

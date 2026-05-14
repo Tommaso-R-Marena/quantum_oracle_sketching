@@ -1,0 +1,9 @@
+01_qos_quickstart.ipynb                     OK      17.8s  patches=0  errors=0
+02_empirical_results.ipynb                  FAIL     1.1s  patches=2  errors=5  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"
+circuit_depth_scaling.ipynb                 FAIL     2.3s  patches=2  errors=1  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"
+full_benchmark_suite.ipynb                  FAIL     2.2s  patches=1  errors=15  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"
+hardware_ibm_colab.ipynb                    FAIL     2.7s  patches=3  errors=10  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qiskit_ibm_runtime'"
+noise_robustness_sweep.ipynb                FAIL     2.2s  patches=2  errors=4  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"
+quantum_oracle_sketching_demo.ipynb         FAIL     5.4s  patches=1  errors=8  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"
+real_datasets_colab.ipynb                   FAIL     5.9s  patches=4  errors=8  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'pdf2image'"
+warmstart_ablation.ipynb                    FAIL     4.0s  patches=2  errors=3  first_err="\x1b[31mModuleNotFoundError\x1b[39m: No module named 'qos'"

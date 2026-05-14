@@ -10,7 +10,7 @@
 [![JAX](https://img.shields.io/badge/JAX-compatible-green.svg)](https://jax.readthedocs.io)
 [![CI](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml/badge.svg)](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![v1.3.1](https://img.shields.io/badge/version-1.3.1-informational)](CHANGELOG.md)
+[![v1.3.2](https://img.shields.io/badge/version-1.3.2-informational)](CHANGELOG.md)
 
 This repository implements **Quantum Oracle Sketching (QOS)** and introduces four novel theoretical extensions (Marena 2026) that surpass the baseline of Zhao et al. (2025/2026) in sample complexity, circuit depth, and robustness.
 
@@ -232,6 +232,50 @@ channel = DepolarizingChannel(num_qubits=10, noise_rate=0.01)
 noisy_diag = channel.apply_to_diagonal(sketch_diag)
 m_star = crossover_sample_count(dim=1024, noise_rate=0.01, circuit_depth=50, epsilon_target=0.1)
 ```
+
+---
+
+## Reproducibility
+
+Every figure-bearing claim in the paper has a standalone driver under
+[`scripts/`](scripts/) that writes CSV data to
+`results/raw_data/` and PNG+PDF figures to `results/figures/`. Regenerate
+everything with:
+
+```bash
+PYTHONPATH=src python scripts/generate_all_figures.py
+```
+
+| Script | Claim verified | Outputs |
+|---|---|---|
+| `verify_tvd_convergence.py` | TVD ∝ M^{-1/2} for cold sketches | `tvd_convergence.{csv,png,pdf}` |
+| `verify_sample_complexity.py` | M\* ∝ N at fixed ε (cold) | `sample_complexity.{csv,png,pdf}` |
+| `verify_warmstart_ablation.py` | M_warm < M_cold (per-iteration TVD log) | `warmstart_ablation_{iterations,summary}.csv` |
+| `verify_noise_robustness.py` | TVD vs. depolarizing η | `noise_robustness.{csv,png,pdf}` |
+| `verify_circuit_depth.py` | M\* vs. circuit depth at fixed η | `circuit_depth.{csv,png,pdf}` |
+
+Run all 9 notebooks headlessly (pip-install, Colab-drive, `/content/...`,
+and IBM-token cells are patched automatically; the hardware notebook
+falls back to the local AerSimulator path):
+
+```bash
+PYTHONPATH=src python scripts/run_notebooks_headless.py
+```
+
+Executed notebooks and rendered HTML land in `results/notebooks_executed/`.
+A per-notebook summary is written to `results/raw_data/notebook_run_log.txt`.
+
+> Caveats. The lightweight quick-start notebook
+> (`01_qos_quickstart.ipynb`) runs cleanly headless under this venv.
+> Heavier publication notebooks
+> (`02_empirical_results.ipynb`, `full_benchmark_suite.ipynb`,
+> `real_datasets_colab.ipynb`, `hardware_ibm_colab.ipynb`) were authored
+> against a Colab environment with networked `git clone` and IBM Quantum
+> credentials; some cells legitimately require those. For
+> paper-quality reruns, prefer Colab (the install + Drive cells are
+> already wired up); for CPU-bound CI, prefer the `verify_*.py` script
+> set above which reproduces the underlying numerical claims without the
+> Colab dependency.
 
 ---
 

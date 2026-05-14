@@ -1,0 +1,10 @@
+Python: 3.12.8 (main, Apr 28 2026, 02:56:29) [GCC 14.2.0]
+jax 0.10.0
+jaxlib 0.10.0
+numpy 2.4.4
+scipy 1.17.1
+sklearn 1.8.0
+matplotlib 3.10.9
+qiskit 2.4.1
+qiskit-aer 0.17.2
+pyqsp n/a
