@@ -1,8 +1,12 @@
 """Sample complexity M(epsilon, N) for uniform cold oracle sketching.
 
 For a 50%-density random truth table, finds the smallest M such that the
-Hadamard-induced TVD between sketch and ideal is below epsilon.  Repeats
-across N to verify the O(N) scaling.
+``hadamard_distribution_tvd`` between sketch and ideal is below epsilon.
+Repeats across N to verify the O(N) scaling.
+
+The metric here is the Hadamard-induced measurement-distribution TVD
+(not the raw-L1 ``tvd_diag``; see ``tests/test_tvd_core.py`` for the
+formal contract).
 
 Outputs
 -------
@@ -38,7 +42,8 @@ def hadamard(n: int) -> np.ndarray:
     return Hn
 
 
-def tvd_diag(d_approx, d_ideal, Hn):
+def hadamard_distribution_tvd(d_approx, d_ideal, Hn):
+    """Hadamard-induced measurement-distribution TVD; ``Hn`` is precomputed."""
     _N = len(d_ideal)
 
     def probs(d):
@@ -56,7 +61,7 @@ def find_M(tt, d_ideal, Hn, epsilon, m_max):
     while lo < hi - 1:
         mid = (lo + hi) // 2
         d, _ = q_oracle_sketch_boolean(tt_j, mid)
-        if tvd_diag(d, d_ideal, Hn) < epsilon:
+        if hadamard_distribution_tvd(d, d_ideal, Hn) < epsilon:
             hi = mid
         else:
             lo = mid

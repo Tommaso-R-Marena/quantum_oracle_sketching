@@ -1,7 +1,10 @@
 """Noise-robustness sweep: TVD as a function of depolarizing rate.
 
 For a fixed N and M, sweep the per-qubit depolarizing rate eta and measure
-the TVD between the noisy sketch and the ideal diagonal.
+the ``hadamard_distribution_tvd`` between the noisy sketch and the ideal
+diagonal. The metric here is the Hadamard-induced measurement-distribution
+TVD (not the raw-L1 ``tvd_diag``; see ``tests/test_tvd_core.py`` for the
+formal contract that distinguishes the two).
 
 Outputs
 -------
@@ -38,7 +41,8 @@ def hadamard(n: int) -> np.ndarray:
     return Hn
 
 
-def tvd_diag(d_approx, d_ideal, Hn):
+def hadamard_distribution_tvd(d_approx, d_ideal, Hn):
+    """Hadamard-induced measurement-distribution TVD; ``Hn`` is precomputed."""
     _N = len(d_ideal)
 
     def probs(d):
@@ -69,7 +73,7 @@ def main() -> None:
         for eta in ETAS:
             chan = DepolarizingChannel(num_qubits=N_BITS, noise_rate=eta)
             d_noisy = chan.apply_to_diagonal(jnp.array(d_clean))
-            t = tvd_diag(d_noisy, d_ideal, Hn)
+            t = hadamard_distribution_tvd(d_noisy, d_ideal, Hn)
             rows.append({"eta": eta, "trial": trial, "tvd": t, "N": N, "M": M})
 
     csv_path = OUT_RAW / "noise_robustness.csv"

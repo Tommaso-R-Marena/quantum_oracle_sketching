@@ -11,6 +11,13 @@ sparse support) and writes:
   results/raw_data/warmstart_ablation_summary.csv
       one row per dataset/trial with M_cold, M_warm, speedup.
 
+The binary search gates on ``hadamard_distribution_tvd`` (the
+Hadamard-induced measurement-distribution TVD) because that matches the
+downstream basis-state measurement semantics of the sketched oracle. The
+raw-diagonal-L1 metric ``tvd_diag`` is a different notion and is not used
+inside this binary search; see ``tests/test_tvd_core.py`` for the formal
+contract that pins both metrics separately.
+
 Deterministic: seeds the JAX, NumPy, and dataset trials.
 
 Run from repo root with:
@@ -57,8 +64,18 @@ def hadamard_matrix(n: int) -> np.ndarray:
     return Hn
 
 
-def tvd_diag(diag_approx, diag_ideal) -> float:
-    """TVD between two oracle diagonals (matches notebook implementation)."""
+def hadamard_distribution_tvd(diag_approx, diag_ideal) -> float:
+    """Hadamard-induced measurement-distribution TVD (matches notebook).
+
+    ``s_i = H_n d_i / sqrt(N)``, ``p_i = |s_i|^2``,
+    ``TVD = 0.5 * ||p_approx - p_ideal||_1``.
+
+    Globally invariant under ``d -> -d`` -- this is the right metric for
+    convergence gating because two oracle diagonals that differ only by a
+    global sign produce identical basis-state measurement statistics.
+    For the raw-L1 metric on ±1 diagonals (``tvd_diag``) see
+    ``tests/test_tvd_core.py``.
+    """
     _N = len(diag_ideal)
     n = int(np.log2(_N))
     Hn = hadamard_matrix(n)
@@ -85,7 +102,7 @@ def find_m_cold(
     while lo < hi - 1:
         mid = (lo + hi) // 2
         d, _ = q_oracle_sketch_boolean(tt, mid)
-        t = tvd_diag(d, d_ideal)
+        t = hadamard_distribution_tvd(d, d_ideal)
         accepted = t < epsilon
         if iter_log is not None:
             iter_log.append(
@@ -133,7 +150,7 @@ def find_m_warm(
         )
         vw.fit(unit_num_samples=mid * 4)
         d_warm = jnp.sign(jnp.real(vw.predict()))
-        t = tvd_diag(d_warm, d_ideal)
+        t = hadamard_distribution_tvd(d_warm, d_ideal)
         accepted = t < epsilon
         if iter_log is not None:
             iter_log.append(

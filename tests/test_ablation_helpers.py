@@ -2,11 +2,18 @@
 
 All tests use synthetic truth tables (no external datasets required).
 These tests guard against regressions in:
-  - tvd_diag correctness (identical diagonals -> TVD=0, distinct -> TVD>0)
-  - tvd_diag handling complex input without ComplexWarning
+  - hadamard_distribution_tvd correctness (identical -> 0, distinct -> >0,
+    global-sign-invariant: ``hadamard_distribution_tvd(d, -d) = 0``)
+  - silent complex input handling
   - VariationalWarmstart.predict() converted to real +-1 diagonal
   - Binary search direction in find_M_cold / find_M_warm logic
   - predict() real part is +-1 valued (sign is well-defined)
+
+The metric used here is the Hadamard-induced measurement-distribution TVD
+(see ``tests/test_tvd_core.py`` for the formal contract that pins it
+against the separate raw-L1 ``tvd_diag``). The warmstart ablation
+algorithm gates on this metric because it matches the basis-state
+measurement semantics downstream of the oracle.
 """
 
 from __future__ import annotations
@@ -66,8 +73,16 @@ def d_ideal_random(random_tt):
 # Helpers (mirrors the notebook implementation exactly)
 # ---------------------------------------------------------------------------
 
-def tvd_diag(diag_approx, diag_ideal):
-    """TVD between two oracle diagonals (real +-1 valued)."""
+def hadamard_distribution_tvd(diag_approx, diag_ideal):
+    """Hadamard-induced measurement-distribution TVD between two diagonals.
+
+    ``s_i = H_n d_i / sqrt(N)``, ``p_i = |s_i|^2``,
+    ``TVD = 0.5 * ||p_approx - p_ideal||_1``.
+
+    Globally invariant under ``d -> -d`` (the basis-state measurement
+    cannot distinguish a global sign).  See ``tests/test_tvd_core.py``
+    for the formal contract.
+    """
     _N = len(diag_ideal)
     n = int(np.log2(_N))
     H = np.array([[1, 1], [1, -1]]) / np.sqrt(2)
@@ -90,13 +105,13 @@ def predict_real(vw: VariationalWarmstart) -> jax.Array:
 
 
 # ---------------------------------------------------------------------------
-# tvd_diag correctness
+# hadamard_distribution_tvd correctness
 # ---------------------------------------------------------------------------
 
-class TestTvdDiag:
+class TestHadamardDistributionTvd:
     def test_identical_diagonals_give_zero(self, d_ideal_sparse):
         """TVD of a diagonal with itself must be exactly 0."""
-        tvd = tvd_diag(d_ideal_sparse, d_ideal_sparse)
+        tvd = hadamard_distribution_tvd(d_ideal_sparse, d_ideal_sparse)
         assert tvd == pytest.approx(0.0, abs=1e-10)
 
     def test_distinct_diagonals_give_positive_tvd(self, d_ideal_sparse, d_ideal_random):
@@ -107,7 +122,7 @@ class TestTvdDiag:
         (i.e. the measurement probabilities) unchanged.  We therefore test
         with two *different* truth tables instead.
         """
-        tvd = tvd_diag(d_ideal_sparse, d_ideal_random)
+        tvd = hadamard_distribution_tvd(d_ideal_sparse, d_ideal_random)
         assert tvd > 0.0, (
             "TVD between two distinct diagonals must be positive"
         )
@@ -116,17 +131,17 @@ class TestTvdDiag:
         """TVD must always be in [0, 1]."""
         rng = np.random.default_rng(SEED)
         noise = jnp.array(rng.choice([-1.0, 1.0], size=N))
-        tvd = tvd_diag(noise, d_ideal_random)
+        tvd = hadamard_distribution_tvd(noise, d_ideal_random)
         assert 0.0 <= tvd <= 1.0 + 1e-10
 
     def test_tvd_is_symmetric(self, d_ideal_sparse, d_ideal_random):
         """TVD(a, b) == TVD(b, a)."""
-        tvd_ab = tvd_diag(d_ideal_sparse, d_ideal_random)
-        tvd_ba = tvd_diag(d_ideal_random, d_ideal_sparse)
+        tvd_ab = hadamard_distribution_tvd(d_ideal_sparse, d_ideal_random)
+        tvd_ba = hadamard_distribution_tvd(d_ideal_random, d_ideal_sparse)
         assert tvd_ab == pytest.approx(tvd_ba, abs=1e-10)
 
     def test_no_complex_warning_on_complex_input(self, d_ideal_sparse):
-        """tvd_diag must not raise ComplexWarning when given complex input.
+        """hadamard_distribution_tvd must not raise ComplexWarning when given complex input.
 
         Uses a version-agnostic _ComplexWarning shim (numpy.exceptions on
         NumPy 2.x, numpy on NumPy 1.x) instead of the removed np.ComplexWarning.
@@ -134,13 +149,13 @@ class TestTvdDiag:
         complex_input = jnp.exp(1j * jnp.pi * (1.0 - d_ideal_sparse) / 2)
         with warnings.catch_warnings():
             warnings.simplefilter("error", _ComplexWarning)
-            tvd = tvd_diag(complex_input, d_ideal_sparse)
+            tvd = hadamard_distribution_tvd(complex_input, d_ideal_sparse)
         assert tvd < 0.1
 
     def test_partial_overlap_gives_intermediate_tvd(self, d_ideal_sparse):
         """Flipping half the entries should give TVD strictly between 0 and 1."""
         d_perturbed = d_ideal_sparse.at[: N // 2].multiply(-1.0)
-        tvd = tvd_diag(d_perturbed, d_ideal_sparse)
+        tvd = hadamard_distribution_tvd(d_perturbed, d_ideal_sparse)
         assert 0.0 < tvd < 1.0
 
 
@@ -186,7 +201,7 @@ class TestPredictRealConversion:
         assert d_real.shape == (N,)
 
     def test_no_complexwarning_when_tvd_called_on_predict(self, sparse_tt, d_ideal_sparse):
-        """The full pipeline: predict -> sign(real) -> tvd_diag must not warn.
+        """The full pipeline: predict -> sign(real) -> hadamard_distribution_tvd must not warn.
 
         Uses a version-agnostic _ComplexWarning shim (numpy.exceptions on
         NumPy 2.x, numpy on NumPy 1.x) instead of the removed np.ComplexWarning.
@@ -199,7 +214,7 @@ class TestPredictRealConversion:
         with warnings.catch_warnings():
             warnings.simplefilter("error", _ComplexWarning)
             d_warm = predict_real(vw)
-            tvd = tvd_diag(d_warm, d_ideal_sparse)
+            tvd = hadamard_distribution_tvd(d_warm, d_ideal_sparse)
         assert 0.0 <= tvd <= 1.0
 
 
@@ -222,7 +237,7 @@ class TestBinarySearchContract:
         while lo < hi - 1:
             mid = (lo + hi) // 2
             d, _ = q_oracle_sketch_boolean(tt, mid)
-            if tvd_diag(d, d_ideal) < epsilon:
+            if hadamard_distribution_tvd(d, d_ideal) < epsilon:
                 hi = mid
             else:
                 lo = mid
@@ -248,7 +263,7 @@ class TestBinarySearchContract:
             )
             vw.fit(unit_num_samples=mid)
             d_warm = jnp.sign(jnp.real(vw.predict()))  # the critical conversion
-            if tvd_diag(d_warm, d_ideal) < epsilon:
+            if hadamard_distribution_tvd(d_warm, d_ideal) < epsilon:
                 hi = mid
             else:
                 lo = mid
@@ -269,7 +284,7 @@ class TestBinarySearchContract:
         tt = sparse_tt
         d_ideal = (-1.0) ** tt
         d, _ = q_oracle_sketch_boolean(tt, self.M_MAX)
-        tvd = tvd_diag(d, d_ideal)
+        tvd = hadamard_distribution_tvd(d, d_ideal)
         assert tvd < self.EPSILON, (
             f"Cold sketch with M_MAX={self.M_MAX} samples should satisfy "
             f"TVD < {self.EPSILON}, got {tvd:.4f}"
@@ -288,7 +303,7 @@ class TestBinarySearchContract:
         )
         vw.fit(unit_num_samples=_N)
         d_warm = jnp.sign(jnp.real(vw.predict()))
-        tvd = tvd_diag(d_warm, d_ideal)
+        tvd = hadamard_distribution_tvd(d_warm, d_ideal)
         assert tvd < self.EPSILON, (
             f"Warmstart with full truth table should satisfy "
             f"TVD < {self.EPSILON}, got {tvd:.4f}"
@@ -299,7 +314,7 @@ class TestBinarySearchContract:
         m = self._find_m_warm(sparse_tt)
         assert m < self.M_MAX, (
             f"M_warm={m} is pinned to M_MAX={self.M_MAX}. "
-            "This indicates tvd_diag or predict_real is broken."
+            "This indicates hadamard_distribution_tvd or predict_real is broken."
         )
 
     def test_m_warm_not_pinned_to_floor(self, random_tt):

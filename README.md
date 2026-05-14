@@ -10,7 +10,7 @@
 [![JAX](https://img.shields.io/badge/JAX-compatible-green.svg)](https://jax.readthedocs.io)
 [![CI](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml/badge.svg)](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![v1.3.2](https://img.shields.io/badge/version-1.3.2-informational)](CHANGELOG.md)
+[![v1.3.3](https://img.shields.io/badge/version-1.3.3-informational)](CHANGELOG.md)
 
 This repository implements **Quantum Oracle Sketching (QOS)** and introduces four novel theoretical extensions (Marena 2026) that surpass the baseline of Zhao et al. (2025/2026) in sample complexity, circuit depth, and robustness.
 

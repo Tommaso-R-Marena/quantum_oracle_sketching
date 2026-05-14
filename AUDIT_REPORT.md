@@ -23,7 +23,7 @@ whether the math is correct, and any regression / conflict observed.
 | 3 | `7bc1425` | `notebooks/warmstart_ablation.ipynb` (2 lines) | Removes `np.abs(...)` wrapper around the difference inside `tvd_diag`'s `probs(d)`. The original `np.abs(s)**2` is correct (|s|² is the Hadamard probability); the buggy variant had `np.abs(d_arr)` inside `s = Hn @ (np.abs(d_arr) / √N)`, destroying the phase sign and pinning `tvd ≈ 0` for any input. | Correct. The Hadamard-induced distribution `p_x = |⟨x|H_n d⟩/√N|²` requires keeping the sign of the diagonal — abs() was the bug. | None. |
 | 4 | `0011cc6` | Merge commit only. | Merge of #13 into `main`. | n/a | None. |
 | 5 | `19ba3e5` | `notebooks/warmstart_ablation.ipynb` (+13), new `tests/test_ablation_helpers.py` (+291) | Two fixes + a regression test suite: (a) `tvd_diag` now does `np.real(np.array(d, dtype=complex128)).astype(float64)` to accept complex input silently; (b) `find_M_warm` collapses `vw.predict()` (complex unit circle) to a real `±1` diagonal via `jnp.sign(jnp.real(...))`. The new test file pins TVD properties and the sign-collapse contract. | Correct. `predict()` returns `exp(i·φ(x; θ))`; for a converged warmstart `φ(x)` clusters around 0 or π so `sign(Re(.))` is the right ±1 read-out. | None (but see commit 6). |
-| 6 | `219f459` | `tests/test_ablation_helpers.py` (3 assertions) | Corrects 3 broken assertions introduced in #14: (a) `test_opposite_diagonals_give_one` rewritten because TVD(d, −d) = 0 by Parseval (negating d only flips Walsh-coefficient signs, leaving `|·|²` invariant); (b) two NumPy-1.x `np.ComplexWarning` references replaced by `builtins.ComplexWarning`. | TVD(d, −d) = 0 is **mathematically correct** and is now pinned by `tests/test_tvd_core.py::test_tvd_negation_is_zero_parseval`. | The (b) fix is wrong on its own — `builtins.ComplexWarning` does not exist in CPython. This is patched two commits later. |
+| 6 | `219f459` | `tests/test_ablation_helpers.py` (3 assertions) | Corrects 3 broken assertions introduced in #14: (a) `test_opposite_diagonals_give_one` rewritten because the *Hadamard-induced* metric used in that file gives `TVD(d, −d) = 0` (global-sign invariance of the basis-state measurement distribution); (b) two NumPy-1.x `np.ComplexWarning` references replaced by `builtins.ComplexWarning`. | The Hadamard-induced metric being globally sign-invariant is correct (see §2.1). Under the separate raw-L1 metric (`tvd_diag` in `tests/test_tvd_core.py`) the same input gives `TVD(d, −d) = 1.0`. This audit cleanly separates the two functions and pins both behaviours. | The (b) fix is wrong on its own — `builtins.ComplexWarning` does not exist in CPython. This is patched two commits later. |
 | 7 | `7953894` | `tests/test_ablation_helpers.py` (shim) | Replaces the broken `builtins.ComplexWarning` import with a version-agnostic shim: `try: from numpy.exceptions import ComplexWarning; except ImportError: from numpy import ComplexWarning`. | Correct. NumPy 2.0+ exposes `ComplexWarning` at `numpy.exceptions`; NumPy 1.x at `numpy.ComplexWarning`. | None. |
 | 8 | `126e95d` | `notebooks/warmstart_ablation.ipynb` (88 lines) | Warmstart hyperparameter tuning: `NUM_FOURIER 32→64`, `WARMSTART_STEPS 200→400`, `WARMSTART_LR 0.02→0.03`; `unit_num_samples = mid*4`; adds an explicit per-trial `jax.random.PRNGKey(trial_seed)` and a `diagnose_warmstart` cell that reports the TVD at the M_MAX budget for the first dataset before the binary search runs. | Correct. The per-trial seed kills cross-trial JAX-key reuse; `mid*4` widens the gradient-signal budget; `diagnose_warmstart` is a pre-flight gate. | None. |
 | 9 | `ef40337` | `notebooks/warmstart_ablation.ipynb` (72 lines) | Two Codex P1 fixes: (a) install cell no longer uses `--no-deps`, so `pyproject.toml` deps are resolved cleanly on a fresh Colab kernel; (b) `diagnose_warmstart` budget changes from `N*4` to `M_MAX*4`, matching the binary-search top end so the diagnostic doesn't false-fail. | Correct. Matching the diagnostic budget to the binary-search regime is the right semantics for a pre-flight check. | None. |
@@ -49,35 +49,109 @@ filter — see §3.
 
 ## 2. Mathematical verification
 
-### 2.1 `tvd_diag(d_approx, d_ideal)` — exact formula
+### 2.1 Two TVD metrics — explicit separation
 
-For an N=2ⁿ-dimensional ±1 diagonal d the function computes
+A late-round review surfaced a naming/semantics ambiguity in the original
+audit: the warmstart-ablation notebook called its convergence metric
+`tvd_diag`, but that name has historically been used in two different
+ways in this codebase:
 
-```
-s = (H_n / √N) · d                  (Hadamard transform, then 1/√N normalization)
-p_d = |s|²                          (basis-state probabilities)
-TVD(d_a, d_i) = ½ · ‖p_{d_a} − p_{d_i}‖₁
-```
+1. **`tvd_diag(d1, d2) = 0.5 * ||d1 − d2||₁ / N`** — the raw L1 distance
+   between the diagonal *vectors themselves*, rescaled so ±1 diagonals
+   live in `[0, 1]`. For any non-zero ±1 diagonal `d`, `tvd_diag(d, d) = 0`
+   and **`tvd_diag(d, −d) = 1.0`** (every entry differs by 2; rescale by
+   `0.5/N` ⇒ 1).
+2. **`hadamard_distribution_tvd(d1, d2)`** — the total variation
+   distance between the basis-state measurement distributions induced
+   by `d1` and `d2`:
+   `s_i = H_n d_i / √N`, `p_i = |s_i|²`,
+   `TVD = 0.5 * ‖p_1 − p_2‖₁`.
+   This metric is **globally sign-invariant by design**: `|H_n d|² =
+   |−H_n d|² = |H_n(−d)|²` element-wise, so
+   `hadamard_distribution_tvd(d, −d) = 0` for any ±1 diagonal.
 
-**Factor check.** `H_n` (built by `np.kron`-ing `H = [[1,1],[1,-1]]/√2`) is
-already orthogonal: `H_nᵀ H_n = I`. Therefore for any sign diagonal
-`||s||² = ||d||²/N = 1`, so `p_d` is a probability distribution. The leading
-`1/2` makes TVD ∈ [0, 1]. **All factors and normalizations are correct.**
+Both are useful. (1) is the right notion when "are these two diagonals
+close as vectors?" is the question — e.g. for a sanity bound on the
+gate-by-gate sketching error. (2) is the right notion for the
+warmstart-ablation binary search because the downstream consumer of the
+sketched oracle measures in the computational basis, and basis-state
+measurement is precisely what (2) compares — a global sign is
+unobservable to that measurement, so a metric that says ±d and d are
+"the same" is *what you want* there.
 
-The properties below are pinned by `tests/test_tvd_core.py`:
+The earlier round of this audit conflated these by calling (2)
+`tvd_diag`, and the report wording cited "TVD(d, −d) = 0 by Parseval
+symmetry" as a property of the function named `tvd_diag`. That wording
+was technically true *only* for metric (2). Under the user-requested
+`tvd_diag` formula (metric (1)) the same statement is wrong; the
+correct value is 1.0.
 
-- `probs(d)` sums to exactly 1 for any sign diagonal of size N ∈ {4, 8, 16, 64}.
-- `TVD(d, d) = 0` exactly.
-- `TVD(d, −d) = 0` exactly (Parseval / phase-doubling invariance).
-- `TVD(a, b) = TVD(b, a)` to 1e-12.
-- `TVD(a, c) ≤ TVD(a, b) + TVD(b, c)` (triangle inequality).
-- `TVD(1, H_n·col1·√N) = 1` (orthogonal-distribution case).
-- A single bit flip in d gives `TVD > 0` and `< 4/√N` (the scale matches
-  `1/√N` perturbation theory).
-- A complex input on the unit circle whose real part equals d_real gives
-  `TVD = 0` exactly under the silent-complex-handling path.
+### 2.2 Concrete reconciliation in this audit
 
-### 2.2 `find_M_warm` — binary-search and sample-budget diagnostics
+- **`tests/test_tvd_core.py`** now imports both metrics from itself and
+  contains two test classes:
+  - `TestTvdDiag` — pins metric (1):
+    `test_identity`, `test_opposite_diagonals` (asserts
+    `tvd_diag(d, −d) = 1.0` exactly), `test_symmetric`, range,
+    triangle inequality, single-bit-flip-is-1/N, complex-input handling,
+    closed-form `[1,1,1,1]` vs `[−1,−1,−1,−1]` → 1.
+  - `TestHadamardDistributionTvd` — pins metric (2): the same property
+    suite, but with `test_global_sign_invariance` explicitly asserting
+    `hadamard_distribution_tvd(d, −d) = 0`.
+  - `test_metrics_disagree_on_global_sign_flip` — single pin that
+    asserts both behaviours simultaneously, so the metric separation
+    cannot silently regress.
+- **`tests/test_warmstart_e2e.py`** — switched to `hadamard_distribution_tvd`
+  internally (the warmstart pipeline gates on the Hadamard metric).
+- **`tests/test_ablation_helpers.py`** — local helper renamed
+  `tvd_diag → hadamard_distribution_tvd`; class renamed
+  `TestTvdDiag → TestHadamardDistributionTvd`; every call site updated.
+- **`scripts/verify_warmstart_ablation.py`**, **`verify_tvd_convergence.py`**,
+  **`verify_sample_complexity.py`**, **`verify_noise_robustness.py`** —
+  each renamed its local `tvd_diag` → `hadamard_distribution_tvd` and
+  added a module-level note explaining why the Hadamard metric is the
+  one being plotted.
+- **`notebooks/warmstart_ablation.ipynb`** — the helper cell's
+  `tvd_diag` (which was the Hadamard implementation) was renamed to
+  `hadamard_distribution_tvd`; the docstring now points at the
+  test-suite contract for the raw-L1 `tvd_diag` so future readers do
+  not re-conflate the two.
+
+### 2.3 Property pinning (after the split)
+
+For metric **(1)** `tvd_diag` (parametric across N ∈ {4, 8, 16, 64}):
+
+- `tvd_diag(d, d) = 0` to 1e-12.
+- `tvd_diag(d, −d) = 1.0` exactly. (The closed-form check is one of the
+  spot tests.)
+- Symmetric to 1e-12. Triangle inequality holds.
+- A single bit flip changes the value by exactly `1/N`.
+- Silent on complex input; `tvd_diag(exp(i π (1 − d_real)/2), d_real) = 0`
+  exactly.
+
+For metric **(2)** `hadamard_distribution_tvd` (same parametric N grid):
+
+- `probs(d)` sums to 1 exactly.
+- Identity, symmetry, triangle inequality, `[0, 1]` range all hold.
+- **Global sign invariance**: `hadamard_distribution_tvd(d, −d) = 0` for
+  any sign diagonal.
+- Two diagonals whose Hadamard spectra live on disjoint basis-state
+  supports give `TVD = 1` (the constructive case
+  `d₁ = 1`, `d₂ = √N · H_n[:, 1]`).
+- Single bit flip stays bounded above by `4/√N`.
+- Silent on complex input.
+
+A cross-metric pin (`test_metrics_disagree_on_global_sign_flip`) asserts
+that for `d = (1, −1, 1, −1, 1, 1, −1, 1)`:
+- `tvd_diag(d, −d) == 1.0`
+- `hadamard_distribution_tvd(d, −d) == 0.0`
+
+The numeric result is preserved across both implementations (the
+`tvd_diag(d, −d)=1.0` and `hadamard_distribution_tvd(d, −d)=0.0`
+identities are pinned in `tests/test_tvd_core.py` to 1e-12 absolute
+tolerance).
+
+### 2.3a `find_M_warm` — binary-search and sample-budget diagnostics
 
 The notebook's `find_M_warm` returns the smallest M in `[10, M_MAX]` for which
 the warmstart oracle (gated to exactly `mid` truth-table queries per
@@ -103,15 +177,25 @@ and TVD descends below ε at the expected `mid`.
 - `diagnose_warmstart` correctly rejects a deliberately-random ±1 diagonal
   (`tests/test_warmstart_e2e.py::test_diagnose_warmstart_rejects_random_prediction`).
 
-### 2.3 `TVD(d, −d) = 1`?  No — `TVD(d, −d) = 0`
+### 2.4 The `tvd_diag(d, −d) = ?` question — disambiguated
 
-The original `test_opposite_diagonals_give_one` assertion was
-mathematically wrong: negating a sign diagonal flips every Walsh coefficient
-`s_x → −s_x`, leaving `|s_x|²` unchanged. The current
-`tests/test_tvd_core.py::test_tvd_negation_is_zero_parseval` pins this for
-N ∈ {4, 8, 16, 64}.
+This audit now answers the question by separating the two metrics
+explicitly (see §2.1–2.3):
 
-### 2.4 `diagnose_warmstart` cannot falsely converge
+| Metric (call site / function name)               | `TVD(d, d)` | `TVD(d, −d)` for ±1 d |
+|---|---|---|
+| `tvd_diag` (raw L1, `tests/test_tvd_core.py`)     | 0           | **1.0** exactly        |
+| `hadamard_distribution_tvd` (Hadamard-induced)    | 0           | **0** exactly          |
+
+Both values are mathematically correct *for their own metric*. The
+warmstart-ablation algorithm legitimately needs the Hadamard-induced one
+(it gates on basis-state measurement closeness, which is invariant under
+a global sign). The audit-name `tvd_diag` is now reserved for the
+raw-L1 definition `0.5 * ‖d₁ − d₂‖₁ / N` and is exercised by
+`TestTvdDiag::test_opposite_diagonals` in
+`tests/test_tvd_core.py`.
+
+### 2.5 `diagnose_warmstart` cannot falsely converge
 
 `test_warmstart_e2e.py::test_diagnose_warmstart_rejects_random_prediction`
 passes a uniformly random ±1 diagonal and checks that the gate's TVD is
@@ -145,28 +229,40 @@ were required.
 
 ### 3.2 New tests
 
-- `tests/test_tvd_core.py` — 33 parametric tests pinning the Hadamard-TVD
-  formula, its mathematical properties, and silent complex-input handling.
+- `tests/test_tvd_core.py` — **60 parametric tests** pinning both
+  metrics. The `TestTvdDiag` class (raw L1) and the
+  `TestHadamardDistributionTvd` class (Hadamard-induced) each carry an
+  identity, opposite-diagonals, symmetry, range, triangle-inequality,
+  single-bit-flip, complex-input, and closed-form test (parametric over
+  N ∈ {4, 8, 16, 64}). The cross-metric
+  `test_metrics_disagree_on_global_sign_flip` pin asserts
+  `tvd_diag(d, −d) == 1.0` *and* `hadamard_distribution_tvd(d, −d) == 0.0`
+  on the same input, so the metric separation cannot regress silently.
 - `tests/test_warmstart_e2e.py` — 5 end-to-end tests covering full-budget
   convergence, false-convergence rejection, monotonicity of cold-sketch
   TVD in M, sign-collapse output domain, and the JAX-0.10 complex-input
-  regression specifically.
-
-`tests/test_ablation_helpers.py` was audited; it remains correct and is left
-unchanged. Its `_ComplexWarning` import shim and its
-`test_opposite_diagonals_give_one_*` → distinct-truth-table rewrite are both
-consistent with the math in §2.
+  regression specifically. All TVD assertions in this file now call
+  `hadamard_distribution_tvd` (the metric the warmstart pipeline gates
+  on); the docstring documents why.
+- `tests/test_ablation_helpers.py` — the local `tvd_diag` helper (which
+  was always the Hadamard implementation) was renamed to
+  `hadamard_distribution_tvd`; class renamed
+  `TestTvdDiag → TestHadamardDistributionTvd`; every call site updated.
+  Behaviour is unchanged because the function body is identical to what
+  it was before — only the name changed.
 
 ### 3.3 Final pytest result
 
 ```
 PYTHONPATH=src pytest tests/ -v --tb=long -W error
-=> 137 passed in 102.96s
+=> 164 passed in 109.69s
 ```
 
 Captured to `results/raw_data/pytest_final.txt`. **Zero failures, zero
 errors, zero warnings-as-errors** under the strictest pytest invocation in
-the test mandate.
+the test mandate. (137 → 164 because the TVD test file grew from 33 to
+60 tests when the metrics were split out into independent property
+suites plus the cross-metric pin.)
 
 ---
 
@@ -380,7 +476,7 @@ across three trials with M_cold ∈ [555, 868], M_warm ∈ [48, 63]).
 - [x] `tests/test_tvd_core.py` (33 tests) and `tests/test_warmstart_e2e.py`
       (5 tests) added; existing `tests/test_ablation_helpers.py` re-audited
       and left unchanged.
-- [x] `pytest tests/ -v --tb=long -W error` → **137 passed, 0 failed**;
+- [x] `pytest tests/ -v --tb=long -W error` → **164 passed, 0 failed**;
       captured to `results/raw_data/pytest_final.txt`.
 - [x] Five `verify_*.py` scripts + `generate_all_figures.py` produce all
       CSV/PNG/PDF outputs in 29 s end-to-end.

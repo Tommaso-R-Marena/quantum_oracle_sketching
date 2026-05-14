@@ -5,6 +5,60 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.3] — 2026-05-14
+
+### Fixed
+- **Two metrics under one name (`tvd_diag`).** A late-round review of
+  the 1.3.2 audit surfaced that the project had been using the name
+  `tvd_diag` for the Hadamard-induced measurement-distribution TVD,
+  while the spec for `tvd_diag` is the raw-diagonal-L1 metric
+  `0.5 * ‖d₁ − d₂‖₁ / N`. Under the spec, `tvd_diag(d, −d) = 1.0` for
+  any nonzero ±1 diagonal; under the Hadamard-induced metric, the same
+  expression is 0 (global-sign invariance of basis-state measurement).
+  Both notions are useful; they were conflated.
+- This release introduces **`hadamard_distribution_tvd`** as the
+  explicit name for the Hadamard-induced metric and reserves
+  **`tvd_diag`** for the raw-L1 metric specified by the user mandate.
+  Every test, verify script, and notebook helper that previously called
+  `tvd_diag` and wanted the Hadamard-induced semantics now calls
+  `hadamard_distribution_tvd` instead. The warmstart-ablation binary
+  search still gates on the Hadamard-induced metric (the right notion
+  for basis-state measurement convergence); only the *function it calls*
+  changed names.
+
+### Changed
+- `tests/test_tvd_core.py` — class split into `TestTvdDiag` (raw L1,
+  including the **new `test_opposite_diagonals` asserting
+  `tvd_diag(d, −d) = 1.0`**) and `TestHadamardDistributionTvd` (the
+  former contents, with `test_global_sign_invariance` retained); a
+  cross-metric `test_metrics_disagree_on_global_sign_flip` pin guards
+  against re-conflation. Total: 60 parametric tests (was 33).
+- `tests/test_warmstart_e2e.py` — switched to `hadamard_distribution_tvd`
+  internally; docstring updated to explain why.
+- `tests/test_ablation_helpers.py` — local helper and class renamed
+  `tvd_diag → hadamard_distribution_tvd`,
+  `TestTvdDiag → TestHadamardDistributionTvd`. Function body unchanged.
+- `scripts/verify_warmstart_ablation.py`,
+  `scripts/verify_tvd_convergence.py`,
+  `scripts/verify_sample_complexity.py`,
+  `scripts/verify_noise_robustness.py` — each renamed its local
+  `tvd_diag` to `hadamard_distribution_tvd` and added a module-level
+  note explaining which metric is plotted.
+- `notebooks/warmstart_ablation.ipynb` — helper cell renamed
+  `tvd_diag → hadamard_distribution_tvd`; docstring now cross-references
+  the raw-L1 `tvd_diag` in `tests/test_tvd_core.py`.
+
+### Verified
+- Full pytest under `-W error`: **164 passed, 0 failed** (was 137; the
+  TVD test count grew from 33 to 60 when the metrics were split).
+- All five `verify_*.py` scripts rerun; numerical CSVs and PNG/PDF
+  figures regenerated. The warmstart-ablation summary is unchanged
+  (M_cold ∈ [555, 868], M_warm ∈ [48, 63], mean speedup ≈ 12.7×) — the
+  binary search was already gating on the Hadamard metric; only the
+  function name changed.
+
+---
+
 ## [1.3.2] — 2026-05-13
 
 ### Fixed

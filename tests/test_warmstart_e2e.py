@@ -5,10 +5,17 @@ notebook on synthetic data (no external dataset, no Colab dependency):
 
   - fit a VariationalWarmstart on a small N=64 Boolean truth table;
   - convert predict() to a real +-1 diagonal via jnp.sign(jnp.real(...));
-  - compute TVD vs the ideal (-1)**tt diagonal;
+  - compute the Hadamard-induced measurement-distribution TVD vs the
+    ideal (-1)**tt diagonal;
   - verify the diagnose-warmstart gate does NOT pass with a
     deliberately-broken (random) prediction (no false convergence);
   - verify a small binary search behaves monotonically on the cold path.
+
+The warmstart algorithm gates convergence on the Hadamard-induced metric
+(``hadamard_distribution_tvd``) because that matches the basis-state
+measurement semantics downstream of the oracle. The raw-diagonal-L1
+metric ``tvd_diag`` is a separate notion; see ``tests/test_tvd_core.py``
+for the contract that pins both metrics.
 
 They are deliberately small so the full file runs in well under a minute.
 """
@@ -23,7 +30,7 @@ import pytest
 from qos.core.oracle_sketch import q_oracle_sketch_boolean
 from qos.theory.variational_warmstart import VariationalWarmstart
 
-from tests.test_tvd_core import tvd_diag  # canonical TVD reference
+from tests.test_tvd_core import hadamard_distribution_tvd
 
 EPSILON = 0.10  # target TVD threshold for "converged"
 SEED = 0
@@ -62,7 +69,7 @@ def test_full_pipeline_converges_at_full_budget(sparse_tt, d_ideal_sparse):
     )
     vw.fit(unit_num_samples=N * 4)
     d_warm = predict_real(vw)
-    t = tvd_diag(d_warm, d_ideal_sparse)
+    t = hadamard_distribution_tvd(d_warm, d_ideal_sparse)
     assert t < EPSILON, (
         f"Warmstart at full budget did not converge: TVD={t:.4f} >= {EPSILON}"
     )
@@ -71,13 +78,14 @@ def test_full_pipeline_converges_at_full_budget(sparse_tt, d_ideal_sparse):
 def test_diagnose_warmstart_rejects_random_prediction(d_ideal_sparse):
     """The diagnose gate must NOT report convergence for a random +-1 diagonal.
 
-    This guards against a regression where an always-zero TVD (e.g. abs() bug
-    in tvd_diag, or sign() collapsing to all-+1) would let any diagnostic
-    pass.  Here we pass a true-random diagonal and assert the gate flags it.
+    Uses the Hadamard-induced measurement-distribution metric (the one the
+    warmstart binary search gates on). Regression guard: if any future bug
+    drove this metric to near-zero on arbitrary inputs, the diagnostic
+    would silently accept garbage.
     """
     rng = np.random.default_rng(SEED)
     d_random = rng.choice([-1.0, 1.0], size=N)
-    t = tvd_diag(d_random, d_ideal_sparse)
+    t = hadamard_distribution_tvd(d_random, d_ideal_sparse)
     # With sparse_tt mostly-+1, random gives ~uniform-on-bits; we expect t
     # well above epsilon.  Use a loose lower bound to keep the test robust.
     assert t > EPSILON, (
@@ -86,17 +94,17 @@ def test_diagnose_warmstart_rejects_random_prediction(d_ideal_sparse):
 
 
 def test_cold_sketch_tvd_monotone_in_budget(sparse_tt, d_ideal_sparse):
-    """Increasing the cold-sketch sample count should generally reduce TVD.
+    """Increasing the cold-sketch sample count should generally reduce the
+    Hadamard-induced TVD (the metric the binary search uses).
 
-    We compare M = 50 vs M = 2000 and require the larger budget to be
-    strictly better in expectation; this guards against a TVD regression
-    where TVD became insensitive to the sample count (broken normalization).
+    M=50 vs M=2000 -- larger budget must be at least as good (up to a small
+    tolerance for sampling noise).
     """
     tt = sparse_tt
     d_low, _ = q_oracle_sketch_boolean(tt, 50)
     d_hi, _ = q_oracle_sketch_boolean(tt, 2000)
-    t_low = tvd_diag(d_low, d_ideal_sparse)
-    t_hi = tvd_diag(d_hi, d_ideal_sparse)
+    t_low = hadamard_distribution_tvd(d_low, d_ideal_sparse)
+    t_hi = hadamard_distribution_tvd(d_hi, d_ideal_sparse)
     assert t_hi <= t_low + 1e-3, (
         f"Cold-sketch TVD did not improve with budget: "
         f"M=50 -> {t_low:.4f}, M=2000 -> {t_hi:.4f}"

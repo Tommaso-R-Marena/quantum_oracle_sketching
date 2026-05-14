@@ -3,6 +3,13 @@
 Reproduces the canonical "TVD shrinks as ~1/sqrt(M)" curve for several
 N values and writes the data + figure to ``results/``.
 
+The metric plotted is the Hadamard-induced measurement-distribution TVD
+(``hadamard_distribution_tvd`` below), which is the convergence target
+of the uniform sketch. The raw-diagonal-L1 metric ``tvd_diag`` (see
+``tests/test_tvd_core.py``) is a separate notion and would give a
+different (typically larger) numerical value here; it is not used in
+this script.
+
 Outputs
 -------
 results/raw_data/tvd_convergence.csv    one row per (N, M, trial)
@@ -42,7 +49,8 @@ def hadamard(n: int) -> np.ndarray:
     return Hn
 
 
-def tvd_diag(d_approx, d_ideal, Hn):
+def hadamard_distribution_tvd(d_approx, d_ideal, Hn):
+    """Hadamard-induced measurement-distribution TVD; ``Hn`` is precomputed."""
     _N = len(d_ideal)
 
     def probs(d):
@@ -72,7 +80,7 @@ def main() -> None:
             d_ideal = (-1.0) ** tt
             for M in M_GRID:
                 d, _ = q_oracle_sketch_boolean(tt_j, M)
-                t = tvd_diag(d, d_ideal, Hn)
+                t = hadamard_distribution_tvd(d, d_ideal, Hn)
                 rows.append({"n_bits": n_bits, "N": N, "M": M, "trial": trial, "tvd": t})
 
     csv_path = OUT_RAW / "tvd_convergence.csv"
