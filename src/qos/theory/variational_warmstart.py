@@ -54,6 +54,13 @@ class VariationalWarmstart:
     which learns a Fourier basis representation from classical samples
     and uses gradient descent to refine the phase parameters.
 
+    See: Marena (2026), §5, Theorem 3 (``thm:var``): for an eps_F-Fourier-
+    sparse f with K_F modes, gradient descent on the proxy loss with
+    ``M_train = O(K_F^2 log K_F / eps_F^2)`` evaluations concentrates the
+    residual on K_F bins, giving combined cost ``O(K_F (Q^2 + K_F log K_F)/eps^2)``.
+    The ansatz is ``f_hat_alpha(x) = sigma(sum_j alpha_j e^{2 pi i omega_j x/N})``
+    (paper §5).
+
     Parameters
     ----------
     truth_table : jax.Array, shape (N,)

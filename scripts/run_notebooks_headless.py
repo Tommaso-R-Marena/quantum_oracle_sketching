@@ -53,9 +53,35 @@ INSTALL_NOOP_VALUE = (
     "{'stdout': b'', 'stderr': b'', 'returncode': 0})()"
 )
 
-# Heuristic detectors
+# A self-contained importability shim injected at the top of any cell that
+# manipulates sys.path or clones/installs the package. It guarantees ``qos``
+# is importable both on Colab (after a clone) and in a local editable install
+# WITHOUT performing any network clone or pip install. See Phase 2 (P1).
+ENSURE_QOS_SHIM = (
+    "# [patched: headless importability shim — no network clone/install]\n"
+    "import sys as _sys, os as _os, importlib as _importlib\n"
+    "def _ensure_qos_importable():\n"
+    "    try:\n"
+    "        _importlib.import_module('qos'); return\n"
+    "    except ModuleNotFoundError:\n"
+    "        pass\n"
+    "    for _c in [_os.path.join(_os.getcwd(), 'src'),\n"
+    "               _os.path.join(_os.getcwd(), 'quantum_oracle_sketching', 'src'),\n"
+    "               '/content/quantum_oracle_sketching/src']:\n"
+    "        if _os.path.isdir(_c) and _c not in _sys.path:\n"
+    "            _sys.path.insert(0, _c)\n"
+    "            try:\n"
+    "                _importlib.import_module('qos'); return\n"
+    "            except ModuleNotFoundError:\n"
+    "                _sys.path.remove(_c)\n"
+    "    raise RuntimeError(\"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root.\")\n"
+    "_ensure_qos_importable()\n"
+)
+
+# Heuristic detectors. Quote-agnostic ([\"'] ) so both single- and
+# double-quoted call styles are caught (the notebooks use double quotes).
 RE_PIP_SUBPROC = re.compile(
-    r"subprocess\.run\(\s*\[\s*sys\.executable\s*,\s*'-m'\s*,\s*'pip'[^)]*?\)\s*",
+    r"subprocess\.(?:run|check_call|check_output)\(\s*\[\s*sys\.executable\s*,\s*[\"']-m[\"']\s*,\s*[\"']pip[\"'][^)]*?\)\s*",
     re.M | re.S,
 )
 RE_PIP_BANG = re.compile(r"^\s*!pip\s+install[^\n]*", re.M)
@@ -64,11 +90,28 @@ RE_SHUTIL_RMTREE_REPO = re.compile(
     re.M,
 )
 RE_PIP_INSTALL_GENERIC = re.compile(
-    r"subprocess\.run\(\s*\[[^\]]*?'pip'[^\]]*?\][^)]*\)\s*", re.M | re.S
+    r"subprocess\.(?:run|check_call|check_output)\(\s*\[[^\]]*?[\"']pip[\"'][^\]]*?\][^)]*\)\s*", re.M | re.S
+)
+RE_GIT_CLONE = re.compile(
+    r"subprocess\.(?:run|check_call|check_output)\(\s*\[[^\]]*?[\"']git[\"']\s*,\s*[\"']clone[\"'][^\]]*?\][^)]*\)\s*",
+    re.M | re.S,
+)
+RE_PIP_UNINSTALL = re.compile(
+    r"subprocess\.(?:run|check_call|check_output)\(\s*\[[^\]]*?[\"']uninstall[\"'][^\]]*?\][^)]*\)\s*",
+    re.M | re.S,
 )
 RE_MOUNT_TRUE = re.compile(r"MOUNT_DRIVE\s*=\s*True")
+RE_USE_HARDWARE_TRUE = re.compile(r"USE_HARDWARE\s*=\s*True")
 RE_DRIVE_MOUNT = re.compile(r"from\s+google\.colab\s+import\s+drive")
 RE_GETPASS = re.compile(r"getpass\.getpass\(|from\s+getpass\s+import\s+getpass")
+RE_COLAB_MAGIC = re.compile(r"^%load_ext\s+google\.colab.*$", re.M)
+RE_COLAB_IMPORT = re.compile(r"^([ \t]*)(from\s+google\.colab\s+import\s+.+)$", re.M)
+# A cell does sys.path manipulation tied to the repo src layout (Colab pattern).
+RE_SYSPATH_TOUCH = re.compile(r"sys\.path\.(?:insert|append)\(|sys\.path\s*=")
+# shutil.make_archive(...) is a Colab download convenience. Headless it can
+# recurse (zipping a tree that contains its own growing output) and blow up
+# the disk, so neutralize it to a harmless string expression.
+RE_MAKE_ARCHIVE = re.compile(r"shutil\.make_archive\([^)]*\)", re.M | re.S)
 
 
 def patch_source(src: str) -> tuple[str, list[str]]:
@@ -99,31 +142,62 @@ def patch_source(src: str) -> tuple[str, list[str]]:
         applied.append("generic pip subprocess -> None")
     # Also no-op pip uninstall calls -- if a notebook tries to uninstall
     # the local editable install, downstream cells break.
-    new_src = re.sub(
-        r"subprocess\.run\(\s*\[[^\]]*?'uninstall'[^\]]*?\][^)]*\)\s*",
-        INSTALL_NOOP_VALUE + "  # [patched: pip uninstall skipped]\n",
-        new_src,
-        flags=re.M | re.S,
-    )
-    # Also no-op git clone calls -- networked clones don't work in sandboxes.
-    new_src = re.sub(
-        r"subprocess\.(?:run|check_call|check_output)\(\s*\[[^\]]*?'git'\s*,\s*'clone'[^\]]*?\][^)]*\)\s*",
-        INSTALL_NOOP_VALUE + "  # [patched: git clone skipped]\n",
-        new_src,
-        flags=re.M | re.S,
-    )
+    if RE_PIP_UNINSTALL.search(new_src):
+        new_src = RE_PIP_UNINSTALL.sub(
+            INSTALL_NOOP_VALUE + "  # [patched: pip uninstall skipped]\n", new_src
+        )
+        applied.append("pip uninstall -> None")
+    # Also no-op git clone calls -- networked clones don't work in sandboxes
+    # and (critically) a relative-path clone re-clones the repo into itself,
+    # which can blow up the disk via repeated runs.
+    if RE_GIT_CLONE.search(new_src):
+        new_src = RE_GIT_CLONE.sub(
+            INSTALL_NOOP_VALUE + "  # [patched: git clone skipped]\n", new_src
+        )
+        applied.append("git clone -> None")
     if RE_SHUTIL_RMTREE_REPO.search(new_src):
         new_src = RE_SHUTIL_RMTREE_REPO.sub(
             "None  # [patched: would have rm -rf the local repo clone]", new_src
         )
         applied.append("repo rmtree -> None")
 
+    # Neutralize shutil.make_archive (Colab download helper; recursion risk).
+    if RE_MAKE_ARCHIVE.search(new_src):
+        new_src = RE_MAKE_ARCHIVE.sub(
+            "'[patched: shutil.make_archive skipped]'", new_src
+        )
+        applied.append("make_archive -> skipped")
+
+    # P3) Colab IPython magics (%load_ext google.colab.*) -> comment.
+    if RE_COLAB_MAGIC.search(new_src):
+        new_src = RE_COLAB_MAGIC.sub("# [patched: google.colab magic skipped]", new_src)
+        applied.append("google.colab magic -> comment")
+
+    # P5) `from google.colab import ...` -> guarded import (preserve indent).
+    if RE_COLAB_IMPORT.search(new_src):
+        def _guard(m: re.Match) -> str:
+            indent, stmt = m.group(1), m.group(2)
+            return (
+                f"{indent}try:\n"
+                f"{indent}    {stmt}\n"
+                f"{indent}except ImportError:\n"
+                f"{indent}    pass  # [patched: not on Colab]"
+            )
+        new_src = RE_COLAB_IMPORT.sub(_guard, new_src)
+        applied.append("google.colab import -> try/except")
+
     # 2) Colab drive mount
     if RE_MOUNT_TRUE.search(new_src):
         new_src = RE_MOUNT_TRUE.sub("MOUNT_DRIVE = False  # patched (no Colab)", new_src)
         applied.append("MOUNT_DRIVE=False")
 
-    # 3) Rewrite Colab '/content/...' paths to a local results/notebooks_data/<name>
+    # P2) Force USE_HARDWARE = False even when the notebook hard-codes True.
+    if RE_USE_HARDWARE_TRUE.search(new_src):
+        new_src = RE_USE_HARDWARE_TRUE.sub("USE_HARDWARE = False  # patched", new_src)
+        applied.append("USE_HARDWARE=False")
+
+    # P4) Rewrite Colab '/content/...' paths to a local results/notebooks_data/
+    #     This catches both bare string literals and os.path.join('/content/', ...).
     if "'/content/" in new_src or '"/content/' in new_src:
         new_src = new_src.replace("'/content/", "'./results/notebooks_data/")
         new_src = new_src.replace('"/content/', '"./results/notebooks_data/')
@@ -138,6 +212,18 @@ def patch_source(src: str) -> tuple[str, list[str]]:
             + new_src
         )
         applied.append("disable IBM hardware prompt")
+
+    # P1) If this cell clones/installs/manipulates sys.path for the package,
+    #     prepend the importability shim so `qos` resolves from the local
+    #     editable install (or the in-repo src/) with no network access.
+    if (
+        "git clone -> None" in applied
+        or "pip subprocess -> None" in applied
+        or "generic pip subprocess -> None" in applied
+        or RE_SYSPATH_TOUCH.search(src)
+    ):
+        new_src = ENSURE_QOS_SHIM + new_src
+        applied.append("_ensure_qos_importable() prepended")
 
     return new_src, applied
 
@@ -170,7 +256,7 @@ def execute_notebook(nb_path: Path) -> dict:
         err = repr(e)
     dt = time.time() - t0
 
-    nbformat.write(nb, out_path)
+    nbformat.write(nb, str(out_path))
 
     # Count cells with errors
     n_err = 0

@@ -21,7 +21,22 @@ def q_oracle_sketch_boolean(
     truth_table: jax.Array,
     unit_num_samples: int,
 ) -> tuple[jax.Array, int]:
-    """Uniform Boolean phase-oracle diagonal via expected-unitary accumulation."""
+    """Uniform Boolean phase-oracle diagonal via expected-unitary accumulation.
+
+    Implements the Zhao et al. (2025) log-sum expected-unitary construction
+    used as the baseline throughout the paper.
+
+    See: Marena (2026), §2.1, Eq. (1) (``eq:logsum``); error bound Eq. (2)
+    (``eq:zhao_bound``), ``|d_hat_M(x) - e^{i pi}| <= C sqrt(N/M)``.
+
+    Args:
+        truth_table: Boolean function ``f in {0,1}^N`` as a length-N array.
+        unit_num_samples: Sample budget ``M`` (the log-sum exponent).
+
+    Returns:
+        Tuple ``(diag, M)`` where ``diag`` is the length-N complex oracle
+        diagonal approximating ``(e^{i pi f(x)})_x`` and ``M`` the budget used.
+    """
     M         = int(unit_num_samples)
     f         = truth_table.astype(jnp.float64)
     N         = f.shape[0]
@@ -39,7 +54,26 @@ def q_oracle_sketch_boolean_adaptive(
     pilot_frac: float = 0.1,
     key: jax.Array | None = None,
 ) -> tuple[jax.Array, int, jax.Array]:
-    """Adaptive Boolean oracle diagonal -- K-sparse concentration (Marena 2026)."""
+    """Adaptive Boolean oracle diagonal -- K-sparse importance sampling.
+
+    Two-phase (pilot + main) importance-weighted construction that reduces the
+    sample cost from ``O(N Q^2/eps^2)`` to ``O(K Q^2/eps^2)`` for K-sparse f.
+
+    See: Marena (2026), §3, Algorithm 1 (``alg:adaptive``) and Theorem 1
+    (``thm:adaptive``): for ``M_main = O(K/eps^2)`` the support error obeys
+    ``Pr[max_{x:f(x)=1} |d_hat(x) - e^{i pi}| > eps] <= delta``. The
+    off-support case is exact (``theta(x)=0 => d_hat(x)=1``).
+
+    Args:
+        truth_table: Boolean function ``f in {0,1}^N`` as a length-N array.
+        unit_num_samples: Total sample budget ``M = M_pilot + M_main``.
+        pilot_frac: Pilot fraction ``rho in (0,1)``; ``M_pilot = floor(rho M)``.
+        key: Optional JAX PRNG key for the pilot draws.
+
+    Returns:
+        Tuple ``(diag, M, q)``: the length-N complex oracle diagonal, the total
+        sample budget, and the support-restricted importance weights ``q``.
+    """
     N = int(truth_table.shape[0])
     if key is None:
         key = random.PRNGKey(0)

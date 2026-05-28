@@ -1,0 +1,48 @@
+wrote results/raw_data/tvd_convergence.csv  (63 rows)
+wrote results/figures/tvd_convergence.png
+wrote results/figures/tvd_convergence.pdf
+N=8, trial=0: M*=50
+N=8, trial=1: M*=97
+N=8, trial=2: M*=50
+N=16, trial=0: M*=199
+N=16, trial=1: M*=70
+N=16, trial=2: M*=70
+N=32, trial=0: M*=320
+N=32, trial=1: M*=178
+N=32, trial=2: M*=375
+N=64, trial=0: M*=361
+N=64, trial=1: M*=445
+N=64, trial=2: M*=445
+wrote results/raw_data/sample_complexity.csv
+wrote results/figures/sample_complexity.png
+wrote results/figures/sample_complexity.pdf
+trial 0: M_cold=555  M_warm=59  speedup=9.41x
+trial 1: M_cold=868  M_warm=48  speedup=18.08x
+trial 2: M_cold=675  M_warm=63  speedup=10.71x
+wrote results/raw_data/warmstart_ablation_iterations.csv  (66 rows)
+wrote results/raw_data/warmstart_ablation_summary.csv
+total time: 12.4s
+wrote results/raw_data/noise_robustness.csv
+wrote results/figures/noise_robustness.png
+wrote results/figures/noise_robustness.pdf
+wrote results/raw_data/circuit_depth.csv
+wrote results/figures/circuit_depth.png
+wrote results/figures/circuit_depth.pdf
+
+===== scripts/verify_tvd_convergence.py =====
+(3.5s, rc=0)
+
+===== scripts/verify_sample_complexity.py =====
+(3.4s, rc=0)
+
+===== scripts/verify_warmstart_ablation.py =====
+(14.1s, rc=0)
+
+===== scripts/verify_noise_robustness.py =====
+(2.6s, rc=0)
+
+===== scripts/verify_circuit_depth.py =====
+(2.6s, rc=0)
+
+Total: 26.1s
+OK: all figures regenerated.

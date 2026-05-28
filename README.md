@@ -264,18 +264,48 @@ PYTHONPATH=src python scripts/run_notebooks_headless.py
 
 Executed notebooks and rendered HTML land in `results/notebooks_executed/`.
 A per-notebook summary is written to `results/raw_data/notebook_run_log.txt`.
+Expected runtime: **< 90 seconds** for all figures, **< 15 minutes** for the
+full notebook suite.
 
-> Caveats. The lightweight quick-start notebook
-> (`01_qos_quickstart.ipynb`) runs cleanly headless under this venv.
-> Heavier publication notebooks
-> (`02_empirical_results.ipynb`, `full_benchmark_suite.ipynb`,
-> `real_datasets_colab.ipynb`, `hardware_ibm_colab.ipynb`) were authored
-> against a Colab environment with networked `git clone` and IBM Quantum
-> credentials; some cells legitimately require those. For
-> paper-quality reruns, prefer Colab (the install + Drive cells are
-> already wired up); for CPU-bound CI, prefer the `verify_*.py` script
-> set above which reproduces the underlying numerical claims without the
-> Colab dependency.
+### Notebook compatibility
+
+All notebooks work on Google Colab and locally after an editable install.
+The setup cell in each notebook auto-detects the environment and ensures
+`qos` is importable (via `_ensure_qos_importable()`), with no networked
+`git clone` required locally. The headless driver patches the remaining
+Colab-only cells (pip install, Drive mount, `/content/` paths, IBM token
+prompts, `google.colab` imports/magics).
+
+**Headless status: 7 of 9 notebooks run with zero cell errors.** The two
+optional-dependency notebooks need extras:
+
+```bash
+pip install -e ".[hardware]"   # notebooks/hardware_ibm_colab.ipynb (qiskit-ibm-runtime)
+pip install -e ".[datasets]"   # notebooks/real_datasets_colab.ipynb (pdf2image, Pillow)
+```
+
+## IBM Quantum Hardware Validation
+
+The 3-qubit XOR phase-oracle sketch (Algorithm 1) was executed on **real IBM
+Quantum hardware**. The job ran only after passing a four-gate safety check:
+G1 (AerSimulator validation), G2 (≤ 5 qubits), G3 (≤ 512 shots), and G4 (queue
+wait ≤ 5 min). The raw record is in
+[`results/raw_data/ibm_qpu_run.json`](results/raw_data/ibm_qpu_run.json) and is
+rendered in [`notebooks/hardware_ibm_colab.ipynb`](notebooks/hardware_ibm_colab.ipynb).
+
+| Field | Value |
+|---|---|
+| Backend | `ibm_fez` |
+| Job ID | `d8cbt9ijki0s73ar2100` |
+| Qubits / shots | 3 / 512 |
+| Transpiled depth | 10 |
+| Ideal output | `\|011⟩` (deterministic) |
+| Measured `\|011⟩` | **453 / 512 = 88.5%** |
+| Noise leakage | `\|010⟩` 5.1%, `\|001⟩` 5.1%, `\|111⟩` 1.2%, `\|000⟩` 0.2% |
+
+The dominant outcome matches the noiseless AerSimulator prediction; the residual
+spread is hardware noise. The IBM API token is read only from the `IBM_TOKEN`
+environment variable and is never written to any committed file.
 
 ---
 

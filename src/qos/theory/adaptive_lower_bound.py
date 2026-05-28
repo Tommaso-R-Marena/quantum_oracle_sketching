@@ -75,6 +75,10 @@ class BoundResult:
 def compute_bounds(N: int, K: int, epsilon: float, constant: float = 1.0) -> BoundResult:
     """Compute adaptive oracle sample-complexity bounds (blind-oracle model).
 
+    See: Marena (2026), §3, Theorem 1 (``thm:adaptive``) upper bound
+    ``O(K/eps^2)`` and the matching Remark (Assouad) lower bound
+    ``Omega(K/eps^2)`` showing tightness up to log factors.
+
     Args:
         N: Ambient dimension.
         K: Support size (number of x with f(x)=1).

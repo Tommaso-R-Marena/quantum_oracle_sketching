@@ -87,7 +87,13 @@ class HierarchyLevel:
 class HierarchicalOracleSketch:
     """Multi-level oracle sketching that beats the Q^2 sample complexity barrier.
 
-    Implements Theorem 1 (Marena 2026): M = O(N * Q^{2 - 1/k}).
+    Composes k oracle sketches, each refining the residual of the previous,
+    allocating ``Q_j = Q^{(k-j)/k}`` queries and ``M_j = N Q_j^2`` samples to
+    level j (paper Definition, §4).
+
+    See: Marena (2026), §4, Theorem 2 (``thm:hier``) and Corollary
+    (``cor:hier``): total samples ``M_total = O(N k Q^{2-1/k})``, improving the
+    ``O(N Q^2)`` baseline by a factor ``Q^{1/k}``.
 
     Usage
     -----
@@ -154,7 +160,12 @@ class HierarchicalOracleSketch:
         return max(1, int(n * (query_budget ** exponent)))
 
     def build(self, key: Optional[jax.Array] = None) -> tuple[jax.Array, dict]:
-        """Execute the hierarchical oracle sketch."""
+        """Execute the k-level hierarchical oracle sketch.
+
+        See: Marena (2026), §4, Theorem 2 (``thm:hier``). Returns the composed
+        oracle diagonal and a stats dict whose ``sample_complexity_ratio``
+        realizes the ``Q^{1/k}`` improvement over the Zhao ``O(N Q^2)`` baseline.
+        """
         if key is None:
             key = random.PRNGKey(self.seed)
 

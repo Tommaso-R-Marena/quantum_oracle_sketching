@@ -1,0 +1,10 @@
+01_qos_quickstart.ipynb                    OK    errors=0
+02_empirical_results.ipynb                 OK    errors=0
+circuit_depth_scaling.ipynb                OK    errors=0
+full_benchmark_suite.ipynb                 OK    errors=0
+hardware_ibm_colab.ipynb                   OK    errors=0
+noise_robustness_sweep.ipynb               OK    errors=0
+quantum_oracle_sketching_demo.ipynb        OK    errors=0
+real_datasets_colab.ipynb                  FAIL  errors=1  (EXPECTED FAIL: pdf2image optional dep)
+warmstart_ablation.ipynb                   OK    errors=0
+8/9 notebooks ran without cell errors (real_datasets_colab needs [datasets] extra).

@@ -7836,7 +7836,7 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=install">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=qos-install">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7844,13 +7844,79 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="c1"># ── Install quantum-oracle-sketching (idempotent) ──────────────────────────</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">_REPO</span> <span class="o">=</span> <span class="s2">"https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git"</span>
+<span class="n">_CLONE_DIR</span> <span class="o">=</span> <span class="s2">"./quantum_oracle_sketching"</span>
+<span class="c1"># Clone only if not already present</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_CLONE_DIR</span><span class="p">):</span>
+    <span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: git clone skipped]</span>
+<span class="c1"># Install the package in editable mode with all extras needed for notebooks</span>
 <span class="n">result</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: pip install skipped]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:]</span> <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span> <span class="k">else</span> <span class="s1">''</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'STDERR:'</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="p">[</span><span class="o">-</span><span class="mi">1000</span><span class="p">:])</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'Install successful.'</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Install failed:</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="c1"># Refresh the interpreter's import path state after a subprocess pip install.</span>
+<span class="c1"># Without this, importlib.util.find_spec("qos") returns None in a fresh</span>
+<span class="c1"># Colab kernel even though pip exited 0 — the interpreter was initialised</span>
+<span class="c1"># before the package existed so its site-packages cache is stale.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib.util</span><span class="o">,</span><span class="w"> </span><span class="nn">site</span>
+<span class="n">importlib</span><span class="o">.</span><span class="n">invalidate_caches</span><span class="p">()</span>
+<span class="n">site</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+<span class="c1"># Hard fallback: for src-layout editable installs Colab may still miss the</span>
+<span class="c1"># package until the next kernel start. Injecting the src/ directory directly</span>
+<span class="c1"># is always safe (pyproject.toml: packages = ["src/qos"]).</span>
+<span class="n">_SRC_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_CLONE_DIR</span><span class="p">,</span> <span class="s2">"src"</span><span class="p">))</span>
+<span class="k">if</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s2">"qos"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_SRC_DIR</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">_SRC_DIR</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_SRC_DIR</span><span class="p">)</span>
+    <span class="n">importlib</span><span class="o">.</span><span class="n">invalidate_caches</span><span class="p">()</span>
+<span class="c1"># This print is intentionally AFTER the importability check — a green</span>
+<span class="c1"># checkmark means qos is actually importable, not just that pip exited 0.</span>
+<span class="n">_spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">find_spec</span><span class="p">(</span><span class="s2">"qos"</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">_spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+        <span class="s2">"qos is still not importable after install + cache refresh + sys.path injection.</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"Expected src dir: </span><span class="si">{</span><span class="n">_SRC_DIR</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="s2">"If this persists: Runtime &gt; Disconnect and delete runtime, then Run All."</span>
+    <span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"✅ quantum-oracle-sketching installed."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✅ qos found at: </span><span class="si">{</span><span class="n">_spec</span><span class="o">.</span><span class="n">origin</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7863,8 +7929,151 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>
-Install successful.
+<pre>✅ quantum-oracle-sketching installed.
+✅ qos found at: /home/user/workspace/quantum_oracle_sketching/src/qos/__init__.py
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=env-check">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ── Environment check ──────────────────────────────────────────────────────</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">platform</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Python      : </span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">split</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Platform    : </span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">platform</span><span class="o">.</span><span class="n">machine</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">_devices</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()</span>
+<span class="n">_has_gpu</span>  <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="s2">"cuda"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">"gpu"</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_devices</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"JAX devices : </span><span class="si">{</span><span class="n">_devices</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">_has_gpu</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"⚠️  No GPU detected. Heavy experiments will be slow."</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"   Go to Runtime &gt; Change runtime type &gt; T4 or A100."</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"✅ GPU detected."</span><span class="p">)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">qos</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"qos version : </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">qos</span><span class="p">,</span><span class="w"> </span><span class="s1">'__version__'</span><span class="p">,</span><span class="w"> </span><span class="s1">'unknown'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"✅ Environment ready."</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Python      : ['3.12.8', '(main,', 'May', '26', '2026,', '17:29:17)', '[GCC', '14.2.0]']
+Platform    : Linux x86_64
+JAX devices : [CpuDevice(id=0)]
+⚠️  No GPU detected. Heavy experiments will be slow.
+   Go to Runtime &gt; Change runtime type &gt; T4 or A100.
+qos version : 1.1.0
+✅ Environment ready.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=path-resolution">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_find_src_root</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""Return the path to the src/ directory containing qos/, wherever we are."""</span>
+    <span class="c1"># Case 1: Running in Colab after git clone</span>
+    <span class="n">colab_path</span> <span class="o">=</span> <span class="s1">'./quantum_oracle_sketching/src'</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">colab_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">colab_path</span><span class="p">)</span>
+    <span class="c1"># Case 2: Running locally / headless from the repo root</span>
+    <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="k">if</span> <span class="s1">'__file__'</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">()</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'..'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span> <span class="k">if</span> <span class="s1">'__file__'</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">()</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s1">'qos'</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+    <span class="c1"># Case 3: qos is already importable (editable install) — don't touch sys.path at all</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">qos</span>  <span class="c1"># noqa: F401</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+        <span class="s2">"Cannot find qos src root. Either run from the repo root, "</span>
+        <span class="s2">"or install with: pip install -e </span><span class="se">\'</span><span class="s2">.[dev,noise,kernel]</span><span class="se">\'</span><span class="s2">"</span>
+    <span class="p">)</span>
+<span class="n">_src</span> <span class="o">=</span> <span class="n">_find_src_root</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">_src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_src</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_src</span><span class="p">)</span>
+<span class="c1"># Verify</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">qos</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"qos loaded from: </span><span class="si">{</span><span class="n">qos</span><span class="o">.</span><span class="vm">__file__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"qos still not importable after sys.path fix: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>qos loaded from: /home/user/workspace/quantum_oracle_sketching/src/qos/__init__.py
 </pre>
 </div>
 </div>
@@ -7875,19 +8084,24 @@ Install successful.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="n">MOUNT_DRIVE</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># patched (no Colab)</span>
 <span class="k">if</span> <span class="n">MOUNT_DRIVE</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">google.colab</span><span class="w"> </span><span class="kn">import</span> <span class="n">drive</span>
-    <span class="n">drive</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">'./results/notebooks_data/drive'</span><span class="p">)</span>
-    <span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="s1">'./results/notebooks_data/drive/MyDrive/qos_real_datasets'</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="s1">'./results/notebooks_data/results'</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">google.colab</span><span class="w"> </span><span class="kn">import</span> <span class="n">drive</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">pass</span>  <span class="c1"># [patched: not on Colab]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">'./results/notebooks_data/drive/MyDrive'</span><span class="p">):</span>
+            <span class="n">drive</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="s1">'./results/notebooks_data/drive'</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># Not running in Colab; OUTPUT_DIR will fall back below.</span>
+<span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="s1">'./results/notebooks_data/drive/MyDrive/qos_real_datasets'</span> <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s1">'./results/notebooks_data/drive/MyDrive'</span><span class="p">)</span> <span class="k">else</span> <span class="s1">'./results'</span>
 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Output directory: </span><span class="si">{</span><span class="n">OUTPUT_DIR</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Output: </span><span class="si">{</span><span class="n">OUTPUT_DIR</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7900,7 +8114,7 @@ Install successful.
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Output directory: ./results/notebooks_data/results
+<pre>Output: ./results
 </pre>
 </div>
 </div>
@@ -7911,11 +8125,25 @@ Install successful.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
 <span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="s1">'jax_enable_x64'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>  <span class="c1"># required for jnp.float64 precision throughout</span>
+
+<span class="c1"># Optional HuggingFace token (used by some loaders); fail-soft outside Colab.</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">google.colab</span><span class="w"> </span><span class="kn">import</span> <span class="n">userdata</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">pass</span>  <span class="c1"># [patched: not on Colab]</span>
+    <span class="n">hf_token</span> <span class="o">=</span> <span class="n">userdata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"HF_TOKEN"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hf_token</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"HUGGING_FACE_HUB_TOKEN"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hf_token</span>
+<span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+    <span class="k">pass</span>
+
 <span class="n">FAST_MODE</span>  <span class="o">=</span> <span class="kc">False</span>
 <span class="n">SAVE_FIGS</span>  <span class="o">=</span> <span class="kc">True</span>
 <span class="n">SHOW_FIGS</span>  <span class="o">=</span> <span class="kc">True</span>
@@ -7932,6 +8160,9 @@ Install successful.
 <span class="nb">print</span><span class="p">(</span><span class="s1">'JAX devices:'</span><span class="p">,</span> <span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'JAX x64 enabled: </span><span class="si">{</span><span class="n">jax</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">jax_enable_x64</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Mode: </span><span class="si">{</span><span class="s2">"FAST"</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">FAST_MODE</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">"PAPER QUALITY"</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="n">_devices</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">devices</span><span class="p">()</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="s1">'cuda'</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">or</span> <span class="s1">'gpu'</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">_devices</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"⚠️ WARNING: No GPU detected. Go to Runtime &gt; Change runtime type &gt; GPU (A100 recommended)."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7947,6 +8178,7 @@ Install successful.
 <pre>JAX devices: [CpuDevice(id=0)]
 JAX x64 enabled: True
 Mode: PAPER QUALITY
+⚠️ WARNING: No GPU detected. Go to Runtime &gt; Change runtime type &gt; GPU (A100 recommended).
 </pre>
 </div>
 </div>
@@ -7957,18 +8189,70 @@ Mode: PAPER QUALITY
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span><span class="o">,</span><span class="w"> </span><span class="nn">subprocess</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span><span class="o">,</span><span class="w"> </span><span class="nn">matplotlib</span>
 <span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">'figure.dpi'</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s1">'font.size'</span><span class="p">:</span> <span class="mi">10</span><span class="p">})</span>
+
+<span class="c1"># Fallback guards: allow this cell to run before/without the config cell.</span>
+<span class="n">SHOW_FIGS</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'SHOW_FIGS'</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<span class="n">OUTPUT_DIR</span> <span class="o">=</span> <span class="nb">globals</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'OUTPUT_DIR'</span><span class="p">,</span> <span class="s1">'./content/results'</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Optional pdf2image — install only if running on Colab; degrade gracefully otherwise.</span>
 <span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: pip install skipped]</span>
 <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">'apt-get'</span><span class="p">,</span> <span class="s1">'install'</span><span class="p">,</span> <span class="s1">'-qq'</span><span class="p">,</span> <span class="s1">'poppler-utils'</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">IPython.display</span><span class="w"> </span><span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Image</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pdf2image</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_from_path</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">pdf2image</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_from_path</span>
+    <span class="n">_PDF2IMAGE_AVAILABLE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">_PDF2IMAGE_AVAILABLE</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">convert_from_path</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">show_pdf</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_PDF2IMAGE_AVAILABLE</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'PDF saved (pdf2image unavailable): </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">return</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">convert_from_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">150</span><span class="p">):</span> <span class="n">display</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -7985,21 +8269,9 @@ Mode: PAPER QUALITY
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[4]</span><span class="ansi-green-fg">, line 8</span>
-<span class="ansi-green-fg">      4</span> matplotlib.rcParams.update({<span class="ansi-yellow-fg">'figure.dpi'</span>: <span class="ansi-green-fg">150</span>, <span class="ansi-yellow-fg">'font.size'</span>: <span class="ansi-green-fg">10</span>})
-<span class="ansi-green-fg">      5</span> type(<span class="ansi-yellow-fg">'_PatchedResult'</span>, (), {<span class="ansi-yellow-fg">'stdout'</span>: <span class="ansi-yellow-fg">b''</span>, <span class="ansi-yellow-fg">'stderr'</span>: <span class="ansi-yellow-fg">b''</span>, <span class="ansi-yellow-fg">'returncode'</span>: <span class="ansi-green-fg">0</span>})()  <span style="color: rgb(95,135,135)"># [patched: pip install skipped]</span>
-<span class="ansi-green-fg">      6</span> subprocess.run([<span class="ansi-yellow-fg">'apt-get'</span>, <span class="ansi-yellow-fg">'install'</span>, <span class="ansi-yellow-fg">'-qq'</span>, <span class="ansi-yellow-fg">'poppler-utils'</span>], capture_output=<span class="ansi-bold" style="color: rgb(0,135,0)">True</span>)
-<span class="ansi-green-fg">      7</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> IPython.display <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> display, Image
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">8</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> pdf2image <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> convert_from_path
-<span class="ansi-green-fg">      9</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> show_pdf(path):
-<span class="ansi-green-fg">     10</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
-<span class="ansi-green-fg">     11</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> img <span class="ansi-bold" style="color: rgb(0,135,0)">in</span> convert_from_path(path, dpi=<span class="ansi-green-fg">150</span>): display(img)
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'pdf2image'</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Shared imports ready.
+</pre>
 </div>
 </div>
 </div>
@@ -8009,7 +8281,7 @@ Mode: PAPER QUALITY
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">ZHAO_REFERENCE</span> <span class="o">=</span> <span class="p">{</span>
@@ -8073,29 +8345,10 @@ Mode: PAPER QUALITY
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[5]</span><span class="ansi-green-fg">, line 27</span>
-<span class="ansi-green-fg">     23</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> m[<span class="ansi-yellow-fg">'space_streaming'</span>] == D,     f"A2 FAIL: {m[<span class="ansi-yellow-fg">'space_streaming'</span>]} != {D}"
-<span class="ansi-green-fg">     24</span>     expected = <span class="ansi-green-fg">2</span>*math.ceil(math.log2(N+<span class="ansi-green-fg">2</span>*D)) + math.ceil(math.log2(s+<span class="ansi-green-fg">1</span>)) + <span class="ansi-green-fg">3</span> + <span class="ansi-green-fg">1</span>
-<span class="ansi-green-fg">     25</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">assert</span> m[<span class="ansi-yellow-fg">'space_quantum'</span>]   == expected, f"A3 FAIL: {m[<span class="ansi-yellow-fg">'space_quantum'</span>]} != {expected}"
-<span class="ansi-green-fg">     26</span>     print(<span class="ansi-yellow-fg">'✅ Equations A1, A2, A3 verified.'</span>)
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">27</span> _verify_zhao_equations()
-<span class="ansi-green-fg">     28</span> 
-<span class="ansi-green-fg">     29</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> compare_to_zhao(dataset_name, results, zhao_ref):
-<span class="ansi-green-fg">     30</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> zhao_ref.get(<span class="ansi-yellow-fg">'quantum_qubits'</span>) <span class="ansi-bold" style="color: rgb(0,135,0)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[5]</span><span class="ansi-green-fg">, line 12</span>, in <span class="ansi-cyan-fg">_verify_zhao_equations</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">     10</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> _verify_zhao_equations():
-<span class="ansi-green-fg">     11</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> scipy.sparse <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> sp_, math
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">12</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.shared <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> compute_space_metrics
-<span class="ansi-green-fg">     13</span>     rng = np.random.default_rng(<span class="ansi-green-fg">42</span>)
-<span class="ansi-green-fg">     14</span>     rows, cols = [], []
-<span class="ansi-green-fg">     15</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> i <span class="ansi-bold" style="color: rgb(0,135,0)">in</span> range(<span class="ansi-green-fg">100</span>):
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'qos'</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>✅ Equations A1, A2, A3 verified.
+compare_to_zhao() loaded.
+</pre>
 </div>
 </div>
 </div>
@@ -8116,10 +8369,11 @@ Mode: PAPER QUALITY
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.feature_extraction.text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TfidfVectorizer</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.feature_extraction.text</span><span class="w"> </span><span class="kn">import</span> <span class="n">TfidfVectorizer</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.shared</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_classification_experiment</span><span class="p">,</span> <span class="n">run_pca_experiment</span><span class="p">,</span> <span class="n">plot_experiment_results</span><span class="p">,</span> <span class="n">plot_pca_results</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.imdb.imdb_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_imdb_data</span>
 <span class="n">IMDB_MIN_DFS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">14</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">19</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">24</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span><span class="mi">32</span><span class="p">,</span><span class="mi">36</span><span class="p">,</span><span class="mi">42</span><span class="p">,</span><span class="mi">48</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">62</span><span class="p">,</span><span class="mi">71</span><span class="p">,</span><span class="mi">81</span><span class="p">,</span><span class="mi">93</span><span class="p">,</span><span class="mi">106</span><span class="p">,</span><span class="mi">122</span><span class="p">,</span><span class="mi">139</span><span class="p">,</span><span class="mi">159</span><span class="p">,</span><span class="mi">181</span><span class="p">,</span><span class="mi">207</span><span class="p">,</span><span class="mi">236</span><span class="p">,</span><span class="mi">270</span><span class="p">,</span><span class="mi">308</span><span class="p">,</span><span class="mi">352</span><span class="p">,</span><span class="mi">402</span><span class="p">,</span><span class="mi">459</span><span class="p">,</span><span class="mi">524</span><span class="p">,</span><span class="mi">599</span><span class="p">,</span><span class="mi">684</span><span class="p">,</span><span class="mi">781</span><span class="p">,</span><span class="mi">891</span><span class="p">,</span><span class="mi">1018</span><span class="p">,</span><span class="mi">1162</span><span class="p">,</span><span class="mi">1327</span><span class="p">,</span><span class="mi">1515</span><span class="p">,</span><span class="mi">1730</span><span class="p">,</span><span class="mi">1976</span><span class="p">,</span><span class="mi">2256</span><span class="p">,</span><span class="mi">2576</span><span class="p">,</span><span class="mi">2941</span><span class="p">,</span><span class="mi">3358</span><span class="p">,</span><span class="mi">3835</span><span class="p">,</span><span class="mi">4379</span><span class="p">,</span><span class="mi">5000</span><span class="p">]</span>
@@ -8163,18 +8417,48 @@ Mode: PAPER QUALITY
 <div class="jp-OutputArea jp-Cell-outputArea">
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading IMDb...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
 <span class="ansi-red-fg">---------------------------------------------------------------------------</span>
 <span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[6]</span><span class="ansi-green-fg">, line 2</span>
-<span class="ansi-green-fg">      1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> sklearn.feature_extraction.text <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> TfidfVectorizer
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">2</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.shared <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> run_classification_experiment, run_pca_experiment, plot_experiment_results, plot_pca_results
-<span class="ansi-green-fg">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.imdb.imdb_utils <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_imdb_data
-<span class="ansi-green-fg">      4</span> IMDB_MIN_DFS = [<span class="ansi-green-fg">2</span>,<span class="ansi-green-fg">3</span>,<span class="ansi-green-fg">4</span>,<span class="ansi-green-fg">5</span>,<span class="ansi-green-fg">6</span>,<span class="ansi-green-fg">7</span>,<span class="ansi-green-fg">8</span>,<span class="ansi-green-fg">9</span>,<span class="ansi-green-fg">11</span>,<span class="ansi-green-fg">12</span>,<span class="ansi-green-fg">14</span>,<span class="ansi-green-fg">16</span>,<span class="ansi-green-fg">19</span>,<span class="ansi-green-fg">21</span>,<span class="ansi-green-fg">24</span>,<span class="ansi-green-fg">28</span>,<span class="ansi-green-fg">32</span>,<span class="ansi-green-fg">36</span>,<span class="ansi-green-fg">42</span>,<span class="ansi-green-fg">48</span>,<span class="ansi-green-fg">55</span>,<span class="ansi-green-fg">62</span>,<span class="ansi-green-fg">71</span>,<span class="ansi-green-fg">81</span>,<span class="ansi-green-fg">93</span>,<span class="ansi-green-fg">106</span>,<span class="ansi-green-fg">122</span>,<span class="ansi-green-fg">139</span>,<span class="ansi-green-fg">159</span>,<span class="ansi-green-fg">181</span>,<span class="ansi-green-fg">207</span>,<span class="ansi-green-fg">236</span>,<span class="ansi-green-fg">270</span>,<span class="ansi-green-fg">308</span>,<span class="ansi-green-fg">352</span>,<span class="ansi-green-fg">402</span>,<span class="ansi-green-fg">459</span>,<span class="ansi-green-fg">524</span>,<span class="ansi-green-fg">599</span>,<span class="ansi-green-fg">684</span>,<span class="ansi-green-fg">781</span>,<span class="ansi-green-fg">891</span>,<span class="ansi-green-fg">1018</span>,<span class="ansi-green-fg">1162</span>,<span class="ansi-green-fg">1327</span>,<span class="ansi-green-fg">1515</span>,<span class="ansi-green-fg">1730</span>,<span class="ansi-green-fg">1976</span>,<span class="ansi-green-fg">2256</span>,<span class="ansi-green-fg">2576</span>,<span class="ansi-green-fg">2941</span>,<span class="ansi-green-fg">3358</span>,<span class="ansi-green-fg">3835</span>,<span class="ansi-green-fg">4379</span>,<span class="ansi-green-fg">5000</span>]
-<span class="ansi-green-fg">      5</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> FAST_MODE: IMDB_MIN_DFS = IMDB_MIN_DFS[::max(<span class="ansi-green-fg">1</span>,len(IMDB_MIN_DFS)//FAST_SWEEP_LEN)]
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching/src/qos/experiments/real_datasets/imdb/imdb_utils.py:33</span>, in <span class="ansi-cyan-fg">load_imdb_data</span><span class="ansi-blue-fg">(split, cache_dir)</span>
+<span class="ansi-green-fg">     32</span> <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">33</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">datasets</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_dataset  <span style="color: rgb(95,135,135)"># type: ignore</span>
+<span class="ansi-green-fg">     34</span> <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> <span class="ansi-bold" style="color: rgb(215,95,95)">ImportError</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> exc:  <span style="color: rgb(95,135,135)"># pragma: no cover</span>
 
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'qos'</pre>
+<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'datasets'
+
+The above exception was the direct cause of the following exception:
+
+<span class="ansi-red-fg">ImportError</span>                               Traceback (most recent call last)
+<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[8]</span><span class="ansi-green-fg">, line 8</span>
+<span class="ansi-green-fg">      4</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.imdb.imdb_utils <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_imdb_data
+<span class="ansi-green-fg">      5</span> IMDB_MIN_DFS = [<span class="ansi-green-fg">2</span>,<span class="ansi-green-fg">3</span>,<span class="ansi-green-fg">4</span>,<span class="ansi-green-fg">5</span>,<span class="ansi-green-fg">6</span>,<span class="ansi-green-fg">7</span>,<span class="ansi-green-fg">8</span>,<span class="ansi-green-fg">9</span>,<span class="ansi-green-fg">11</span>,<span class="ansi-green-fg">12</span>,<span class="ansi-green-fg">14</span>,<span class="ansi-green-fg">16</span>,<span class="ansi-green-fg">19</span>,<span class="ansi-green-fg">21</span>,<span class="ansi-green-fg">24</span>,<span class="ansi-green-fg">28</span>,<span class="ansi-green-fg">32</span>,<span class="ansi-green-fg">36</span>,<span class="ansi-green-fg">42</span>,<span class="ansi-green-fg">48</span>,<span class="ansi-green-fg">55</span>,<span class="ansi-green-fg">62</span>,<span class="ansi-green-fg">71</span>,<span class="ansi-green-fg">81</span>,<span class="ansi-green-fg">93</span>,<span class="ansi-green-fg">106</span>,<span class="ansi-green-fg">122</span>,<span class="ansi-green-fg">139</span>,<span class="ansi-green-fg">159</span>,<span class="ansi-green-fg">181</span>,<span class="ansi-green-fg">207</span>,<span class="ansi-green-fg">236</span>,<span class="ansi-green-fg">270</span>,<span class="ansi-green-fg">308</span>,<span class="ansi-green-fg">352</span>,<span class="ansi-green-fg">402</span>,<span class="ansi-green-fg">459</span>,<span class="ansi-green-fg">524</span>,<span class="ansi-green-fg">599</span>,<span class="ansi-green-fg">684</span>,<span class="ansi-green-fg">781</span>,<span class="ansi-green-fg">891</span>,<span class="ansi-green-fg">1018</span>,<span class="ansi-green-fg">1162</span>,<span class="ansi-green-fg">1327</span>,<span class="ansi-green-fg">1515</span>,<span class="ansi-green-fg">1730</span>,<span class="ansi-green-fg">1976</span>,<span class="ansi-green-fg">2256</span>,<span class="ansi-green-fg">2576</span>,<span class="ansi-green-fg">2941</span>,<span class="ansi-green-fg">3358</span>,<span class="ansi-green-fg">3835</span>,<span class="ansi-green-fg">4379</span>,<span class="ansi-green-fg">5000</span>]
+<span class="ansi-green-fg">      6</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> FAST_MODE: IMDB_MIN_DFS = IMDB_MIN_DFS[::max(<span class="ansi-green-fg">1</span>,len(IMDB_MIN_DFS)//FAST_SWEEP_LEN)]
+<span class="ansi-green-fg">      7</span> print(<span class="ansi-yellow-fg">'Loading IMDb...'</span>)
+<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">8</span> X_raw, y = load_imdb_data()
+<span class="ansi-green-fg">      9</span> print(f'Loaded {len(X_raw)} reviews, {len(set(y))} classes')
+<span class="ansi-green-fg">     10</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> imdb_filter(X_raw, min_df):
+<span class="ansi-green-fg">     11</span>     <span style="color: rgb(95,135,135)"># Guard: very high min_df can prune all terms from the IMDb corpus.</span>
+
+<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching/src/qos/experiments/real_datasets/imdb/imdb_utils.py:35</span>, in <span class="ansi-cyan-fg">load_imdb_data</span><span class="ansi-blue-fg">(split, cache_dir)</span>
+<span class="ansi-green-fg">     33</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">datasets</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_dataset  <span style="color: rgb(95,135,135)"># type: ignore</span>
+<span class="ansi-green-fg">     34</span> <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> <span class="ansi-bold" style="color: rgb(215,95,95)">ImportError</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> exc:  <span style="color: rgb(95,135,135)"># pragma: no cover</span>
+<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">35</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">ImportError</span>(
+<span class="ansi-green-fg">     36</span>         <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">The </span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">datasets</span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg"> package is required for load_imdb_data(). </span><span class="ansi-yellow-fg">"</span>
+<span class="ansi-green-fg">     37</span>         <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Install it with: pip install datasets</span><span class="ansi-yellow-fg">"</span>
+<span class="ansi-green-fg">     38</span>     ) <span class="ansi-bold" style="color: rgb(0,135,0)">from</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-intense-fg ansi-bold">exc</span>
+<span class="ansi-green-fg">     40</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">_col_to_list</span>(col):
+<span class="ansi-green-fg">     41</span> <span style="color: rgb(188,188,188)">    </span><span class="ansi-yellow-fg">"""Safely convert a HF Column or list to a plain Python list."""</span>
+
+<span class="ansi-red-fg">ImportError</span>: The 'datasets' package is required for load_imdb_data(). Install it with: pip install datasets</pre>
 </div>
 </div>
 </div>
@@ -8195,10 +8479,11 @@ Mode: PAPER QUALITY
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_20newsgroups</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">fetch_20newsgroups</span>
 <span class="n">NEWS20_MIN_DFS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">15</span><span class="p">,</span><span class="mi">18</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">26</span><span class="p">,</span><span class="mi">31</span><span class="p">,</span><span class="mi">37</span><span class="p">,</span><span class="mi">44</span><span class="p">,</span><span class="mi">53</span><span class="p">,</span><span class="mi">63</span><span class="p">,</span><span class="mi">76</span><span class="p">,</span><span class="mi">91</span><span class="p">,</span><span class="mi">109</span><span class="p">,</span><span class="mi">130</span><span class="p">,</span><span class="mi">156</span><span class="p">,</span><span class="mi">187</span><span class="p">,</span><span class="mi">224</span><span class="p">,</span><span class="mi">268</span><span class="p">,</span><span class="mi">321</span><span class="p">,</span><span class="mi">385</span><span class="p">,</span><span class="mi">461</span><span class="p">,</span><span class="mi">553</span><span class="p">,</span><span class="mi">662</span><span class="p">,</span><span class="mi">793</span><span class="p">,</span><span class="mi">950</span><span class="p">,</span><span class="mi">1138</span><span class="p">,</span><span class="mi">1363</span><span class="p">,</span><span class="mi">1633</span><span class="p">,</span><span class="mi">1956</span><span class="p">,</span><span class="mi">2342</span><span class="p">,</span><span class="mi">2806</span><span class="p">,</span><span class="mi">3361</span><span class="p">,</span><span class="mi">4027</span><span class="p">,</span><span class="mi">4826</span><span class="p">,</span><span class="mi">5000</span><span class="p">]</span>
 <span class="k">if</span> <span class="n">FAST_MODE</span><span class="p">:</span> <span class="n">NEWS20_MIN_DFS</span> <span class="o">=</span> <span class="n">NEWS20_MIN_DFS</span><span class="p">[::</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">NEWS20_MIN_DFS</span><span class="p">)</span><span class="o">//</span><span class="n">FAST_SWEEP_LEN</span><span class="p">)]</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'Loading 20 Newsgroups...'</span><span class="p">)</span>
@@ -8248,26 +8533,302 @@ Mode: PAPER QUALITY
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Loaded 18846 documents, 20 classes
 Running 20 Newsgroups classification sweep...
+Running classification sweep on 20 Newsgroups...
 </pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   0%|          | 0/42 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   2%|▏         | 1/42 [00:28&lt;19:09, 28.03s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   5%|▍         | 2/42 [00:37&lt;11:25, 17.15s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   7%|▋         | 3/42 [00:46&lt;08:44, 13.46s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  10%|▉         | 4/42 [00:55&lt;07:18, 11.54s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  12%|█▏        | 5/42 [01:03&lt;06:28, 10.49s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  14%|█▍        | 6/42 [01:12&lt;05:52,  9.80s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  17%|█▋        | 7/42 [01:19&lt;05:16,  9.04s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  19%|█▉        | 8/42 [01:27&lt;04:48,  8.48s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  21%|██▏       | 9/42 [01:39&lt;05:20,  9.71s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  24%|██▍       | 10/42 [01:56&lt;06:25, 12.04s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  26%|██▌       | 11/42 [02:13&lt;06:59, 13.53s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  29%|██▊       | 12/42 [02:29&lt;07:07, 14.25s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  31%|███       | 13/42 [02:48&lt;07:30, 15.55s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  33%|███▎      | 14/42 [03:04&lt;07:18, 15.66s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  36%|███▌      | 15/42 [03:23&lt;07:32, 16.77s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  38%|███▊      | 16/42 [03:34&lt;06:35, 15.22s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  40%|████      | 17/42 [03:40&lt;05:08, 12.35s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  43%|████▎     | 18/42 [03:46&lt;04:06, 10.26s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  45%|████▌     | 19/42 [03:57&lt;04:04, 10.63s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  48%|████▊     | 20/42 [04:02&lt;03:17,  8.97s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  50%|█████     | 21/42 [04:07&lt;02:44,  7.83s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  52%|█████▏    | 22/42 [04:12&lt;02:15,  6.76s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  55%|█████▍    | 23/42 [04:15&lt;01:52,  5.90s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  57%|█████▋    | 24/42 [04:19&lt;01:33,  5.22s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  60%|█████▉    | 25/42 [04:23&lt;01:19,  4.69s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  62%|██████▏   | 26/42 [04:30&lt;01:26,  5.42s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  64%|██████▍   | 27/42 [04:35&lt;01:20,  5.38s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  67%|██████▋   | 28/42 [04:38&lt;01:05,  4.68s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  69%|██████▉   | 29/42 [04:41&lt;00:53,  4.09s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  71%|███████▏  | 30/42 [04:43&lt;00:43,  3.67s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  74%|███████▍  | 31/42 [04:46&lt;00:36,  3.29s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  76%|███████▌  | 32/42 [04:48&lt;00:30,  3.01s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  79%|███████▊  | 33/42 [04:50&lt;00:24,  2.77s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  81%|████████  | 34/42 [04:53&lt;00:20,  2.60s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  83%|████████▎ | 35/42 [04:55&lt;00:17,  2.47s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  86%|████████▌ | 36/42 [04:57&lt;00:14,  2.38s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  86%|████████▌ | 36/42 [04:58&lt;00:49,  8.29s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
 <pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">NameError</span>                                 Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[7]</span><span class="ansi-green-fg">, line 19</span>
-<span class="ansi-green-fg">     15</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> ValueError:
-<span class="ansi-green-fg">     16</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>, {}
-<span class="ansi-green-fg">     17</span> prefix = os.path.join(OUTPUT_DIR, <span class="ansi-yellow-fg">'news20'</span>); t0 = time.time()
-<span class="ansi-green-fg">     18</span> print(<span class="ansi-yellow-fg">'Running 20 Newsgroups classification sweep...'</span>)
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">19</span> news_clf = run_classification_experiment(X_raw_news, y_news, sweep_values=NEWS20_MIN_DFS, filter_fn=news20_filter, dataset_name=<span class="ansi-yellow-fg">'20 Newsgroups'</span>, output_prefix=prefix, clf_alpha=CLF_ALPHA_PER_DATASET[<span class="ansi-yellow-fg">'news20'</span>], cv_folds=CV_FOLDS)
-<span class="ansi-green-fg">     20</span> plot_experiment_results(news_clf, title=<span class="ansi-yellow-fg">'20 Newsgroups: Multi-class'</span>, output_prefix=prefix, xlabel=<span class="ansi-yellow-fg">'Accuracy'</span>, xticks=[<span class="ansi-green-fg">0.55</span>,<span class="ansi-green-fg">0.65</span>,<span class="ansi-green-fg">0.75</span>,<span class="ansi-green-fg">0.85</span>], xtick_labels=[<span class="ansi-yellow-fg">'55%'</span>,<span class="ansi-yellow-fg">'65%'</span>,<span class="ansi-yellow-fg">'75%'</span>,<span class="ansi-yellow-fg">'85%'</span>], xlim=(<span class="ansi-green-fg">0.50</span>,<span class="ansi-green-fg">0.88</span>), ylim=(<span class="ansi-green-fg">1e1</span>,<span class="ansi-green-fg">1e7</span>))
-<span class="ansi-green-fg">     21</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> SHOW_FIGS: show_pdf(prefix + <span class="ansi-yellow-fg">'_size_vs_accuracy.pdf'</span>)
-<span class="ansi-green-fg">     22</span> _comp = compare_to_zhao(<span class="ansi-yellow-fg">'news20'</span>, news_clf, ZHAO_REFERENCE[<span class="ansi-yellow-fg">'news20'</span>])
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Unexpected exception formatting exception. Falling back to standard exception
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/interactiveshell.py", line 3748, in run_code
+    exec(code_obj, self.user_global_ns, self.user_ns)
+  File "/tmp/ipykernel_3760/3440905655.py", line 20, in &lt;module&gt;
+    news_clf = run_classification_experiment(X_raw_news, y_news, sweep_values=NEWS20_MIN_DFS, filter_fn=news20_filter, dataset_name='20 Newsgroups', output_prefix=prefix, clf_alpha=CLF_ALPHA_PER_DATASET['news20'], cv_folds=CV_FOLDS)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/workspace/quantum_oracle_sketching/src/qos/experiments/real_datasets/shared.py", line 125, in run_classification_experiment
+    X_filtered, info = filter_fn(X, threshold)
+                       ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/ipykernel_3760/3440905655.py", line 12, in news20_filter
+    X = vec.fit_transform(X_raw); X.eliminate_zeros()
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py", line 2104, in fit_transform
+    X = super().fit_transform(raw_documents)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sklearn/base.py", line 1336, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py", line 1386, in fit_transform
+    vocabulary, X = self._count_vocab(raw_documents, self.fixed_vocabulary_)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py", line None, in _count_vocab
+KeyboardInterrupt
 
-<span class="ansi-red-fg">NameError</span>: name 'run_classification_experiment' is not defined</pre>
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/interactiveshell.py", line 2223, in showtraceback
+    stb = self.InteractiveTB.structured_traceback(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/ultratb.py", line 1228, in structured_traceback
+    return FormattedTB.structured_traceback(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/ultratb.py", line 1099, in structured_traceback
+    return VerboseTB.structured_traceback(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/ultratb.py", line 907, in structured_traceback
+    formatted_exceptions: list[list[str]] = self.format_exception_as_a_whole(
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/ultratb.py", line 791, in format_exception_as_a_whole
+    frames.append(self.format_record(record))
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/IPython/core/ultratb.py", line 540, in format_record
+    assert isinstance(frame_info.lineno, int)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+</pre>
 </div>
 </div>
 </div>
@@ -8283,40 +8844,63 @@ Running 20 Newsgroups classification sweep...
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc3k-install">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc3k-install">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: pip install skipped]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
+               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
+            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
+                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
+<span class="n">_ensure_qos_importable</span><span class="p">()</span>
+<span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: pip install skipped]</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'scanpy/anndata/leidenalg installed.'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>scanpy/anndata/leidenalg installed.
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc3k-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc3k-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.pbmc68k.pbmc_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pbmc3k</span>
@@ -8348,27 +8932,6 @@ Running 20 Newsgroups classification sweep...
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 1</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.pbmc68k.pbmc_utils <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_pbmc3k
-<span class="ansi-green-fg">      2</span> PBMC_MIN_COUNTS = [<span class="ansi-green-fg">1</span>,<span class="ansi-green-fg">2</span>,<span class="ansi-green-fg">3</span>,<span class="ansi-green-fg">4</span>,<span class="ansi-green-fg">5</span>,<span class="ansi-green-fg">6</span>,<span class="ansi-green-fg">8</span>,<span class="ansi-green-fg">10</span>,<span class="ansi-green-fg">12</span>,<span class="ansi-green-fg">15</span>,<span class="ansi-green-fg">18</span>,<span class="ansi-green-fg">21</span>,<span class="ansi-green-fg">25</span>,<span class="ansi-green-fg">30</span>,<span class="ansi-green-fg">36</span>,<span class="ansi-green-fg">43</span>,<span class="ansi-green-fg">51</span>,<span class="ansi-green-fg">61</span>,<span class="ansi-green-fg">73</span>,<span class="ansi-green-fg">87</span>,<span class="ansi-green-fg">104</span>,<span class="ansi-green-fg">124</span>,<span class="ansi-green-fg">148</span>,<span class="ansi-green-fg">177</span>,<span class="ansi-green-fg">211</span>,<span class="ansi-green-fg">252</span>,<span class="ansi-green-fg">301</span>,<span class="ansi-green-fg">360</span>,<span class="ansi-green-fg">430</span>,<span class="ansi-green-fg">514</span>,<span class="ansi-green-fg">614</span>,<span class="ansi-green-fg">734</span>,<span class="ansi-green-fg">877</span>,<span class="ansi-green-fg">1048</span>,<span class="ansi-green-fg">1252</span>,<span class="ansi-green-fg">1496</span>,<span class="ansi-green-fg">1788</span>,<span class="ansi-green-fg">2137</span>,<span class="ansi-green-fg">2554</span>,<span class="ansi-green-fg">3053</span>,<span class="ansi-green-fg">3650</span>,<span class="ansi-green-fg">5000</span>]
-<span class="ansi-green-fg">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> FAST_MODE: PBMC_MIN_COUNTS = PBMC_MIN_COUNTS[::max(<span class="ansi-green-fg">1</span>,len(PBMC_MIN_COUNTS)//FAST_SWEEP_LEN)]
-<span class="ansi-green-fg">      4</span> <span class="ansi-bold" style="color: rgb(0,135,0)">def</span> pbmc_filter(X, min_count):
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'qos'</pre>
-</div>
-</div>
-</div>
-</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-pbmc68k">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8383,22 +8946,23 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc68k-download">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc68k-download">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Manual fallback download — run this cell ONLY if Section 3b fails with a download error.</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="c1"># Manual fallback download — run this cell ONLY if Section 3b fails with a download error.</span>
 <span class="n">PBMC68K_CACHE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.cache/qos/pbmc68k'</span><span class="p">)</span>
 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">h5ad_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="s1">'pbmc68k_raw.h5ad'</span><span class="p">)</span>
 <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">):</span>
     <span class="n">CDN_URL</span> <span class="o">=</span> <span class="s1">'https://figshare.com/ndownloader/files/40014331'</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Downloading PBMC68k from figshare (~180 MB)...'</span><span class="p">)</span>
-    <span class="o">!</span>wget<span class="w"> </span>-q<span class="w"> </span>--show-progress<span class="w"> </span>-O<span class="w"> </span><span class="o">{</span>h5ad_path<span class="o">}</span><span class="w"> </span><span class="o">{</span>CDN_URL<span class="o">}</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wget -q --show-progress -O </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">CDN_URL</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">'Download complete.'</span><span class="p">)</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Already cached: </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
@@ -8407,28 +8971,16 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Already cached: /home/user/.cache/qos/pbmc68k/pbmc68k_raw.h5ad
-</pre>
-</div>
-</div>
-</div>
-</div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc68k-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc68k-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span><span class="o">,</span><span class="w"> </span><span class="nn">anndata</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ad</span><span class="o">,</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span><span class="o">,</span><span class="w"> </span><span class="nn">anndata</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ad</span><span class="o">,</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
 <span class="n">PBMC68K_CACHE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.cache/qos/pbmc68k'</span><span class="p">)</span>
 <span class="n">h5ad_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="s1">'pbmc68k_raw.h5ad'</span><span class="p">)</span>
 
@@ -8442,10 +8994,31 @@ If the download fails, run the wget cell below first.</p>
     <span class="k">if</span> <span class="n">pca</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">pca</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">pca</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">n_obs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_download_pbmc68k_cache</span><span class="p">():</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">CDN_URL</span> <span class="o">=</span> <span class="s1">'https://figshare.com/ndownloader/files/40014331'</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Downloading PBMC68k cache from </span><span class="si">{</span><span class="n">CDN_URL</span><span class="si">}</span><span class="s1"> ...'</span><span class="p">)</span>
+    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">'wget'</span><span class="p">,</span> <span class="s1">'-q'</span><span class="p">,</span> <span class="s1">'--show-progress'</span><span class="p">,</span> <span class="s1">'-O'</span><span class="p">,</span> <span class="n">h5ad_path</span><span class="p">,</span> <span class="n">CDN_URL</span><span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Download complete.'</span><span class="p">)</span>
+
+<span class="n">adata68k</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loading PBMC68k from cache: </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-    <span class="n">adata68k</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loading PBMC68k from cache: </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="n">adata68k</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Cache appears corrupt (</span><span class="si">{</span><span class="n">_e</span><span class="si">!r}</span><span class="s1">); removing and re-downloading.'</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_download_pbmc68k_cache</span><span class="p">()</span>
+            <span class="n">adata68k</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e2</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Re-download failed (</span><span class="si">{</span><span class="n">_e2</span><span class="si">!r}</span><span class="s1">); falling back to scanpy built-in reduced dataset.'</span><span class="p">)</span>
+            <span class="n">adata68k</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">pbmc68k_reduced</span><span class="p">()</span>
+<span class="k">if</span> <span class="n">adata68k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">'Cache miss — using scanpy built-in (pbmc68k_reduced). Run cell 3b-download for full dataset.'</span><span class="p">)</span>
     <span class="n">adata68k</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">pbmc68k_reduced</span><span class="p">()</span>
 
@@ -8460,91 +9033,44 @@ If the download fails, run the wget cell below first.</p>
 <span class="n">X_pbmc68k</span> <span class="o">=</span> <span class="n">adata68k</span><span class="o">.</span><span class="n">X</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loaded </span><span class="si">{</span><span class="n">X_pbmc68k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> cells x </span><span class="si">{</span><span class="n">X_pbmc68k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> genes, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y_pbmc68k</span><span class="p">))</span><span class="si">}</span><span class="s1"> classes'</span><span class="p">)</span>
 
+<span class="c1"># Checkpoint/resume for long sweep. Allows recovery from preemption.</span>
+<span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">'pbmc68k'</span>
+<span class="n">_ckpt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">DATASET_NAME</span><span class="si">}</span><span class="s1">_checkpoint.json'</span><span class="p">)</span>
+<span class="n">_ckpt</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">_ckpt</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Resuming from checkpoint: </span><span class="si">{</span><span class="n">_ckpt_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Checkpoint unreadable (</span><span class="si">{</span><span class="n">_e</span><span class="si">!r}</span><span class="s1">); starting fresh.'</span><span class="p">)</span>
+        <span class="n">_ckpt</span> <span class="o">=</span> <span class="p">{}</span>
+
 <span class="n">prefix68k</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="s1">'pbmc68k'</span><span class="p">);</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running PBMC68k classification sweep...'</span><span class="p">)</span>
-<span class="n">pbmc68k_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_pbmc68k</span><span class="p">,</span> <span class="n">y_pbmc68k</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">PBMC_MIN_COUNTS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">pbmc_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'PBMC68k'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'pbmc68k'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">_ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'classification_done'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.json'</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Classification sweep already complete (loading from disk).'</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">pbmc68k_clf</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running PBMC68k classification sweep...'</span><span class="p">)</span>
+    <span class="n">pbmc68k_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_pbmc68k</span><span class="p">,</span> <span class="n">y_pbmc68k</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">PBMC_MIN_COUNTS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">pbmc_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'PBMC68k'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'pbmc68k'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
+    <span class="n">_ckpt</span><span class="p">[</span><span class="s1">'classification_done'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_ckpt</span><span class="p">,</span> <span class="n">_f</span><span class="p">)</span>
 <span class="n">plot_experiment_results</span><span class="p">(</span><span class="n">pbmc68k_clf</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'PBMC68k: Cell-type classification (~68k cells)'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'Accuracy'</span><span class="p">,</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[</span><span class="mf">0.80</span><span class="p">,</span><span class="mf">0.85</span><span class="p">,</span><span class="mf">0.90</span><span class="p">,</span><span class="mf">0.95</span><span class="p">],</span> <span class="n">xtick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'80%'</span><span class="p">,</span><span class="s1">'85%'</span><span class="p">,</span><span class="s1">'90%'</span><span class="p">,</span><span class="s1">'95%'</span><span class="p">],</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.78</span><span class="p">,</span><span class="mf">0.97</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e6</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.pdf'</span><span class="p">)</span>
 <span class="n">_comp68k</span> <span class="o">=</span> <span class="n">compare_to_zhao</span><span class="p">(</span><span class="s1">'pbmc68k'</span><span class="p">,</span> <span class="n">pbmc68k_clf</span><span class="p">,</span> <span class="n">ZHAO_REFERENCE</span><span class="p">[</span><span class="s1">'pbmc68k'</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">ZHAO COMPARISON — PBMC68K</span><span class="se">\n</span><span class="s2">Status: </span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'match_status'</span><span class="p">]</span><span class="si">}</span><span class="s2">  Acc: ours=</span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'our_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'zhao_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Δ=</span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'accuracy_delta'</span><span class="p">]</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">  Qubits: ours=</span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'our_qubits_at_peak'</span><span class="p">]</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'zhao_qubits'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reproduced: </span><span class="si">{</span><span class="s1">'✅ YES'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">_comp68k</span><span class="p">[</span><span class="s1">'reproduced'</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'❌ NO'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span><span class="s1">'pbmc68k_zhao_comparison.json'</span><span class="p">),</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_comp68k</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running PBMC68k PCA sweep...'</span><span class="p">)</span>
-<span class="n">pbmc68k_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_pbmc68k</span><span class="p">,</span> <span class="n">y_pbmc68k</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">PBMC_MIN_COUNTS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">pbmc_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'PBMC68k'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">_ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'pca_done'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.json'</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'PCA sweep already complete (loading from disk).'</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">pbmc68k_pca</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running PBMC68k PCA sweep...'</span><span class="p">)</span>
+    <span class="n">pbmc68k_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_pbmc68k</span><span class="p">,</span> <span class="n">y_pbmc68k</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">PBMC_MIN_COUNTS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">pbmc_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'PBMC68k'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">_ckpt</span><span class="p">[</span><span class="s1">'pca_done'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_ckpt</span><span class="p">,</span> <span class="n">_f</span><span class="p">)</span>
 <span class="n">plot_pca_results</span><span class="p">(</span><span class="n">pbmc68k_pca</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'PBMC68k: Dimension reduction'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix68k</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e6</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix68k</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.pdf'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'PBMC68k done in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">s'</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Loading PBMC68k from cache: /home/user/.cache/qos/pbmc68k/pbmc68k_raw.h5ad
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">OSError</span>                                   Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[11]</span><span class="ansi-green-fg">, line 17</span>
-<span class="ansi-green-fg">     13</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> np.zeros(adata.n_obs, dtype=int)
-<span class="ansi-green-fg">     14</span> 
-<span class="ansi-green-fg">     15</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> os.path.exists(h5ad_path):
-<span class="ansi-green-fg">     16</span>     print(f'Loading PBMC68k from cache: {h5ad_path}')
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">17</span>     adata68k = ad.read_h5ad(h5ad_path)
-<span class="ansi-green-fg">     18</span> <span class="ansi-bold" style="color: rgb(0,135,0)">else</span>:
-<span class="ansi-green-fg">     19</span>     print(<span class="ansi-yellow-fg">'Cache miss — using scanpy built-in (pbmc68k_reduced). Run cell 3b-download for full dataset.'</span>)
-<span class="ansi-green-fg">     20</span>     adata68k = sc.datasets.pbmc68k_reduced()
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching-7acd62f3/.venv/lib/python3.12/site-packages/anndata/_io/h5ad.py:263</span>, in <span class="ansi-cyan-fg">read_h5ad</span><span class="ansi-blue-fg">(filename, backed, as_sparse, as_sparse_fmt, chunk_size)</span>
-<span class="ansi-green-fg">    257</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">raise</span> <span class="ansi-bold" style="color: rgb(215,95,95)">NotImplementedError</span>(msg)
-<span class="ansi-green-fg">    259</span> rdasp = partial(
-<span class="ansi-green-fg">    260</span>     read_dense_as_sparse, sparse_format=as_sparse_fmt, axis_chunk=chunk_size
-<span class="ansi-green-fg">    261</span> )
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">263</span> <span class="ansi-bold" style="color: rgb(0,135,0)">with</span> <span class="ansi-black-fg ansi-yellow-bg">h5py</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">File</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">filename</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">"</span><span class="ansi-black-fg ansi-yellow-bg">r</span><span class="ansi-black-fg ansi-yellow-bg">"</span><span class="ansi-black-fg ansi-yellow-bg">)</span> <span class="ansi-bold" style="color: rgb(0,135,0)">as</span> f:
-<span class="ansi-green-fg">    265</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">def</span><span style="color: rgb(188,188,188)"> </span><span class="ansi-blue-fg">callback</span>(read_func, elem_name: <span style="color: rgb(0,135,0)">str</span>, elem: StorageType, iospec: IOSpec):
-<span class="ansi-green-fg">    266</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> iospec.encoding_type == <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">anndata</span><span class="ansi-yellow-fg">"</span> <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> elem_name.endswith(<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">/</span><span class="ansi-yellow-fg">"</span>):
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching-7acd62f3/.venv/lib/python3.12/site-packages/h5py/_hl/files.py:555</span>, in <span class="ansi-cyan-fg">File.__init__</span><span class="ansi-blue-fg">(self, name, mode, driver, libver, userblock_size, swmr, rdcc_nslots, rdcc_nbytes, rdcc_w0, track_order, fs_strategy, fs_persist, fs_threshold, fs_page_size, page_buf_size, min_meta_keep, min_raw_keep, locking, alignment_threshold, alignment_interval, meta_block_size, track_times, **kwds)</span>
-<span class="ansi-green-fg">    546</span>     fapl = make_fapl(driver, libver, rdcc_nslots, rdcc_nbytes, rdcc_w0,
-<span class="ansi-green-fg">    547</span>                      locking, page_buf_size, min_meta_keep, min_raw_keep,
-<span class="ansi-green-fg">    548</span>                      alignment_threshold=alignment_threshold,
-<span class="ansi-green-fg">    549</span>                      alignment_interval=alignment_interval,
-<span class="ansi-green-fg">    550</span>                      meta_block_size=meta_block_size,
-<span class="ansi-green-fg">    551</span>                      **kwds)
-<span class="ansi-green-fg">    552</span>     fcpl = make_fcpl(track_order=track_order, track_times=track_times,
-<span class="ansi-green-fg">    553</span>                      fs_strategy=fs_strategy, fs_persist=fs_persist,
-<span class="ansi-green-fg">    554</span>                      fs_threshold=fs_threshold, fs_page_size=fs_page_size)
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">555</span>     fid = <span class="ansi-black-fg ansi-yellow-bg">make_fid</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">name</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">mode</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">userblock_size</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">fapl</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">fcpl</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">swmr</span><span class="ansi-black-fg ansi-yellow-bg">=</span><span class="ansi-black-fg ansi-yellow-bg">swmr</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    557</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">isinstance</span>(libver, <span style="color: rgb(0,135,0)">tuple</span>):
-<span class="ansi-green-fg">    558</span>     <span style="color: rgb(0,135,0)">self</span>._libver = libver
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching-7acd62f3/.venv/lib/python3.12/site-packages/h5py/_hl/files.py:232</span>, in <span class="ansi-cyan-fg">make_fid</span><span class="ansi-blue-fg">(name, mode, userblock_size, fapl, fcpl, swmr)</span>
-<span class="ansi-green-fg">    230</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> swmr:
-<span class="ansi-green-fg">    231</span>         flags |= h5f.ACC_SWMR_READ
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">232</span>     fid = <span class="ansi-black-fg ansi-yellow-bg">h5f</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">open</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">name</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">flags</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">fapl</span><span class="ansi-black-fg ansi-yellow-bg">=</span><span class="ansi-black-fg ansi-yellow-bg">fapl</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    233</span> <span class="ansi-bold" style="color: rgb(0,135,0)">elif</span> mode == <span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">r+</span><span class="ansi-yellow-fg">'</span>:
-<span class="ansi-green-fg">    234</span>     fid = h5f.open(name, h5f.ACC_RDWR, fapl=fapl)
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">h5py/_objects.pyx:54</span>, in <span class="ansi-cyan-fg">h5py._objects.with_phil.wrapper</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">54</span> <span class="ansi-yellow-fg">'Could not get source, probably due dynamically evaluated source code.'</span>
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">h5py/_objects.pyx:55</span>, in <span class="ansi-cyan-fg">h5py._objects.with_phil.wrapper</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">55</span> <span class="ansi-yellow-fg">'Could not get source, probably due dynamically evaluated source code.'</span>
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">h5py/h5f.pyx:106</span>, in <span class="ansi-cyan-fg">h5py.h5f.open</span><span class="ansi-blue-fg">()</span>
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">106</span> <span class="ansi-yellow-fg">'Could not get source, probably due dynamically evaluated source code.'</span>
-
-<span class="ansi-red-fg">OSError</span>: Unable to synchronously open file (file signature not found)</pre>
 </div>
 </div>
 </div>
@@ -8560,15 +9086,16 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dorothea-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=dorothea-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.dorothea.dorothea_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dorothea</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.dorothea.dorothea_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dorothea</span>
 <span class="n">DOROTHEA_THRESHOLDS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">10</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">14</span><span class="p">,</span><span class="mi">17</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">24</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span><span class="mi">33</span><span class="p">,</span><span class="mi">39</span><span class="p">,</span><span class="mi">46</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">65</span><span class="p">,</span><span class="mi">77</span><span class="p">,</span><span class="mi">91</span><span class="p">,</span><span class="mi">108</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">152</span><span class="p">,</span><span class="mi">180</span><span class="p">,</span><span class="mi">213</span><span class="p">,</span><span class="mi">252</span><span class="p">,</span><span class="mi">299</span><span class="p">,</span><span class="mi">354</span><span class="p">,</span><span class="mi">420</span><span class="p">,</span><span class="mi">497</span><span class="p">,</span><span class="mi">589</span><span class="p">,</span><span class="mi">698</span><span class="p">,</span><span class="mi">827</span><span class="p">,</span><span class="mi">980</span><span class="p">,</span><span class="mi">1161</span><span class="p">,</span><span class="mi">1375</span><span class="p">,</span><span class="mi">1629</span><span class="p">,</span><span class="mi">1930</span><span class="p">,</span><span class="mi">2286</span><span class="p">,</span><span class="mi">2709</span><span class="p">]</span>
 <span class="k">if</span> <span class="n">FAST_MODE</span><span class="p">:</span> <span class="n">DOROTHEA_THRESHOLDS</span> <span class="o">=</span> <span class="n">DOROTHEA_THRESHOLDS</span><span class="p">[::</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">DOROTHEA_THRESHOLDS</span><span class="p">)</span><span class="o">//</span><span class="n">FAST_SWEEP_LEN</span><span class="p">)]</span>
 <span class="nb">print</span><span class="p">(</span><span class="s1">'Loading Dorothea...'</span><span class="p">)</span>
@@ -8580,40 +9107,44 @@ If the download fails, run the wget cell below first.</p>
     <span class="n">X_f</span> <span class="o">=</span> <span class="n">X</span><span class="p">[:,</span> <span class="n">mask</span><span class="p">]</span>
     <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="p">{})</span> <span class="k">if</span> <span class="n">X_f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">(</span><span class="n">X_f</span><span class="p">,</span> <span class="p">{</span><span class="s1">'num_features'</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())})</span>
 <span class="n">prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="s1">'dorothea'</span><span class="p">);</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running Dorothea classification sweep...'</span><span class="p">)</span>
-<span class="n">dor_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_dor</span><span class="p">,</span> <span class="n">y_dor</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">DOROTHEA_THRESHOLDS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">dorothea_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'Dorothea'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'dorothea'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
+
+<span class="c1"># Checkpoint/resume for long sweep.</span>
+<span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">'dorothea'</span>
+<span class="n">_ckpt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">DATASET_NAME</span><span class="si">}</span><span class="s1">_checkpoint.json'</span><span class="p">)</span>
+<span class="n">_ckpt</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">_ckpt</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Resuming from checkpoint: </span><span class="si">{</span><span class="n">_ckpt_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Checkpoint unreadable (</span><span class="si">{</span><span class="n">_e</span><span class="si">!r}</span><span class="s1">); starting fresh.'</span><span class="p">)</span>
+        <span class="n">_ckpt</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="k">if</span> <span class="n">_ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'classification_done'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.json'</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Classification sweep already complete (loading from disk).'</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">dor_clf</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running Dorothea classification sweep...'</span><span class="p">)</span>
+    <span class="n">dor_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_dor</span><span class="p">,</span> <span class="n">y_dor</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">DOROTHEA_THRESHOLDS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">dorothea_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'Dorothea'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'dorothea'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
+    <span class="n">_ckpt</span><span class="p">[</span><span class="s1">'classification_done'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_ckpt</span><span class="p">,</span> <span class="n">_f</span><span class="p">)</span>
 <span class="n">plot_experiment_results</span><span class="p">(</span><span class="n">dor_clf</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'Dorothea: Drug discovery'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'Accuracy'</span><span class="p">,</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[</span><span class="mf">0.80</span><span class="p">,</span><span class="mf">0.85</span><span class="p">,</span><span class="mf">0.90</span><span class="p">,</span><span class="mf">0.95</span><span class="p">],</span> <span class="n">xtick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'80%'</span><span class="p">,</span><span class="s1">'85%'</span><span class="p">,</span><span class="s1">'90%'</span><span class="p">,</span><span class="s1">'95%'</span><span class="p">],</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.78</span><span class="p">,</span><span class="mf">0.97</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e6</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.pdf'</span><span class="p">)</span>
 <span class="n">_comp</span> <span class="o">=</span> <span class="n">compare_to_zhao</span><span class="p">(</span><span class="s1">'dorothea'</span><span class="p">,</span> <span class="n">dor_clf</span><span class="p">,</span> <span class="n">ZHAO_REFERENCE</span><span class="p">[</span><span class="s1">'dorothea'</span><span class="p">])</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">ZHAO COMPARISON — DOROTHEA</span><span class="se">\n</span><span class="s2">Status: </span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'match_status'</span><span class="p">]</span><span class="si">}</span><span class="s2">  Acc: ours=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'our_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'zhao_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Δ=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'accuracy_delta'</span><span class="p">]</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reproduced: </span><span class="si">{</span><span class="s1">'✅ YES'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">_comp</span><span class="p">[</span><span class="s1">'reproduced'</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'❌ NO'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span><span class="s1">'dorothea_zhao_comparison.json'</span><span class="p">),</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_comp</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running Dorothea PCA sweep...'</span><span class="p">)</span>
-<span class="n">dor_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_dor</span><span class="p">,</span> <span class="n">y_dor</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">DOROTHEA_THRESHOLDS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">dorothea_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'Dorothea'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">_ckpt</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'pca_done'</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.json'</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'PCA sweep already complete (loading from disk).'</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.json'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">dor_pca</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">_f</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running Dorothea PCA sweep...'</span><span class="p">)</span>
+    <span class="n">dor_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_dor</span><span class="p">,</span> <span class="n">y_dor</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">DOROTHEA_THRESHOLDS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">dorothea_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'Dorothea'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">_ckpt</span><span class="p">[</span><span class="s1">'pca_done'</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">_ckpt_path</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">_f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_ckpt</span><span class="p">,</span> <span class="n">_f</span><span class="p">)</span>
 <span class="n">plot_pca_results</span><span class="p">(</span><span class="n">dor_pca</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'Dorothea: Dimension reduction'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e6</span><span class="p">))</span>
 <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.pdf'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Dorothea done in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">s'</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[12]</span><span class="ansi-green-fg">, line 1</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.dorothea.dorothea_utils <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_dorothea
-<span class="ansi-green-fg">      2</span> DOROTHEA_THRESHOLDS = [<span class="ansi-green-fg">1</span>,<span class="ansi-green-fg">2</span>,<span class="ansi-green-fg">3</span>,<span class="ansi-green-fg">4</span>,<span class="ansi-green-fg">5</span>,<span class="ansi-green-fg">6</span>,<span class="ansi-green-fg">7</span>,<span class="ansi-green-fg">8</span>,<span class="ansi-green-fg">10</span>,<span class="ansi-green-fg">12</span>,<span class="ansi-green-fg">14</span>,<span class="ansi-green-fg">17</span>,<span class="ansi-green-fg">20</span>,<span class="ansi-green-fg">24</span>,<span class="ansi-green-fg">28</span>,<span class="ansi-green-fg">33</span>,<span class="ansi-green-fg">39</span>,<span class="ansi-green-fg">46</span>,<span class="ansi-green-fg">55</span>,<span class="ansi-green-fg">65</span>,<span class="ansi-green-fg">77</span>,<span class="ansi-green-fg">91</span>,<span class="ansi-green-fg">108</span>,<span class="ansi-green-fg">128</span>,<span class="ansi-green-fg">152</span>,<span class="ansi-green-fg">180</span>,<span class="ansi-green-fg">213</span>,<span class="ansi-green-fg">252</span>,<span class="ansi-green-fg">299</span>,<span class="ansi-green-fg">354</span>,<span class="ansi-green-fg">420</span>,<span class="ansi-green-fg">497</span>,<span class="ansi-green-fg">589</span>,<span class="ansi-green-fg">698</span>,<span class="ansi-green-fg">827</span>,<span class="ansi-green-fg">980</span>,<span class="ansi-green-fg">1161</span>,<span class="ansi-green-fg">1375</span>,<span class="ansi-green-fg">1629</span>,<span class="ansi-green-fg">1930</span>,<span class="ansi-green-fg">2286</span>,<span class="ansi-green-fg">2709</span>]
-<span class="ansi-green-fg">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> FAST_MODE: DOROTHEA_THRESHOLDS = DOROTHEA_THRESHOLDS[::max(<span class="ansi-green-fg">1</span>,len(DOROTHEA_THRESHOLDS)//FAST_SWEEP_LEN)]
-<span class="ansi-green-fg">      4</span> print(<span class="ansi-yellow-fg">'Loading Dorothea...'</span>)
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'qos'</pre>
 </div>
 </div>
 </div>
@@ -8629,12 +9160,12 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=splice-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=splice-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.splice.splice_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_splice</span>
@@ -8664,27 +9195,6 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">ModuleNotFoundError</span>                       Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[13]</span><span class="ansi-green-fg">, line 1</span>
-<span class="ansi-green-fg">----&gt; </span><span class="ansi-green-fg">1</span> <span class="ansi-bold" style="color: rgb(0,135,0)">from</span> qos.experiments.real_datasets.splice.splice_utils <span class="ansi-bold" style="color: rgb(0,135,0)">import</span> load_splice
-<span class="ansi-green-fg">      2</span> SPLICE_THRESHOLDS = list(range(<span class="ansi-green-fg">1</span>, <span class="ansi-green-fg">61</span>))
-<span class="ansi-green-fg">      3</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> FAST_MODE: SPLICE_THRESHOLDS = SPLICE_THRESHOLDS[::max(<span class="ansi-green-fg">1</span>,len(SPLICE_THRESHOLDS)//FAST_SWEEP_LEN)]
-<span class="ansi-green-fg">      4</span> print(<span class="ansi-yellow-fg">'Loading Splice...'</span>)
-
-<span class="ansi-red-fg">ModuleNotFoundError</span>: No module named 'qos'</pre>
-</div>
-</div>
-</div>
-</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-summary">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8696,12 +9206,12 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=summary">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=summary">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
@@ -8733,46 +9243,6 @@ If the download fails, run the wget cell below first.</p>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'  </span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s1">&lt;12</span><span class="si">}</span><span class="s1">: acc=</span><span class="si">{</span><span class="n">peak</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1">, min_qubits=</span><span class="si">{</span><span class="n">minq</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'  </span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s1">&lt;12</span><span class="si">}</span><span class="s1">: not run'</span><span class="p">)</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>=================================================================
-REAL DATASET EXPERIMENTS — OUTPUT MANIFEST
-=================================================================
-
-PDFs (0):
-
-JSON results (0):
-
-=================================================================
-ZHAO ET AL. (2025) REPLICATION SUMMARY
-=================================================================
-Dataset        Status          Acc Δ   Qubits Δ    OOM (ours/Zhao)
------------------------------------------------------------------
-imdb           NOT RUN     
-news20         NOT RUN     
-pbmc68k        NOT RUN     
-dorothea       NOT RUN     
------------------------------------------------------------------
-pbmc3k         NOVEL        —          —                  — (no Zhao baseline)
-splice         NOVEL        —          —                  — (no Zhao baseline)
-
-Peak accuracy per dataset:
-  imdb        : not run
-  news20      : not run
-  pbmc3k      : not run
-  pbmc68k     : not run
-  dorothea    : not run
-  splice      : not run
-</pre>
 </div>
 </div>
 </div>

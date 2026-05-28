@@ -1,0 +1,27 @@
+{
+  "status": "success",
+  "backend": "ibm_fez",
+  "job_id": "d8cbt9ijki0s73ar2100",
+  "timestamp": "2026-05-28T22:16:12.847293Z",
+  "circuit_description": "3-qubit XOR phase oracle sketch, Algorithm 1",
+  "paper_reference": "Marena (2026), Algorithm 1, \u00a73",
+  "n_qubits": 3,
+  "circuit_depth_transpiled": 10,
+  "circuit_gates_transpiled": 12,
+  "shots": 512,
+  "pending_jobs_at_submission": 0,
+  "counts": {
+    "011": 453,
+    "111": 6,
+    "010": 26,
+    "001": 26,
+    "000": 1
+  },
+  "probabilities": {
+    "011": 0.884766,
+    "111": 0.011719,
+    "010": 0.050781,
+    "001": 0.050781,
+    "000": 0.001953
+  }
+}

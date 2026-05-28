@@ -45,6 +45,11 @@ class InterferometricClassicalShadow:
     This is the first open-source simulation of Theorem F.16 from
     Zhao et al. (2025), extended to complex test vectors (Marena 2026).
 
+    See: Marena (2026), §7 (``sec:shadow``). The shadow estimator for
+    ``<v|rho|v>`` from T interferometric measurements is unbiased,
+    ``E[O_hat_T] = <v|rho|v>``, with ``Var[O_hat_T] = O(s/T)`` where
+    ``s = |supp(v)|``; hence the prediction error scales as ``O(sqrt(s/T))``.
+
     Parameters
     ----------
     weight_state : jax.Array, shape (N,)

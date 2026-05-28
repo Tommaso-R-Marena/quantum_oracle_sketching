@@ -31,12 +31,21 @@ jobs:
           # dependency resolver error does not mask the base install)
           pip install -e ".[dev,noise,kernel]"
 
+      - name: Verify optional extras installable
+        run: |
+          pip install -e ".[hardware]" --dry-run
+          pip install -e ".[datasets]" --dry-run
+
       - name: Run full test suite
         run: |
+          set -o pipefail
           mkdir -p test-output
-          PYTHONPATH=src pytest tests/ -v --tb=short \
+          PYTHONPATH=src pytest tests/ -v --tb=long -W error \
             --junitxml=test-output/junit-${{ matrix.python-version }}.xml \
             2>&1 | tee test-output/pytest-${{ matrix.python-version }}.txt
+
+      - name: Regenerate figures
+        run: python scripts/generate_all_figures.py
 
       - name: Upload test artifacts
         if: always()
@@ -44,3 +53,10 @@ jobs:
         with:
           name: pytest-output-py${{ matrix.python-version }}
           path: test-output/
+
+      - name: Upload figures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figures-py${{ matrix.python-version }}
+          path: results/figures/

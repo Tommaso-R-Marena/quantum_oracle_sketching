@@ -3,12 +3,26 @@ __pycache__/
 *.pyc
 *.pyo
 *.egg-info/
+.eggs/
 build/
 dist/
 .pytest_cache/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# Secrets / scratch
+.env
+*.json.bak
+/tmp/
+
+# Headless notebook scratch data (regenerated; not committed)
+results/notebooks_data/
+# Runaway in-notebook self-clone (never commit)
+notebooks/quantum_oracle_sketching/
+# Notebook-generated figures + downloaded dataset caches written into notebooks/
+notebooks/*.png
+notebooks/data/
 
 # Virtual envs
 .venv/

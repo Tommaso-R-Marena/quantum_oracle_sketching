@@ -5,7 +5,71 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.3.3] — 2026-05-14
+## [1.3.3] — 2026-05-28
+
+Publication-readiness sweep, second pass (2026-05-28).
+
+### Added
+- **TRACEABILITY.md**: complete paper↔code↔test map covering every theorem,
+  algorithm, and key equation, with a "math verified?" column and reproduction
+  table for all five figure-bearing empirical claims. No unresolved gaps.
+- **`[hardware]` and `[datasets]` optional install extras** in `pyproject.toml`
+  (`qiskit-ibm-runtime`, `pdf2image`, `Pillow`).
+- **IBM Quantum hardware validation** (`results/raw_data/ibm_qpu_run.json`):
+  the 3-qubit XOR phase-oracle sketch (Algorithm 1) was executed on real IBM
+  hardware (backend `ibm_fez`, 512 shots) after passing the AerSimulator gate
+  (G1) and queue/qubit/shots gates (G2–G4). Ideal output `|011>` recovered with
+  88.5% probability under hardware noise; result rendered into
+  `notebooks/hardware_ibm_colab.ipynb`.
+- **LaTeX `% Implementation:` / `% Tests:` comments** in
+  `paper/marena2026_quantum_oracle_sketching.tex` linking each theorem,
+  algorithm, and equation to its source file and test (comments only).
+- **Paper-citing docstrings** on the public functions/classes in `src/qos/`
+  that implement paper results (`See: Marena (2026), §X, …`).
+
+### Fixed
+- **Notebook portability (all 9 notebooks).** The headless driver
+  (`scripts/run_notebooks_headless.py`) now applies quote-agnostic patches for
+  `git clone`, `pip install/uninstall`, `USE_HARDWARE=True`→False,
+  `%load_ext google.colab` magics, `from google.colab import …` (try/except),
+  `/content/` paths, and a recursion-prone `shutil.make_archive` call; it also
+  prepends an `_ensure_qos_importable()` shim to any clone/install/sys.path
+  cell. The same shim is applied directly inside each notebook
+  (belt-and-suspenders), and IBM/`pdf2image` import-guard cells were added to
+  the hardware and real-datasets notebooks. Headless run: **7/9 PASS**
+  (`n_err==0`); the 2 remaining are expected optional-dependency fails
+  (`real_datasets_colab` → `pdf2image`).
+- **`run_notebooks_headless.py`** `nbformat.write(nb, PosixPath)` crash fixed
+  (pass `str(out_path)`).
+- **`warmstart_ablation.ipynb`** now seeds the ablation with clearly-labeled
+  SYNTHETIC K-sparse truth tables (the regime Theorem 3 targets) in addition
+  to any real datasets, so the convergence diagnostic exercises the method's
+  valid regime and runs cleanly offline. Real-data results (dense, balanced)
+  are reported honestly and show no warmstart speedup — matching the paper's
+  Fourier-sparsity assumption.
+- **`scripts/verify_noise_robustness.py`** now computes the physically-correct
+  depolarized measurement distribution (convex mixture toward uniform), so the
+  noise-robustness TVD increases monotonically with the depolarizing rate
+  instead of being invariant to it (a global diagonal shrink cancels under
+  normalization). The underlying `DepolarizingChannel` contract is unchanged
+  and still pinned by `tests/test_noise_model.py`.
+- **CI** (`.github/workflows/ci.yml`): test command now uses `--tb=long`,
+  `-W error`, and `set -o pipefail`; added a figure-regeneration step, a
+  figures artifact upload, and an optional-extras (`[hardware]`, `[datasets]`)
+  dry-run install smoke test.
+
+### Changed
+- **Version 1.1.0 → 1.3.3** with a **static** `version` in `pyproject.toml`
+  (replacing the dynamic hatch-sourced version) plus `__version__` in
+  `src/qos/__init__.py`; both report `1.3.3`.
+- **CITATION.cff**: `date-released: 2026-05-28`.
+- **.gitignore**: added `.eggs/`, `/tmp/`, `results/notebooks_data/`, `.env`,
+  `*.json.bak`, and the runaway `notebooks/quantum_oracle_sketching/` self-clone
+  guard.
+
+---
+
+## [1.3.2] — 2026-05-14
 
 ### Fixed
 - **Two metrics under one name (`tvd_diag`).** A late-round review of
