@@ -7859,24 +7859,6 @@ Results are reproducible: circuits are fixed by <code>SEED</code>.</p>
                 <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
 <span class="n">_ensure_qos_importable</span><span class="p">()</span>
-<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
-<span class="n">_ensure_qos_importable</span><span class="p">()</span>
 <span class="c1"># ── Install quantum-oracle-sketching (idempotent) ──────────────────────────</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
 <span class="n">_REPO</span> <span class="o">=</span> <span class="s2">"https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git"</span>
@@ -7981,7 +7963,7 @@ qos version : 1.3.3
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=23706983">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=34689e03">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7991,7 +7973,7 @@ qos version : 1.3.3
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2e78dc78">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2fc69b27">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -7999,19 +7981,26 @@ qos version : 1.3.3
 <div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_json</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Display the real IBM QPU result recorded during the publication sweep.</span>
+<span class="c1"># Path is resolved across local / headless / Colab-clone layouts; if the</span>
+<span class="c1"># record is absent (e.g. a fresh Colab run that has not executed a QPU job),</span>
+<span class="c1"># this cell degrades gracefully instead of erroring.</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_json</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span>
 <span class="n">_cands</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'results/raw_data/ibm_qpu_run.json'</span><span class="p">,</span>
-          <span class="s1">'../results/raw_data/ibm_qpu_run.json'</span><span class="p">]</span>
-<span class="n">_p</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_cands</span> <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span> <span class="n">_cands</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">_qpu</span> <span class="o">=</span> <span class="n">_json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">_p</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Backend:     </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'backend'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Job ID:      </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'job_id'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Timestamp:   </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'timestamp'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Circuit:     </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'circuit_description'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Depth:       </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'circuit_depth_transpiled'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Counts:      </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'counts'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shots:       </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'shots'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Paper ref:   </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s1">'paper_reference'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+          <span class="s1">'../results/raw_data/ibm_qpu_run.json'</span><span class="p">,</span>
+          <span class="s1">'quantum_oracle_sketching/results/raw_data/ibm_qpu_run.json'</span><span class="p">]</span>
+<span class="n">_p</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_cands</span> <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">c</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">_p</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'No recorded QPU result found (results/raw_data/ibm_qpu_run.json).'</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Run the QPU submission to populate it; this cell is display-only.'</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">_qpu</span> <span class="o">=</span> <span class="n">_json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">_p</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">_k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">'backend'</span><span class="p">,</span><span class="s1">'job_id'</span><span class="p">,</span><span class="s1">'timestamp'</span><span class="p">,</span><span class="s1">'circuit_description'</span><span class="p">,</span>
+               <span class="s1">'circuit_depth_transpiled'</span><span class="p">,</span><span class="s1">'counts'</span><span class="p">,</span><span class="s1">'shots'</span><span class="p">,</span><span class="s1">'paper_reference'</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">_k</span> <span class="ow">in</span> <span class="n">_qpu</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">_k</span><span class="si">:</span><span class="s1">24s</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="n">_k</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="s1">'reason'</span> <span class="ow">in</span> <span class="n">_qpu</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'QPU run skipped: </span><span class="si">{</span><span class="n">_qpu</span><span class="p">[</span><span class="s2">"reason"</span><span class="p">]</span><span class="si">}</span><span class="s1">'</span><span class="p">);</span> <span class="k">break</span>
 </pre></div>
 </div>
 </div>
@@ -8024,14 +8013,14 @@ qos version : 1.3.3
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Backend:     ibm_fez
-Job ID:      d8cbt9ijki0s73ar2100
-Timestamp:   2026-05-28T22:16:12.847293Z
-Circuit:     3-qubit XOR phase oracle sketch, Algorithm 1
-Depth:       10
-Counts:      {'011': 453, '111': 6, '010': 26, '001': 26, '000': 1}
-Shots:       512
-Paper ref:   Marena (2026), Algorithm 1, §3
+<pre>backend                 : ibm_fez
+job_id                  : d8cbt9ijki0s73ar2100
+timestamp               : 2026-05-28T22:16:12.847293Z
+circuit_description     : 3-qubit XOR phase oracle sketch, Algorithm 1
+circuit_depth_transpiled: 10
+counts                  : {'011': 453, '111': 6, '010': 26, '001': 26, '000': 1}
+shots                   : 512
+paper_reference         : Marena (2026), Algorithm 1, §3
 </pre>
 </div>
 </div>
@@ -8055,24 +8044,6 @@ Paper ref:   Marena (2026), Algorithm 1, §3
     <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
                <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
                <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
-<span class="n">_ensure_qos_importable</span><span class="p">()</span>
-<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
             <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
@@ -8145,9 +8116,6 @@ Paper ref:   Marena (2026), Algorithm 1, §3
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">'IBMQ_TOKEN'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>  <span class="c1"># patched: no interactive prompt</span>
-<span class="n">USE_HARDWARE</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># patched: force AerSimulator path</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">'IBMQ_TOKEN'</span><span class="p">,</span> <span class="s1">''</span><span class="p">)</span>  <span class="c1"># patched: no interactive prompt</span>
 <span class="n">USE_HARDWARE</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># patched: force AerSimulator path</span>
 <span class="c1"># ============================================================</span>

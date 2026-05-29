@@ -7843,24 +7843,6 @@ a.anchor-link {
                 <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
 <span class="n">_ensure_qos_importable</span><span class="p">()</span>
-<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
-<span class="n">_ensure_qos_importable</span><span class="p">()</span>
 <span class="c1"># ── Install quantum-oracle-sketching (idempotent) ──────────────────────────</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span>
 <span class="n">_REPO</span> <span class="o">=</span> <span class="s2">"https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git"</span>

@@ -3,7 +3,34 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script><script>
+(function() {
+  function addWidgetsRenderer() {
+    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
+    var scriptElement = document.createElement('script');
+    
+    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
+    
+    var widgetState;
+
+    // Fallback for older version:
+    try {
+      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
+
+      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
+        
+        var widgetRendererSrc = 'https://unpkg.com/@jupyter-js-widgets@*/dist/embed.js';
+        
+      }
+    } catch(e) {}
+
+    scriptElement.src = widgetRendererSrc;
+    document.body.appendChild(scriptElement);
+  }
+
+  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
+}());
+</script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7844,24 +7871,6 @@ and the speedup ratio. Produces the per-dataset ablation table for Section 5.3.<
                 <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
 <span class="n">_ensure_qos_importable</span><span class="p">()</span>
-<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
-<span class="n">_ensure_qos_importable</span><span class="p">()</span>
 <span class="c1"># ── Install quantum-oracle-sketching (warmstart two-step, idempotent) ─────</span>
 <span class="c1"># Two-step install preserved from commits ef40337/3352732: install qos wheel</span>
 <span class="c1"># with --no-deps so Colab's pre-pinned numpy/scipy/jax aren't disturbed, then</span>
@@ -7963,7 +7972,7 @@ Platform    : Linux x86_64
 JAX devices : [CpuDevice(id=0)]
 ⚠️  No GPU detected. Heavy experiments will be slow.
    Go to Runtime &gt; Change runtime type &gt; T4 or A100.
-qos version : 1.1.0
+qos version : 1.3.3
 ✅ Environment ready.
 </pre>
 </div>
@@ -7988,24 +7997,6 @@ qos version : 1.1.0
     <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
                <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
                <span class="s1">'/content/quantum_oracle_sketching/src'</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-            <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-                <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span>
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
-<span class="n">_ensure_qos_importable</span><span class="p">()</span>
-<span class="c1"># [patched: headless importability shim — no network clone/install]</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_sys</span><span class="o">,</span><span class="w"> </span><span class="nn">os</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_os</span><span class="o">,</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_importlib</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">_ensure_qos_importable</span><span class="p">():</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">_importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="s1">'qos'</span><span class="p">);</span> <span class="k">return</span>
-    <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-        <span class="k">pass</span>
-    <span class="k">for</span> <span class="n">_c</span> <span class="ow">in</span> <span class="p">[</span><span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">(),</span> <span class="s1">'quantum_oracle_sketching'</span><span class="p">,</span> <span class="s1">'src'</span><span class="p">),</span>
-               <span class="s1">'./results/notebooks_data/quantum_oracle_sketching/src'</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">_os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">_c</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
             <span class="n">_sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">_c</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
@@ -8419,10 +8410,13 @@ Warmstart: 64 modes, 400 steps, lr=0.03
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>/usr/local/lib/python3.12/site-packages/tqdm/auto.py:21: TqdmWarning: IProgress not found. Please update jupyter and ipywidgets. See https://ipywidgets.readthedocs.io/en/stable/user_install.html
-  from .autonotebook import tqdm as notebook_tqdm
-</pre>
+<div class="jupyter-widgets jp-OutputArea-output" id="1bad68d4-1bc8-42ba-beda-6271c788ee28" tabindex="0">
+<script type="text/javascript">
+var element = document.getElementById('1bad68d4-1bc8-42ba-beda-6271c788ee28');
+</script>
+<script type="application/vnd.jupyter.widget-view+json">
+{"version_major": 2, "version_minor": 0, "model_id": "92fa3cc9957243c4a4eb9cd03728cea3"}
+</script>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8446,13 +8440,7 @@ In the future, the default backend for leiden will be igraph instead of leidenal
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>  loaded Dorothea (real)
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  loaded Splice (real)
+  loaded Splice (real)
 Loaded 7 datasets (3 synthetic K-sparse + 4 real), N=256 each. (skipped: ['IMDb', 'PBMC3k'])
 </pre>
 </div>
@@ -8837,4 +8825,7 @@ Splice &amp; 2618$\pm$44 &amp; 50000$\pm$0 &amp; 0.05x \\
 </div>
 </main>
 </body>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {"a08da2d6e6fe4ea9910bbfb259e842af": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "46677c2fcfcd47e49c58d832ef81c624": {"model_name": "ProgressStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "0755a389f7f14216a1df1560fa3f9d77": {"model_name": "FloatProgressModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_a08da2d6e6fe4ea9910bbfb259e842af", "max": 5855727.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_46677c2fcfcd47e49c58d832ef81c624", "tabbable": null, "tooltip": null, "value": 5855727.0}}, "89a5c303de0449e1a32e0e9ec2901a86": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "cf68b7823fa94039bcf4ef4e019ea9e4": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "c41a0084e41d4ecca74c477e5a66ed2e": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_89a5c303de0449e1a32e0e9ec2901a86", "placeholder": "\u200b", "style": "IPY_MODEL_cf68b7823fa94039bcf4ef4e019ea9e4", "tabbable": null, "tooltip": null, "value": "100%"}}, "63139b47b68145ecb5f0c3b9c4460f62": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "be3a96b2aaee4742b8dbbcd54c3a084a": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "5ec96fc2878c4bc994128e5166a8cb6b": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_63139b47b68145ecb5f0c3b9c4460f62", "placeholder": "\u200b", "style": "IPY_MODEL_be3a96b2aaee4742b8dbbcd54c3a084a", "tabbable": null, "tooltip": null, "value": "\u20075.58M\/5.58M\u2007[00:00&lt;00:00,\u20077.08MB\/s]"}}, "6281721128f14db08a65de438776549e": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "92fa3cc9957243c4a4eb9cd03728cea3": {"model_name": "HBoxModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_c41a0084e41d4ecca74c477e5a66ed2e", "IPY_MODEL_0755a389f7f14216a1df1560fa3f9d77", "IPY_MODEL_5ec96fc2878c4bc994128e5166a8cb6b"], "layout": "IPY_MODEL_6281721128f14db08a65de438776549e", "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}
+</script>
 </html>
