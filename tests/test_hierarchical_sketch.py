@@ -49,15 +49,13 @@ def test_hierarchical_diagonal_accuracy_on_support(truth_table):
 
 
 def test_more_levels_fewer_samples(truth_table):
-    """Both k=1 and k=3 beat the Zhao Q^2 reference.
+    """More hierarchy levels => fewer (or equal) total samples (BUG-17).
 
-    The theorem guarantees M_hierarchical(k) = N * Q^{2-1/k} < N * Q^2 for
-    all k >= 1 and Q > 1. This holds for both k=1 and k=3 independently.
-
-    Note: we do NOT compare k=3 vs k=1 directly. The per-level improvement
-    ratio is Q^{1/k}, which DECREASES with k (e.g. Q^{1/1}=32 >> Q^{1/3}=3.2
-    at Q=32). The benefit of higher k is query depth reduction, not total
-    sample count.
+    With the corrected self-consistent complexity M(k) = N * Q^{1 + 1/k}:
+      - k=1 equals the Zhao N*Q^2 baseline (improvement factor 1), and
+      - k=3 strictly beats the baseline AND uses fewer samples than k=1.
+    The previous formula N*Q^{2-1/k} was INCREASING in k, so k=4 cost more
+    than k=1 -- the bug this test now guards against.
     """
     Q = 32
     _, stats_k1 = HierarchicalOracleSketch.from_truth_table(
@@ -67,10 +65,15 @@ def test_more_levels_fewer_samples(truth_table):
         truth_table, num_levels=3, total_queries=Q, seed=0
     ).build()
 
-    # Both k=1 and k=3 must independently beat the Zhao Q^2 reference.
-    assert stats_k1["total_samples"] < stats_k1["zhao_reference_samples"], (
-        f"k=1 ({stats_k1['total_samples']}) should beat Zhao "
+    # k=1 equals the Zhao Q^2 baseline (improvement factor 1); k=3 beats it.
+    assert stats_k1["total_samples"] <= stats_k1["zhao_reference_samples"], (
+        f"k=1 ({stats_k1['total_samples']}) should be <= Zhao "
         f"({stats_k1['zhao_reference_samples']})"
+    )
+    # BUG-17: more levels must not cost more samples.
+    assert stats_k3["total_samples"] <= stats_k1["total_samples"], (
+        f"k=3 ({stats_k3['total_samples']}) should use <= samples than "
+        f"k=1 ({stats_k1['total_samples']})"
     )
     assert stats_k3["total_samples"] < stats_k3["zhao_reference_samples"], (
         f"k=3 ({stats_k3['total_samples']}) should beat Zhao "

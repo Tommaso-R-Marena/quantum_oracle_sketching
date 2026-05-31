@@ -26,6 +26,19 @@ dual-Hadamard test that extracts both Re<w|x_j> and Im<w|x_j> simultaneously,
 halving the circuit depth at equal precision.
 
 This extension is NOT in Zhao et al. and constitutes a new result.
+
+## Known limitation (BUG-14, flagged for follow-up)
+
+The single-shot estimator ``(1-2*bit)*Re<Uw|x>`` used in :meth:`predict` is
+NOT unbiased for ``<w|x>`` under the random phase+permutation ensemble here:
+that ensemble is not a unitary 2-design, so the standard ``(N+1)`` global-
+Clifford dual-frame inversion does not apply. As a result the prediction error
+has a systematic BIAS FLOOR for test vectors with large true overlap -- it does
+not decay at the theoretical ``O(1/sqrt(T))`` rate (the variance term does).
+A correct fix requires the dual frame for this specific ensemble, or switching
+to a Clifford/Pauli shadow with a known inverse channel. Until then,
+downstream uses that depend only on the relative ordering of overlaps are fine;
+absolute-overlap precision is bias-limited.
 """
 
 from __future__ import annotations

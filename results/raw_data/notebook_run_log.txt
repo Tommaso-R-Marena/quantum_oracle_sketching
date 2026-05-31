@@ -1,9 +1,9 @@
-01_qos_quickstart.ipynb                     OK      25.5s  patches=1  errors=0
-02_empirical_results.ipynb                  OK      39.1s  patches=2  errors=0
-circuit_depth_scaling.ipynb                 OK       9.3s  patches=3  errors=0
-full_benchmark_suite.ipynb                  FAIL   364.7s  patches=2  errors=1  first_err='\x1b[31mKeyboardInterrupt\x1b[39m: '
-hardware_ibm_colab.ipynb                    OK       4.8s  patches=4  errors=0
-noise_robustness_sweep.ipynb                OK       6.2s  patches=3  errors=0
-quantum_oracle_sketching_demo.ipynb         OK      81.0s  patches=2  errors=0
-real_datasets_colab.ipynb                   FAIL   304.4s  patches=6  errors=1  first_err="\x1b[31mImportError\x1b[39m: The 'datasets' package is required for load_imdb_data(). Install it with: pip install datasets"
-warmstart_ablation.ipynb                    FAIL    96.1s  patches=3  errors=1  first_err='\x1b[31mAssertionError\x1b[39m: Warmstart does not converge at M_MAX budget (TVD=0.5095 >= 0.05). Increase NUM_FOURIER, WARMSTART_STEPS, or lower WARMSTART_LR in the config cell.'
+01_qos_quickstart.ipynb                     OK      18.7s  patches=1  errors=0
+02_empirical_results.ipynb                  OK      27.4s  patches=2  errors=0
+circuit_depth_scaling.ipynb                 OK       8.0s  patches=3  errors=0
+full_benchmark_suite.ipynb                  OK     137.0s  patches=2  errors=0
+hardware_ibm_colab.ipynb                    OK       4.9s  patches=3  errors=0
+noise_robustness_sweep.ipynb                OK       7.3s  patches=3  errors=0
+quantum_oracle_sketching_demo.ipynb         OK      76.4s  patches=2  errors=0
+real_datasets_colab.ipynb                   FAIL   304.9s  patches=7  errors=1  first_err='\x1b[31mKeyboardInterrupt\x1b[39m: '
+warmstart_ablation.ipynb                    OK     148.5s  patches=3  errors=0

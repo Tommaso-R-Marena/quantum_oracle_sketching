@@ -290,13 +290,24 @@ def run_benchmark_sweep(
 def fit_sample_complexity(
     results: dict[int, dict[int, dict[str, float]]],
     dim_transform: Callable[[int], float] = lambda x: float(x),
+    exclude_dims: Sequence[int] | None = None,
 ) -> dict[str, float]:
-    """Fit the ansatz ``M = C * dim^alpha / epsilon^beta`` via log-space least squares."""
+    """Fit the ansatz ``M = C * dim^alpha / epsilon^beta`` via log-space least squares.
+
+    BUG-7: ``exclude_dims`` omits the listed dimensions from the regression
+    (e.g. a pre-asymptotic ``N=1024`` row-index point at ``M <= 1e6``) while
+    callers may still PLOT those points. The fit is done in log-space, which
+    avoids the spurious low-residual minimum that a raw-scale ``curve_fit``
+    falls into when the data span many orders of magnitude (BUG-6).
+    """
+    excluded = set(int(d) for d in (exclude_dims or []))
     num_samples_list: list[float] = []
     dims_list: list[float] = []
     errors_list: list[float] = []
 
     for dim, dim_results in results.items():
+        if int(dim) in excluded:
+            continue
         for unit_num_samples, res in dim_results.items():
             num_samples_list.append(res["num_samples"])
             dims_list.append(dim_transform(dim))

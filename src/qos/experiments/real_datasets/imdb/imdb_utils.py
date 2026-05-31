@@ -11,6 +11,7 @@ import numpy as np
 def load_imdb_data(
     split: str = "all",
     cache_dir: str | None = None,
+    token: str | None = None,
 ) -> tuple[list[str], np.ndarray]:
     """Return (texts, labels) for the IMDb dataset.
 
@@ -41,13 +42,17 @@ def load_imdb_data(
         """Safely convert a HF Column or list to a plain Python list."""
         return col.to_pylist() if hasattr(col, "to_pylist") else list(col)
 
+    # BUG-18: the canonical HF repo id is 'stanfordnlp/imdb'; the bare 'imdb'
+    # alias was removed and raises HfUriError ("Repository id must be
+    # 'namespace/name'").
+    _REPO = "stanfordnlp/imdb"
     if split == "all":
-        ds_train = load_dataset("imdb", split="train", cache_dir=cache_dir)
-        ds_test  = load_dataset("imdb", split="test",  cache_dir=cache_dir)
+        ds_train = load_dataset(_REPO, split="train", cache_dir=cache_dir, token=token)
+        ds_test  = load_dataset(_REPO, split="test",  cache_dir=cache_dir, token=token)
         texts  = _col_to_list(ds_train["text"])  + _col_to_list(ds_test["text"])
         labels = _col_to_list(ds_train["label"]) + _col_to_list(ds_test["label"])
     else:
-        ds = load_dataset("imdb", split=split, cache_dir=cache_dir)
+        ds = load_dataset(_REPO, split=split, cache_dir=cache_dir, token=token)
         texts  = _col_to_list(ds["text"])
         labels = _col_to_list(ds["label"])
 

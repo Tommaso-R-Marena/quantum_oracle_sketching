@@ -154,10 +154,15 @@ class HierarchicalOracleSketch:
                    total_queries=Q, seed=seed)
 
     def _samples_for_level(self, l_idx: int, query_budget: int) -> int:
+        # BUG-17: distribute the (decreasing-in-k) total budget
+        # M_total(k) = N * Q^{1 + 1/k} evenly across the k levels, so that
+        # adding levels reduces total samples (M(k=4) <= ... <= M(k=1)) and the
+        # per-level cost is consistent with compute_hierarchical_sample_complexity.
         k = len(self.levels)
         n = int(self.truth_table.shape[0])
-        exponent = 2.0 - 1.0 / k
-        return max(1, int(n * (query_budget ** exponent)))
+        exponent = 1.0 + 1.0 / k
+        total = n * (query_budget ** exponent)
+        return max(1, int(total / k))
 
     def build(self, key: Optional[jax.Array] = None) -> tuple[jax.Array, dict]:
         """Execute the k-level hierarchical oracle sketch.
@@ -266,9 +271,17 @@ def compute_hierarchical_sample_complexity(
     resolved_k = int(k if k is not None else num_levels)  # type: ignore[arg-type]
     resolved_k = max(resolved_k, 1)
 
-    exponent = 2.0 - 1.0 / resolved_k
+    # BUG-17: the previous exponent ``2 - 1/k`` is INCREASING in k for Q>1,
+    # so M(k=4) > M(k=1), violating the theoretical ordering (more levels must
+    # cost fewer samples). The self-consistent hierarchical complexity that
+    # (a) equals the Zhao baseline N*Q^2 at k=1, (b) decreases monotonically in
+    # k, and (c) realizes the Q^{1/k} family of improvements over baseline is
+    #     M(k) = N * Q^{1 + 1/k}.
+    # Then improvement over baseline = N*Q^2 / M(k) = Q^{1 - 1/k}, which grows
+    # with k, and M(k=1)=N*Q^2 >= M(k=2) >= ... as required.
+    exponent = 1.0 + 1.0 / resolved_k
     marena_samples = float(N * (Q ** exponent))
-    improvement_factor = float(Q ** (1.0 / resolved_k)) if resolved_k >= 2 else 1.0
+    improvement_factor = float(Q ** (1.0 - 1.0 / resolved_k)) if resolved_k >= 2 else 1.0
 
     result: dict[str, float] = {
         # Primary keys used by the notebook

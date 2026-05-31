@@ -1,27 +1,62 @@
 {
   "status": "success",
-  "backend": "ibm_fez",
-  "job_id": "d8cbt9ijki0s73ar2100",
-  "timestamp": "2026-05-28T22:16:12.847293Z",
-  "circuit_description": "3-qubit XOR phase oracle sketch, Algorithm 1",
-  "paper_reference": "Marena (2026), Algorithm 1, \u00a73",
-  "n_qubits": 3,
-  "circuit_depth_transpiled": 10,
-  "circuit_gates_transpiled": 12,
-  "shots": 512,
+  "backend": "ibm_marrakesh",
+  "job_id": "d8dscqnd0j8c73f4njqg",
+  "timestamp": "2026-05-31T05:26:08.010563Z",
+  "circuit_description": "QOS DiagonalGate phase-oracle circuits (n=3,4,5), Algorithm 1 readout",
+  "shots": 300,
+  "estimated_qpu_seconds": 16.200000000000003,
   "pending_jobs_at_submission": 0,
-  "counts": {
-    "011": 453,
-    "111": 6,
-    "010": 26,
-    "001": 26,
-    "000": 1
+  "submitted_qubits": [
+    3,
+    4
+  ],
+  "depth_skipped_qubits": [
+    5
+  ],
+  "transpiled_depths": {
+    "3": 34,
+    "4": 108,
+    "5": 222
   },
-  "probabilities": {
-    "011": 0.884766,
-    "111": 0.011719,
-    "010": 0.050781,
-    "001": 0.050781,
-    "000": 0.001953
+  "results": {
+    "3": {
+      "counts": {
+        "101": 78,
+        "001": 69,
+        "111": 75,
+        "011": 73,
+        "000": 1,
+        "110": 1,
+        "010": 1,
+        "100": 2
+      },
+      "tvd_vs_ideal": 0.0266666613109983,
+      "fidelity": 0.9828594161604878,
+      "aer_tvd": 0.005100005355668351
+    },
+    "4": {
+      "counts": {
+        "1111": 19,
+        "0110": 20,
+        "1001": 24,
+        "0000": 16,
+        "0101": 13,
+        "0010": 25,
+        "0011": 20,
+        "1011": 17,
+        "1010": 17,
+        "0100": 23,
+        "1101": 19,
+        "0111": 20,
+        "1100": 14,
+        "0001": 18,
+        "1110": 13,
+        "1000": 22
+      },
+      "tvd_vs_ideal": 0.07750015061454694,
+      "fidelity": 0.9907553234783686,
+      "aer_tvd": 0.010500117144647655
+    }
   }
 }
