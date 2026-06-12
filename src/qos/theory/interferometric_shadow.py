@@ -62,6 +62,9 @@ class InterferometricClassicalShadow:
     ``<v|rho|v>`` from T interferometric measurements is unbiased,
     ``E[O_hat_T] = <v|rho|v>``, with ``Var[O_hat_T] = O(s/T)`` where
     ``s = |supp(v)|``; hence the prediction error scales as ``O(sqrt(s/T))``.
+    [Theoretical prediction; empirical verification pending -- see note in
+    Section 6. Current implementation exhibits a bias floor due to non-2-design
+    ensemble; flagged for follow-up.]
 
     Parameters
     ----------
@@ -153,7 +156,7 @@ class InterferometricClassicalShadow:
         """
         if not self._shadow_built:
             self.build_shadow()
-        m = test_vectors.shape[0]
+        test_vectors.shape[0]
         preds = []
         for x in test_vectors:
             re_vals, im_vals = [], []
@@ -172,5 +175,8 @@ class InterferometricClassicalShadow:
         """Upper bound on prediction error given sparsity s.
 
         From Theorem F.16 of Zhao et al.: error <= sqrt(s / num_shadows).
+        [Theoretical prediction; empirical verification pending -- see note in
+        Section 6. Current implementation exhibits a bias floor due to
+        non-2-design ensemble; flagged for follow-up.]
         """
         return float(jnp.sqrt(sparsity / self.num_shadows))

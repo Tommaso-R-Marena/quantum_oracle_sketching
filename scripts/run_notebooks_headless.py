@@ -102,6 +102,8 @@ RE_PIP_UNINSTALL = re.compile(
 )
 RE_MOUNT_TRUE = re.compile(r"MOUNT_DRIVE\s*=\s*True")
 RE_USE_HARDWARE_TRUE = re.compile(r"USE_HARDWARE\s*=\s*True")
+# Headless: skip the ~30-min IMDb CV sweep (real_datasets_colab); resource-limited.
+RE_SKIP_CV_FALSE = re.compile(r"SKIP_CV_SWEEP\s*=\s*False")
 RE_DRIVE_MOUNT = re.compile(r"from\s+google\.colab\s+import\s+drive")
 RE_GETPASS = re.compile(r"getpass\.getpass\(|from\s+getpass\s+import\s+getpass")
 RE_COLAB_MAGIC = re.compile(r"^%load_ext\s+google\.colab.*$", re.M)
@@ -195,6 +197,12 @@ def patch_source(src: str) -> tuple[str, list[str]]:
     if RE_USE_HARDWARE_TRUE.search(new_src):
         new_src = RE_USE_HARDWARE_TRUE.sub("USE_HARDWARE = False  # patched", new_src)
         applied.append("USE_HARDWARE=False")
+
+    # Headless: force SKIP_CV_SWEEP=True so the heavy IMDb CV sweep is skipped
+    # (it needs ~30 min CPU and times out in CI; see FIX-4).
+    if RE_SKIP_CV_FALSE.search(new_src):
+        new_src = RE_SKIP_CV_FALSE.sub("SKIP_CV_SWEEP = True  # patched (headless)", new_src)
+        applied.append("SKIP_CV_SWEEP=True")
 
     # P4) Rewrite Colab '/content/...' paths to a local results/notebooks_data/
     #     This catches both bare string literals and os.path.join('/content/', ...).

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import math
-from collections.abc import Sequence
 from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from typing import Iterator
 from os import devnull
-from typing import Any, cast
 
 import jax
 import jax.numpy as jnp
@@ -20,7 +18,7 @@ from qos.config import complex_dtype, int_dtype, real_dtype
 # ---------------------------------------------------------------------------
 
 @contextmanager
-def suppress_stdout_stderr():
+def suppress_stdout_stderr() -> Iterator[tuple[object, object]]:
     """A context manager that redirects stdout and stderr to devnull."""
     with open(devnull, "w") as fnull:
         with redirect_stderr(fnull) as err, redirect_stdout(fnull) as out:
@@ -46,7 +44,7 @@ def infidelity(state1: jnp.ndarray, state2: jnp.ndarray) -> jnp.ndarray:
 # ---------------------------------------------------------------------------
 
 def random_unit_vector(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     batch_size: int = 1,
 ) -> jnp.ndarray:
@@ -57,7 +55,7 @@ def random_unit_vector(
 
 
 def random_flat_vector(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     batch_size: int = 1,
 ) -> jnp.ndarray:
@@ -70,7 +68,7 @@ def random_flat_vector(
 
 
 def random_sparse_matrix(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     shape: tuple[int, int],
     nnz: int,
     batch_size: int = 1,
@@ -90,7 +88,7 @@ def random_sparse_matrix(
 
 
 def random_sparse_matrix_constant_magnitude(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     shape: tuple[int, int],
     nnz: int,
     magnitude: float,
@@ -112,7 +110,7 @@ def random_sparse_matrix_constant_magnitude(
 
 
 def random_sparse_matrix_given_row_sparsity(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     shape: tuple[int, int],
     row_sparsity: int,
     batch_size: int = 1,
@@ -221,7 +219,7 @@ def fwht(v: jax.Array) -> jax.Array:
 # Unitary / block-encoding helpers
 # ---------------------------------------------------------------------------
 
-def generate_random_unitary(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
+def generate_random_unitary(key: jax.Array, dim: int) -> jnp.ndarray:
     """Generate a Haar-random unitary matrix of size dim x dim."""
     A = random.normal(key, (dim, dim), dtype=complex_dtype) + 1j * random.normal(
         key, (dim, dim), dtype=complex_dtype
@@ -231,7 +229,7 @@ def generate_random_unitary(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
     return jnp.dot(Q, D)
 
 
-def generate_random_hermitian(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
+def generate_random_hermitian(key: jax.Array, dim: int) -> jnp.ndarray:
     """Generate a random Hermitian matrix with spectral norm bounded by 1."""
     A = random.normal(key, (dim, dim), dtype=complex_dtype) + 1j * random.normal(
         key, (dim, dim), dtype=complex_dtype
@@ -255,7 +253,7 @@ def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
     """
     dim = A.shape[0]
     identity = jnp.eye(dim, dtype=complex_dtype)
-    D_A  = jax.scipy.linalg.sqrtm(identity - A.conj().T @ A)   # right defect
+    D_A = jax.scipy.linalg.sqrtm(identity - A.conj().T @ A)   # right defect
     D_As = jax.scipy.linalg.sqrtm(identity - A @ A.conj().T)   # left defect
     U = jnp.block([
         [A,    D_As],
@@ -264,7 +262,7 @@ def halmos_dilation(A: jnp.ndarray) -> jnp.ndarray:
     return U
 
 
-def random_halmos_dilation(key: random.PRNGKeyArray, dim: int) -> jnp.ndarray:
+def random_halmos_dilation(key: jax.Array, dim: int) -> jnp.ndarray:
     """Generate a random Halmos dilation of size 2N x 2N with scrambled blocks."""
     A = generate_random_hermitian(key, dim)
     U = halmos_dilation(A)

@@ -19,10 +19,10 @@ import jax.numpy as jnp
 from jax import random
 
 from qos.config import DEFAULT_CONFIG, complex_dtype, int_dtype, real_dtype
-from qos.utils.numerical import bitwise_parity_matrix, fwht, unnormalized_hadamard_transform
+from qos.utils.numerical import bitwise_parity_matrix, fwht
 
 if TYPE_CHECKING:
-    from jax import random as jax_random
+    pass
 
 
 def q_state_sketch_flat(
@@ -63,7 +63,7 @@ def q_state_sketch_flat(
 
 def q_state_sketch(
     vector: jax.Array,
-    key: jax_random.PRNGKeyArray,
+    key: jax.Array,
     unit_num_samples: int,
     angle_set: jax.Array | None = None,
     degree: int = DEFAULT_CONFIG.arcsin_degree,

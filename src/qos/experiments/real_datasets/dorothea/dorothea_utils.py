@@ -80,7 +80,7 @@ def load_dorothea(
     y : np.ndarray, shape (800,), dtype int
         0 = inactive compound, 1 = active compound.
     """
-    train_data_path  = _download("dorothea_train.data",   cache_dir)
+    train_data_path = _download("dorothea_train.data",   cache_dir)
     train_label_path = _download("dorothea_train.labels", cache_dir)
 
     X = _parse_sparse(train_data_path)

@@ -6,7 +6,6 @@ visualization helpers used across all dataset experiments.
 
 from __future__ import annotations
 
-from typing import Any
 
 import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt

@@ -7803,6 +7803,9 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h1 id="Quantum-Oracle-Sketching-(QOS)-%E2%80%94-Quick-Start">Quantum Oracle Sketching (QOS) — Quick Start<a class="anchor-link" href="#Quantum-Oracle-Sketching-(QOS)-%E2%80%94-Quick-Start">¶</a></h1><p>This notebook demonstrates the core QOS operations: state sketching, oracle sketching, and QSVT transforms.</p>
+<blockquote>
+<p>Last verified: 2026-06-12 · Estimated runtime: ~1 min (headless, CPU)</p>
+</blockquote>
 </div>
 </div>
 </div>
@@ -7925,11 +7928,50 @@ a.anchor-link {
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Python      : ['3.12.8', '(main,', 'May', '26', '2026,', '17:29:17)', '[GCC', '14.2.0]']
 Platform    : Linux x86_64
-JAX devices : [CpuDevice(id=0)]
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>JAX devices : [CpuDevice(id=0)]
 ⚠️  No GPU detected. Heavy experiments will be slow.
    Go to Runtime &gt; Change runtime type &gt; T4 or A100.
 qos version : 1.3.3
 ✅ Environment ready.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ── PARAMETERS (all tuneable values in one place) ──</span>
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">0</span>                      <span class="c1"># master RNG seed (JAX PRNGKey base)</span>
+<span class="n">N_FLAT</span> <span class="o">=</span> <span class="mi">1024</span>                 <span class="c1"># dimension for flat-vector sketch demo</span>
+<span class="n">N_GENERAL</span> <span class="o">=</span> <span class="mi">128</span>               <span class="c1"># dimension for general-vector sketch demo</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_random</span>
+<span class="n">_np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">);</span> <span class="n">_random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Parameters set. SEED=</span><span class="si">{</span><span class="n">SEED</span><span class="si">}</span><span class="s1">.'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Parameters set. SEED=0.
 </pre>
 </div>
 </div>
@@ -7940,7 +7982,7 @@ qos version : 1.3.3
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
@@ -7957,7 +7999,7 @@ qos version : 1.3.3
 <span class="kn">from</span><span class="w"> </span><span class="nn">qos.primitives.amplification</span><span class="w"> </span><span class="kn">import</span> <span class="n">amplitude_amplification</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">qos.utils.numerical</span><span class="w"> </span><span class="kn">import</span> <span class="n">random_flat_vector</span><span class="p">,</span> <span class="n">random_unit_vector</span><span class="p">,</span> <span class="n">random_sparse_matrix</span>
 
-<span class="n">key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -7979,10 +8021,10 @@ qos version : 1.3.3
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">1024</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="n">N_FLAT</span>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 <span class="n">flat_vector</span> <span class="o">=</span> <span class="n">random_flat_vector</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
 
@@ -8023,10 +8065,10 @@ qos version : 1.3.3
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">128</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="n">N_GENERAL</span>
 <span class="n">key</span><span class="p">,</span> <span class="n">subkey</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 <span class="n">vector</span> <span class="o">=</span> <span class="n">random_unit_vector</span><span class="p">(</span><span class="n">subkey</span><span class="p">,</span> <span class="n">N</span><span class="p">)</span>
 
@@ -8082,7 +8124,7 @@ iter: 007 --- err: 6.674e-16
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">1000</span>
@@ -8127,7 +8169,7 @@ iter: 007 --- err: 6.674e-16
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">N1</span><span class="p">,</span> <span class="n">N2</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span>
@@ -8173,7 +8215,7 @@ iter: 007 --- err: 6.674e-16
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">dim1</span><span class="p">,</span> <span class="n">dim2</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">50</span>
@@ -8210,13 +8252,7 @@ iter: 007 --- err: 6.674e-16
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Row 0: predicted=11, actual=11
 Row 1: predicted=0, actual=0
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Row 2: predicted=0, actual=0
+Row 2: predicted=0, actual=0
 </pre>
 </div>
 </div>
@@ -8238,7 +8274,7 @@ Row 1: predicted=0, actual=0
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">dim</span> <span class="o">=</span> <span class="mi">100</span>
@@ -8272,13 +8308,7 @@ iter: 004 --- err: 1.875e-02
 iter: 005 --- err: 3.488e-03
 iter: 006 --- err: 1.671e-04
 iter: 007 --- err: 3.260e-07
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>iter: 008 --- err: 1.019e-12
+iter: 008 --- err: 1.019e-12
 iter: 009 --- err: 2.388e-15
 [sym_qsp] Stop criteria satisfied.
 </pre>

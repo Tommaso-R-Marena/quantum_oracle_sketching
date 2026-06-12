@@ -1,0 +1,28 @@
+# Auto-generated from actual imports across src/qos and notebooks/.
+# Pins reflect the verified working environment (Python >=3.10, tested 3.12).
+# For the editable package + extras, prefer: pip install -e '.[dev,noise,kernel,hardware,datasets]'
+
+anndata==0.12.16
+datasets==4.8.5
+huggingface-hub==1.17.0
+ipython==9.13.0
+ipywidgets==8.1.8
+jax==0.10.1
+jaxlib==0.10.1
+matplotlib==3.10.9
+nbclient==0.10.4
+nbconvert==7.17.1
+nbformat==5.10.4
+numpy==2.4.6
+pandas==2.3.3
+pdf2image==1.17.0
+pydantic==2.12.5
+pyqsp==0.2.0
+qiskit==2.4.1
+qiskit-aer==0.17.2
+qiskit-ibm-runtime==0.47.0
+scanpy==1.12.1
+scikit-learn==1.8.0
+scipy==1.17.1
+tqdm==4.67.3
+ucimlrepo==0.0.7

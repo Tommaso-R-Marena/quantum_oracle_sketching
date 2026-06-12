@@ -108,7 +108,6 @@ def load_pbmc68k(
     """
     try:
         import scanpy as sc
-        import anndata as ad
     except ImportError as exc:
         raise ImportError("pip install scanpy anndata leidenalg") from exc
 

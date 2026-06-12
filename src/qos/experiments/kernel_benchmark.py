@@ -152,6 +152,7 @@ def run_kernel_benchmark(
 
 
 def main() -> None:
+    """CLI entry point: run the kernel-shadow benchmark and write results."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dim", type=int, default=64)
     parser.add_argument("--num-trials", type=int, default=1)

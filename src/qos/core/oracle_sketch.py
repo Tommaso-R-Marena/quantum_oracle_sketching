@@ -11,10 +11,10 @@ import jax
 import jax.numpy as jnp
 from jax import random
 
-from qos.config import DEFAULT_CONFIG, int_dtype, real_dtype
+from qos.config import DEFAULT_CONFIG, real_dtype
 
 if TYPE_CHECKING:
-    from jax import random as jax_random
+    pass
 
 
 def q_oracle_sketch_boolean(
@@ -37,14 +37,14 @@ def q_oracle_sketch_boolean(
         Tuple ``(diag, M)`` where ``diag`` is the length-N complex oracle
         diagonal approximating ``(e^{i pi f(x)})_x`` and ``M`` the budget used.
     """
-    M         = int(unit_num_samples)
-    f         = truth_table.astype(jnp.float64)
-    N         = f.shape[0]
-    p         = jnp.float64(1.0) / jnp.float64(N)
-    t_over_M  = jnp.float64(jnp.pi * N) / jnp.float64(M)
+    M = int(unit_num_samples)
+    f = truth_table.astype(jnp.float64)
+    N = f.shape[0]
+    p = jnp.float64(1.0) / jnp.float64(N)
+    t_over_M = jnp.float64(jnp.pi * N) / jnp.float64(M)
     phase_arg = jnp.complex128(1j) * t_over_M * f
-    log_diag  = jnp.log1p(p * jnp.expm1(phase_arg))
-    diag      = jnp.exp(jnp.float64(M) * log_diag)
+    log_diag = jnp.log1p(p * jnp.expm1(phase_arg))
+    diag = jnp.exp(jnp.float64(M) * log_diag)
     return diag, M
 
 
@@ -79,9 +79,9 @@ def q_oracle_sketch_boolean_adaptive(
         key = random.PRNGKey(0)
 
     M_pilot = int(float(pilot_frac) * unit_num_samples)
-    M_main  = max(unit_num_samples - M_pilot, 1)
+    M_main = max(unit_num_samples - M_pilot, 1)
 
-    f      = truth_table.astype(jnp.float64)
+    f = truth_table.astype(jnp.float64)
     K_true = float(jnp.sum(f))
 
     uniform_q = jnp.ones((N,), dtype=jnp.float64) / jnp.float64(N)
@@ -90,11 +90,11 @@ def q_oracle_sketch_boolean_adaptive(
         diag, _ = q_oracle_sketch_boolean(truth_table, unit_num_samples)
         return diag, int(unit_num_samples), uniform_q
 
-    q           = f / jnp.float64(K_true)
-    phase_step  = jnp.float64(jnp.pi) * jnp.float64(K_true) / jnp.float64(M_main)
-    inner       = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)
-    log_term    = jnp.log1p(inner)
-    diag        = jnp.exp(jnp.float64(M_main) * log_term)
+    q = f / jnp.float64(K_true)
+    phase_step = jnp.float64(jnp.pi) * jnp.float64(K_true) / jnp.float64(M_main)
+    inner = q * jnp.expm1(jnp.complex128(1j) * phase_step * f)
+    log_term = jnp.log1p(inner)
+    diag = jnp.exp(jnp.float64(M_main) * log_term)
 
     return diag, int(unit_num_samples), q
 

@@ -15,12 +15,13 @@ from qos.config import int_dtype, real_dtype
 from qos.utils.numerical import fwht  # O(N log N) vector WHT, not the matrix builder
 
 if TYPE_CHECKING:
-    from jax import random as jax_random
+    pass
 
 __all__ = ["matrix_data", "vector_data", "boolean_data", "k_forrelation_data"]
 
 
 class matrix_data:
+    """Sparse-matrix data generator for matrix-row-index oracle benchmarks."""
     def __init__(self, matrix: jax.Array) -> None:
         self.matrix = matrix.astype(real_dtype)
         self.shape = matrix.shape
@@ -32,12 +33,14 @@ class matrix_data:
 
     def get_matrix_element_data(
         self,
-        key: jax_random.PRNGKeyArray,
+        key: jax.Array,
         num_samples: int,
         return_values: bool = True,
     ) -> tuple[jax.Array, ...]:
+        """Return sampled matrix-element data (indices, values) for the given key."""
         self.num_generated_samples += num_samples
-        sampled_indices = random.randint(key, shape=(num_samples,), minval=0, maxval=self._nnz, dtype=int_dtype)
+        sampled_indices = random.randint(key, shape=(
+            num_samples,), minval=0, maxval=self._nnz, dtype=int_dtype)
         sampled_rows = self._nz_rows[sampled_indices]
         sampled_cols = self._nz_cols[sampled_indices]
         if return_values:
@@ -45,35 +48,49 @@ class matrix_data:
             return sampled_rows, sampled_cols, sampled_values
         return sampled_rows, sampled_cols
 
-    def get_row_data(self, key: jax_random.PRNGKeyArray, num_samples: int) -> tuple[jax.Array, jax.Array]:
+    def get_row_data(
+        self, key: jax.Array, num_samples: int
+    ) -> tuple[jax.Array, jax.Array]:
+        """Return sampled row data (indices, values) for the given key."""
         num_rows = self.shape[0]
-        sampled_rows = random.choice(key, jnp.arange(num_rows, dtype=int_dtype), shape=(num_samples,), replace=True)
+        sampled_rows = random.choice(key, jnp.arange(
+            num_rows, dtype=int_dtype), shape=(num_samples,), replace=True)
         sampled_row_vectors = self.matrix[sampled_rows]
         self.num_generated_samples += num_samples
         return sampled_rows, sampled_row_vectors
 
 
 class vector_data:
+    """General dense-vector data generator for state-sketch benchmarks."""
     def __init__(self, vector: jax.Array) -> None:
         self.vector = vector.astype(real_dtype)
         self.length = int(vector.shape[0])
         self.num_generated_samples: int = 0
 
-    def get_data(self, key: jax_random.PRNGKeyArray, num_samples: int) -> tuple[jax.Array, jax.Array]:
-        sampled_indices = random.choice(key, jnp.arange(self.length, dtype=int_dtype), shape=(num_samples,), replace=True).astype(int_dtype)
+    def get_data(
+        self, key: jax.Array, num_samples: int
+    ) -> tuple[jax.Array, jax.Array]:
+        """Return sampled vector data (indices, values) for the given key."""
+        sampled_indices = random.choice(key, jnp.arange(self.length, dtype=int_dtype), shape=(
+            num_samples,), replace=True).astype(int_dtype)
         sampled_values = self.vector[sampled_indices]
         self.num_generated_samples += num_samples
         return sampled_indices, sampled_values
 
 
 class boolean_data:
+    """Boolean truth-table data generator for oracle-sketch benchmarks."""
     def __init__(self, truth_table: jax.Array) -> None:
         self.truth_table = truth_table.astype(int_dtype)
         self.length = int(truth_table.shape[0])
         self.num_generated_samples: int = 0
 
-    def get_data(self, key: jax_random.PRNGKeyArray, num_samples: int) -> tuple[jax.Array, jax.Array]:
-        sampled_indices = random.choice(key, jnp.arange(self.length, dtype=int_dtype), shape=(num_samples,), replace=True).astype(int_dtype)
+    def get_data(
+        self, key: jax.Array, num_samples: int
+    ) -> tuple[jax.Array, jax.Array]:
+        """Return sampled boolean data (indices, values) for the given key."""
+        sampled_indices = random.choice(key, jnp.arange(self.length, dtype=int_dtype), shape=(
+            num_samples,), replace=True).astype(int_dtype)
         sampled_values = self.truth_table[sampled_indices]
         self.num_generated_samples += num_samples
         return sampled_indices, sampled_values

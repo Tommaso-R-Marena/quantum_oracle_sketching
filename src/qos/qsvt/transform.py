@@ -13,7 +13,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-from qos.config import complex_dtype, real_dtype
+from qos.config import real_dtype
 
 
 def apply_qsvt(

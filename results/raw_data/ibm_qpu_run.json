@@ -2,9 +2,27 @@
   "status": "success",
   "backend": "ibm_marrakesh",
   "job_id": "d8dscqnd0j8c73f4njqg",
-  "timestamp": "2026-05-31T05:26:08.010563Z",
-  "circuit_description": "QOS DiagonalGate phase-oracle circuits (n=3,4,5), Algorithm 1 readout",
   "shots": 300,
+  "timestamp": "2026-05-31T05:26:08.010563Z",
+  "n_qubits_list": [
+    3,
+    4,
+    5
+  ],
+  "zne_factors": [
+    1
+  ],
+  "fidelities": {
+    "3": 0.9828594161604878,
+    "4": 0.9907553234783686,
+    "5": null
+  },
+  "tvds": {
+    "3": 0.0266666613109983,
+    "4": 0.07750015061454694,
+    "5": null
+  },
+  "circuit_description": "QOS DiagonalGate phase-oracle circuits (n=3,4,5), Algorithm 1 readout",
   "estimated_qpu_seconds": 16.200000000000003,
   "pending_jobs_at_submission": 0,
   "submitted_qubits": [

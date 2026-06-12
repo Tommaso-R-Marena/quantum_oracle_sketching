@@ -148,12 +148,15 @@ class VariationalWarmstart:
         phi = basis @ theta  # shape (N,)
         return jnp.exp(1j * phi)
 
-    def _make_loss(self, basis: jax.Array, f_target_phases: jax.Array) -> Callable[[jax.Array], jax.Array]:
+    def _make_loss(
+        self, basis: jax.Array, f_target_phases: jax.Array
+    ) -> Callable[[jax.Array], jax.Array]:
         """Create periodic chordal loss on the unit circle.
 
         f_target_phases has shape (N,) with entries on the unit circle.
         """
         def loss_fn(theta: jax.Array) -> jax.Array:
+            """Proxy MSE loss between the Fourier-ansatz phases and the target phases."""
             f_pred = self._phase_ansatz(theta, basis)
             return jnp.mean(jnp.abs(f_pred - f_target_phases) ** 2)
 

@@ -48,12 +48,12 @@ def load_imdb_data(
     _REPO = "stanfordnlp/imdb"
     if split == "all":
         ds_train = load_dataset(_REPO, split="train", cache_dir=cache_dir, token=token)
-        ds_test  = load_dataset(_REPO, split="test",  cache_dir=cache_dir, token=token)
-        texts  = _col_to_list(ds_train["text"])  + _col_to_list(ds_test["text"])
+        ds_test = load_dataset(_REPO, split="test",  cache_dir=cache_dir, token=token)
+        texts = _col_to_list(ds_train["text"]) + _col_to_list(ds_test["text"])
         labels = _col_to_list(ds_train["label"]) + _col_to_list(ds_test["label"])
     else:
         ds = load_dataset(_REPO, split=split, cache_dir=cache_dir, token=token)
-        texts  = _col_to_list(ds["text"])
+        texts = _col_to_list(ds["text"])
         labels = _col_to_list(ds["label"])
 
     return texts, np.asarray(labels, dtype=np.int64)

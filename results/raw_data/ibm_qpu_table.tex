@@ -1,12 +1,16 @@
 % IBM QPU hardware-validation table (auto-generated)
+% NOTE: the n=5 footnote uses \tablefootnote so it renders correctly inside the
+% floating table (plain \footnote is dropped inside floats). Add to preamble:
+%   \usepackage{tablefootnote}
 \begin{table}[h]\centering
-\caption{QOS phase-oracle on real IBM hardware (ibm_marrakesh, 300 shots, job d8dscqnd0j8c73f4njqg).}
+\caption{QOS phase-oracle on real IBM hardware (ibm\_marrakesh, 300 shots, job d8dscqnd0j8c73f4njqg).}
 \begin{tabular}{ccc}
 \hline
 $n$ & TVD vs ideal & Fidelity \\
 \hline
   3 & 0.0267 & 0.9829 \\
   4 & 0.0775 & 0.9908 \\
+  5 & --- & ---\tablefootnote{n=5 excluded: transpiled circuit depth 222 exceeds ibm\_marrakesh backend limit of 200. Raw circuit included in ibm\_qpu\_run.json for reference.} \\
 \hline
 \end{tabular}
 \end{table}

@@ -7,13 +7,13 @@ from typing import TYPE_CHECKING
 import jax
 import jax.numpy as jnp
 
-from qos.config import DEFAULT_CONFIG, complex_dtype, real_dtype
+from qos.config import DEFAULT_CONFIG
 from qos.qsvt.angles import get_qsvt_angles_sign
 from qos.qsvt.transform import apply_qsvt, apply_qsvt_imperfect
 from qos.utils.numerical import get_block_encoded, halmos_dilation
 
 if TYPE_CHECKING:
-    from jax import random as jax_random
+    pass
 
 
 def amplitude_amplification(

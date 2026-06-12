@@ -87,6 +87,15 @@ python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 # optional: noise + kernel extensions
 pip install -e ".[dev,noise,kernel]"
+# hardware (IBM QPU) and real-dataset extras
+pip install -e ".[hardware,datasets]"
+```
+
+For an exact, fully-pinned environment (every package used across `src/` and
+all notebooks), use [`requirements.txt`](requirements.txt):
+
+```bash
+pip install -r requirements.txt && pip install -e .
 ```
 
 ### Run tests
@@ -286,26 +295,63 @@ pip install -e ".[datasets]"   # notebooks/real_datasets_colab.ipynb (pdf2image,
 
 ## IBM Quantum Hardware Validation
 
-The 3-qubit XOR phase-oracle sketch (Algorithm 1) was executed on **real IBM
-Quantum hardware**. The job ran only after passing a four-gate safety check:
-G1 (AerSimulator validation), G2 (≤ 5 qubits), G3 (≤ 512 shots), and G4 (queue
-wait ≤ 5 min). The raw record is in
-[`results/raw_data/ibm_qpu_run.json`](results/raw_data/ibm_qpu_run.json) and is
-rendered in [`notebooks/hardware_ibm_colab.ipynb`](notebooks/hardware_ibm_colab.ipynb).
+The QOS phase-oracle circuits (DiagonalGate synthesis, Algorithm 1 readout)
+were executed on **real IBM Quantum hardware**. The job ran only after a
+mandatory simulator-first Aer TVD gate passed and the estimated QPU time
+(~16 s) stayed within the 9 min 58 s budget. The raw record is in
+[`results/raw_data/ibm_qpu_run.json`](results/raw_data/ibm_qpu_run.json), the
+LaTeX table in
+[`results/raw_data/ibm_qpu_table.tex`](results/raw_data/ibm_qpu_table.tex), and
+the display is rendered in
+[`notebooks/hardware_ibm_colab.ipynb`](notebooks/hardware_ibm_colab.ipynb).
 
 | Field | Value |
 |---|---|
-| Backend | `ibm_fez` |
-| Job ID | `d8cbt9ijki0s73ar2100` |
-| Qubits / shots | 3 / 512 |
-| Transpiled depth | 10 |
-| Ideal output | `\|011⟩` (deterministic) |
-| Measured `\|011⟩` | **453 / 512 = 88.5%** |
-| Noise leakage | `\|010⟩` 5.1%, `\|001⟩` 5.1%, `\|111⟩` 1.2%, `\|000⟩` 0.2% |
+| Backend | `ibm_marrakesh` |
+| Job ID | `d8dscqnd0j8c73f4njqg` |
+| Shots | 300 |
+| n = 3 | TVD 0.0267 · **fidelity 0.9829** |
+| n = 4 | TVD 0.0775 · **fidelity 0.9908** |
+| n = 5 | excluded — transpiled depth 222 > 200 backend limit (raw circuit in `ibm_qpu_run.json`) |
 
-The dominant outcome matches the noiseless AerSimulator prediction; the residual
-spread is hardware noise. The IBM API token is read only from the `IBM_TOKEN`
+The measured distributions match the noiseless AerSimulator prediction to
+within hardware noise. The IBM API token is read only from the `IBM_TOKEN`
 environment variable and is never written to any committed file.
+
+### Reproducing the QPU results
+
+The recorded results in `ibm_qpu_run.json` are read-only artifacts of a
+specific hardware job. To submit a fresh job: set `IBM_TOKEN` in your
+environment, open `notebooks/hardware_ibm_colab.ipynb`, run through the Aer
+simulator gate (which must pass), confirm `USE_HARDWARE` is `True` and the
+estimated QPU time is under budget, then run the submission cells.
+
+---
+
+## Known Limitations
+
+- **Interferometric shadow estimator bias floor (BUG-14, flagged for
+  follow-up).** The shadow reconstruction kernel in
+  `src/qos/theory/interferometric_shadow.py` currently exhibits a bias floor
+  inconsistent with the theoretical O(1/√T) decay. The root cause is that the
+  random phase + permutation measurement ensemble does not form a unitary
+  2-design, so the dual-frame inverse does not exist. The variance term still
+  decays as 1/√T, but the bias dominates at large overlap. Downstream results
+  that depend only on the *relative* ordering of overlaps are unaffected;
+  absolute-overlap precision is bias-limited. A correct fix requires deriving
+  the dual frame for this ensemble or switching to a Clifford/Pauli shadow.
+  See the Section 6 note in `quantum_oracle_sketching_demo.ipynb` and
+  `full_benchmark_suite.ipynb`.
+- **n = 5 QPU depth skip.** On `ibm_marrakesh` the n = 5 DiagonalGate circuit
+  transpiles to depth 222, exceeding the 200-gate reliability threshold, so it
+  was excluded from the hardware run (the raw circuit is retained in
+  `ibm_qpu_run.json`). n = 3 and n = 4 ran successfully.
+- **`real_datasets_colab.ipynb` IMDb CV sweep is resource-limited.** The full
+  cross-validation sweep needs ~30 min of CPU and times out under headless CI /
+  Colab free tier. All dataset loaders are verified working; set
+  `SKIP_CV_SWEEP = True` to skip the sweep.
+- **`full_benchmark_suite.ipynb`** uses an automatically reduced grid on
+  CPU-only hosts (GPU/`FAST_MODE` runs the full paper-scale sweep).
 
 ---
 

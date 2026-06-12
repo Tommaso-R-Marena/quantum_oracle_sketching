@@ -16,13 +16,12 @@ Preprocessing:
 from __future__ import annotations
 
 import os
-import io
 import urllib.request
 import numpy as np
 import scipy.sparse as sp
 
 _CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "qos", "splice")
-_DATA_URL  = (
+_DATA_URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases/"
     "molecular-biology/splice-junction-gene-sequences/splice.data"
 )
@@ -73,7 +72,7 @@ def load_splice(
             if len(parts) < 3:
                 continue
             cls_str = parts[0].strip()
-            seq     = parts[2].strip().upper()
+            seq = parts[2].strip().upper()
 
             label_3 = class_map.get(cls_str)
             if label_3 is None:
@@ -89,7 +88,7 @@ def load_splice(
             labels.append(label_3)
             row_idx += 1
 
-    n_samples  = row_idx
+    n_samples = row_idx
     n_features = 4 * 60  # 240
     data = np.ones(len(rows), dtype=np.float32)
     X = sp.csr_matrix((data, (rows, cols)), shape=(n_samples, n_features))

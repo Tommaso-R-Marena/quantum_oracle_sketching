@@ -70,7 +70,7 @@ import jax
 import jax.numpy as jnp
 from jax import random
 
-from qos.config import real_dtype, int_dtype
+from qos.config import real_dtype
 from qos.core.oracle_sketch import q_oracle_sketch_boolean_adaptive
 
 
@@ -124,7 +124,7 @@ class HierarchicalOracleSketch:
         pilot_frac: float = 0.1,
     ) -> "HierarchicalOracleSketch":
         """Auto-partition truth_table support into k levels by density."""
-        n = truth_table.shape[0]
+        truth_table.shape[0]
         supp_idx = jnp.where(truth_table > 0)[0]
         K = int(supp_idx.shape[0])
         if K == 0:
@@ -227,9 +227,12 @@ class HierarchicalOracleSketch:
         return diag, stats
 
     def verify_improvement(self) -> bool:
+        """Return True if the hierarchical sketch uses fewer samples than the Zhao baseline."""
         if self._stats is None:
             self.build()
-        return self._stats["total_samples"] < self._stats["zhao_reference_samples"]
+        stats = self._stats
+        assert stats is not None  # build() always populates _stats
+        return bool(stats["total_samples"] < stats["zhao_reference_samples"])
 
 
 def compute_hierarchical_sample_complexity(

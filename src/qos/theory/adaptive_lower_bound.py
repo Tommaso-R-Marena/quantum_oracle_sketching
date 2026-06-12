@@ -34,7 +34,7 @@ import jax
 import jax.numpy as jnp
 
 from qos.config import real_dtype
-from qos.core.oracle_sketch import q_oracle_sketch_boolean, q_oracle_sketch_boolean_adaptive
+from qos.core.oracle_sketch import q_oracle_sketch_boolean_adaptive
 
 
 @dataclass(frozen=True)
@@ -110,8 +110,8 @@ def compute_bounds(N: int, K: int, epsilon: float, constant: float = 1.0) -> Bou
         occurs near M ~ K * pi^2 / eps^2 (where adaptive converges).
         For K=16, eps=0.3: crossover at M ~ 1750, well within M=200..20000.
     """
-    t_uniform = math.pi * N      # uniform: each entry gets phase pi*N*(1/N) = pi
-    t_adaptive = math.pi * K     # adaptive: support entries get phase pi*K*(1/K) = pi
+    # Phase-time bookkeeping (documentation): uniform t = pi*N gives each entry
+    # phase pi*N*(1/N)=pi; adaptive t = pi*K gives support entries phase pi*K*(1/K)=pi.
 
     # Sample complexity:
     # Uniform:  M = N * t_uniform^2 / (N * eps^2) = N * pi^2 / eps^2
@@ -205,7 +205,7 @@ def uniform_vs_adaptive_error_comparison(
     # sampling variance, O(0.01)-O(0.5) at low M.
     base_seed = int(jax.random.randint(key, (), 0, 2**30))
 
-    def _mc_uniform_diag(truth, M, seed):
+    def _mc_uniform_diag(truth: jax.Array, M: int, seed: int) -> np.ndarray:
         """Finite-sample uniform expected-unitary sketch (stochastic)."""
         rng = np.random.default_rng(seed)
         f = np.asarray(truth, dtype=np.float64)
@@ -216,7 +216,9 @@ def uniform_vs_adaptive_error_comparison(
         phase *= (np.pi * Nloc) / int(M)
         return np.exp(1j * phase)
 
-    def _mc_adaptive_diag(truth, M, pilot_frac, seed, k2):
+    def _mc_adaptive_diag(
+        truth: jax.Array, M: int, pilot_frac: float, seed: int, k2: jax.Array
+    ) -> np.ndarray:
         """Adaptive sketch error with realistic finite-sample fluctuation.
 
         The paper's adaptive construction (q_oracle_sketch_boolean_adaptive) is

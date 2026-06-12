@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import math
-import os
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -25,7 +23,6 @@ from qos.experiments.plotting import (
     add_text_annotations,
     finalize_accuracy_plot,
     get_sorted_arrays,
-    plot_parametric_hybrid,
 )
 
 
@@ -207,7 +204,7 @@ def run_pca_experiment(
                 X_dense = np.asarray(X_filtered)
             feature_dim = X_dense.shape[1]
             svd = TruncatedSVD(n_components=min(n_components, feature_dim - 1), random_state=42)
-            X_reduced = svd.fit_transform(X_dense)
+            svd.fit_transform(X_dense)
             variance = float(np.sum(svd.explained_variance_ratio_))
         except Exception as exc:
             tqdm.write(f"Skipping threshold={threshold} due to SVD error: {exc}")
@@ -255,7 +252,8 @@ def plot_experiment_results(
         )
         plt.fill_betweenx(ym, xm - xs, xm + xs, color=color, alpha=0.2, edgecolor="none")
         plt.plot(xm, ym, linestyle=linestyle, color=color, linewidth=1.5, alpha=0.9, label=label)
-        plt.scatter(xm, ym, marker=marker, color=color, alpha=0.9, s=marker_size, linewidth=linewidth)
+        plt.scatter(xm, ym, marker=marker, color=color,
+                    alpha=0.9, s=marker_size, linewidth=linewidth)
 
     if text_positions is not None:
         add_text_annotations(text_positions)

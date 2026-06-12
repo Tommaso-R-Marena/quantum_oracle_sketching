@@ -59,7 +59,8 @@ class QOSConfig(BaseModel):
         description="Numerical precision in bits.",
     )
     # arcsin is an odd function -> QSVT polynomial must have parity=1 (odd degree).
-    arcsin_degree: int = Field(default=21, ge=1, description="Degree of arcsin polynomial (must be odd).")
+    arcsin_degree: int = Field(
+        default=21, ge=1, description="Degree of arcsin polynomial (must be odd).")
     sign_degree: int = Field(default=101, ge=1, description="Degree of sign polynomial.")
     sign_threshold_factor: float = Field(
         default=0.8, gt=0, lt=1, description="Threshold factor for sign function."

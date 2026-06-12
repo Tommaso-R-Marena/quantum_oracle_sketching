@@ -7802,7 +7802,9 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="Empirical-Results:-Adaptive-Boolean-Oracle-(Marena-2026)">Empirical Results: Adaptive Boolean Oracle (Marena 2026)<a class="anchor-link" href="#Empirical-Results:-Adaptive-Boolean-Oracle-(Marena-2026)">¶</a></h1>
+<h1 id="Empirical-Results:-Adaptive-Boolean-Oracle-(Marena-2026)">Empirical Results: Adaptive Boolean Oracle (Marena 2026)<a class="anchor-link" href="#Empirical-Results:-Adaptive-Boolean-Oracle-(Marena-2026)">¶</a></h1><blockquote>
+<p>Last verified: 2026-06-12 · Estimated runtime: ~1 min (headless, CPU)</p>
+</blockquote>
 </div>
 </div>
 </div>
@@ -7997,6 +7999,41 @@ qos version : 1.3.3
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=45c53d2a">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ── PARAMETERS (all tuneable values in one place) ──</span>
+<span class="n">SEED</span> <span class="o">=</span> <span class="mi">0</span>                      <span class="c1"># master RNG seed (JAX PRNGKey base)</span>
+<span class="n">Na</span><span class="p">,</span> <span class="n">Ka</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">16</span>              <span class="c1"># Panel A dimension / sparsity</span>
+<span class="n">Nb</span><span class="p">,</span> <span class="n">Kb</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">16</span>             <span class="c1"># Panel B dimension / sparsity</span>
+<span class="n">sample_counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">20000</span><span class="p">]</span>
+<span class="n">NUM_TRIALS</span> <span class="o">=</span> <span class="mi">20</span>               <span class="c1"># independent trials per point (std/error bars)</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_random</span>
+<span class="n">_np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">);</span> <span class="n">_random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Parameters set. SEED=</span><span class="si">{</span><span class="n">SEED</span><span class="si">}</span><span class="s1">.'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Parameters set. SEED=0.
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=fig1-header">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8013,12 +8050,12 @@ qos version : 1.3.3
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [4]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">sample_counts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">5000</span><span class="p">,</span> <span class="mi">10000</span><span class="p">,</span> <span class="mi">20000</span><span class="p">]</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># sample_counts taken from the PARAMETERS cell</span>
 
-<span class="n">Na</span><span class="p">,</span> <span class="n">Ka</span> <span class="o">=</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">16</span>
+<span class="c1"># Na, Ka from PARAMETERS cell</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Panel A: N=</span><span class="si">{</span><span class="n">Na</span><span class="si">}</span><span class="s1">, K=</span><span class="si">{</span><span class="n">Ka</span><span class="si">}</span><span class="s1">, N/K=</span><span class="si">{</span><span class="n">Na</span><span class="o">//</span><span class="n">Ka</span><span class="si">}</span><span class="s1">, (N/K)^2=</span><span class="si">{</span><span class="p">(</span><span class="n">Na</span><span class="o">//</span><span class="n">Ka</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Adaptive crossover: M ~ K*pi^2/eps^2 = </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">Ka</span><span class="o">*</span><span class="mf">3.14159</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="mf">0.3</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1"> (eps=0.3)'</span><span class="p">)</span>
 <span class="n">results_a</span> <span class="o">=</span> <span class="n">uniform_vs_adaptive_error_comparison</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">Na</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="n">Ka</span><span class="p">,</span> <span class="n">sample_counts</span><span class="o">=</span><span class="n">sample_counts</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
@@ -8027,7 +8064,7 @@ qos version : 1.3.3
 <span class="nb">print</span><span class="p">(</span><span class="n">df1a</span><span class="o">.</span><span class="n">to_string</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'N/K improvement factor: </span><span class="si">{</span><span class="n">Na</span><span class="o">/</span><span class="n">Ka</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">x (blind-oracle model)</span><span class="se">\n</span><span class="s1">'</span><span class="p">)</span>
 
-<span class="n">Nb</span><span class="p">,</span> <span class="n">Kb</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">,</span> <span class="mi">16</span>
+<span class="c1"># Nb, Kb from PARAMETERS cell</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Panel B: N=</span><span class="si">{</span><span class="n">Nb</span><span class="si">}</span><span class="s1">, K=</span><span class="si">{</span><span class="n">Kb</span><span class="si">}</span><span class="s1">, N/K=</span><span class="si">{</span><span class="n">Nb</span><span class="o">//</span><span class="n">Kb</span><span class="si">}</span><span class="s1">, (N/K)^2=</span><span class="si">{</span><span class="p">(</span><span class="n">Nb</span><span class="o">//</span><span class="n">Kb</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 <span class="n">results_b</span> <span class="o">=</span> <span class="n">uniform_vs_adaptive_error_comparison</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">Nb</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="n">Kb</span><span class="p">,</span> <span class="n">sample_counts</span><span class="o">=</span><span class="n">sample_counts</span><span class="p">,</span> <span class="n">num_trials</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">jax</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">PRNGKey</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
 <span class="n">df1b</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">results_b</span><span class="p">)</span>
@@ -8151,7 +8188,7 @@ N/K improvement factor: 64x (blind-oracle model)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">NK_pairs</span> <span class="o">=</span> <span class="p">[(</span><span class="mi">128</span><span class="p">,</span><span class="mi">1</span><span class="p">),(</span><span class="mi">128</span><span class="p">,</span><span class="mi">6</span><span class="p">),(</span><span class="mi">128</span><span class="p">,</span><span class="mi">13</span><span class="p">),(</span><span class="mi">128</span><span class="p">,</span><span class="mi">32</span><span class="p">),(</span><span class="mi">256</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="mi">256</span><span class="p">,</span><span class="mi">13</span><span class="p">),(</span><span class="mi">256</span><span class="p">,</span><span class="mi">26</span><span class="p">),(</span><span class="mi">256</span><span class="p">,</span><span class="mi">64</span><span class="p">),</span>
@@ -8232,7 +8269,7 @@ N/K improvement factor: 64x (blind-oracle model)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.primitives.noise_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DepolarizingChannel</span><span class="p">,</span> <span class="n">crossover_sample_count</span>
@@ -8286,7 +8323,7 @@ N/K improvement factor: 64x (blind-oracle model)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>
@@ -8370,7 +8407,7 @@ N/K improvement factor: 64x (blind-oracle model)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">try</span><span class="p">:</span>
@@ -8462,7 +8499,7 @@ N/K improvement factor: 64x (blind-oracle model)
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="n">results_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_repo</span><span class="p">,</span> <span class="s1">'results'</span><span class="p">)</span>

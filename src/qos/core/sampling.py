@@ -17,12 +17,12 @@ import jax
 import jax.numpy as jnp
 from jax import random
 
-from qos.config import DEFAULT_CONFIG, complex_dtype, int_dtype, real_dtype
-from qos.data.generation import boolean_data, matrix_data, vector_data
+from qos.config import DEFAULT_CONFIG, int_dtype, real_dtype
+from qos.data.generation import matrix_data
 from qos.utils.numerical import bitwise_parity_matrix, unnormalized_hadamard_transform
 
 if TYPE_CHECKING:
-    from jax import random as jax_random
+    pass
 
 
 def q_state_sketch_flat(
@@ -77,7 +77,7 @@ def q_state_sketch(
     data: tuple[jax.Array, jax.Array],
     dim: int,
     norm: float,
-    key: jax_random.PRNGKeyArray,
+    key: jax.Array,
     degree: int = DEFAULT_CONFIG.arcsin_degree,
 ) -> jax.Array:
     """Construct a general-vector state sketch from actively sampled data.
@@ -265,7 +265,7 @@ def q_oracle_sketch_matrix_row_index(
 
 def q_oracle_sketch_matrix_index(
     data_gen: matrix_data,
-    key: jax_random.PRNGKeyArray,
+    key: jax.Array,
     unit_sample_size: int,
     dims: tuple[int, int],
     axis: int,
@@ -305,7 +305,7 @@ def q_oracle_sketch_matrix_index(
     nz_cols = data_gen._nz_cols
     nnz_entries = data_gen._nnz
 
-    def _assemble_phase(sample_key: jax_random.PRNGKeyArray) -> jax.Array:
+    def _assemble_phase(sample_key: jax.Array) -> jax.Array:
         phase = jnp.zeros((num_rows, num_cols), dtype=real_dtype)
         sampled_indices = random.randint(
             sample_key,
@@ -398,7 +398,6 @@ def q_oracle_sketch_matrix_index(
 
     state_lo = state_lo[:, :, : dims[1 - axis], 0]
     return state_lo
-
 
 
 def q_oracle_sketch_boolean_adaptive(

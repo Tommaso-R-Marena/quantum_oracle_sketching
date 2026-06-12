@@ -131,6 +131,7 @@ def run_noise_benchmark(
 
 
 def main() -> None:
+    """CLI entry point: run the noise-robustness benchmark and write results."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--dim", type=int, default=256)
     parser.add_argument("--num-trials", type=int, default=3)

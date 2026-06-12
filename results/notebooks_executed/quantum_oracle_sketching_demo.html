@@ -7842,6 +7842,9 @@ a.anchor-link {
 </tr>
 </tbody>
 </table>
+<blockquote>
+<p>Last verified: 2026-06-12 · Estimated runtime: ~2 min (headless, CPU)</p>
+</blockquote>
 </div>
 </div>
 </div>
@@ -8106,6 +8109,46 @@ Default backend: cpu
 </div>
 </div>
 </div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=c869a2f1">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+<div class="cm-editor cm-s-jupyter">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
+<span class="c1"># PARAMETERS  (all tuneable values in one place; reproducibility)</span>
+<span class="c1"># ============================================================</span>
+<span class="n">SEED</span>          <span class="o">=</span> <span class="mi">42</span>      <span class="c1"># master RNG seed (numpy + JAX PRNGKey base)</span>
+<span class="n">N_SEEDS</span>       <span class="o">=</span> <span class="mi">8</span>       <span class="c1"># independent trials per data point (error bars)</span>
+<span class="n">M_SWEEP</span>       <span class="o">=</span> <span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">,</span> <span class="mi">8000</span><span class="p">,</span> <span class="mi">16000</span><span class="p">,</span> <span class="mi">32000</span><span class="p">,</span> <span class="mi">64000</span><span class="p">,</span> <span class="mi">128000</span><span class="p">]</span>
+<span class="n">WARMSTART_LR</span>   <span class="o">=</span> <span class="mf">0.02</span>   <span class="c1"># variational warmstart learning rate</span>
+<span class="n">WARMSTART_STEPS</span> <span class="o">=</span> <span class="mi">80</span>    <span class="c1"># variational warmstart gradient steps</span>
+<span class="n">SHADOW_T_LIST</span>  <span class="o">=</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">3000</span><span class="p">]</span>  <span class="c1"># interferometric shadow budgets</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_np</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_random</span>
+<span class="n">_np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>   <span class="c1"># seed NumPy global RNG</span>
+<span class="n">_random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>      <span class="c1"># seed Python stdlib RNG</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Parameters set. Master SEED=</span><span class="si">{</span><span class="n">SEED</span><span class="si">}</span><span class="s1">, N_SEEDS=</span><span class="si">{</span><span class="n">N_SEEDS</span><span class="si">}</span><span class="s1">.'</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Parameters set. Master SEED=42, N_SEEDS=8.
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=f07933a5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8126,7 +8169,7 @@ Convergence: O(√(K/M)) vs O(√(N/M)) for uniform — exactly N/K times faster
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8143,7 +8186,7 @@ Convergence: O(√(K/M)) vs O(√(N/M)) for uniform — exactly N/K times faster
 <span class="c1"># BUG-21: extend the sweep to M=64000, 128000 so the Uniform/Adaptive ratio</span>
 <span class="c1"># approaches the theoretical N/K plateau instead of stopping mid-climb at 32000.</span>
 <span class="n">Ms</span> <span class="o">=</span> <span class="p">[</span><span class="mi">500</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="mi">4000</span><span class="p">,</span> <span class="mi">8000</span><span class="p">,</span> <span class="mi">16000</span><span class="p">,</span> <span class="mi">32000</span><span class="p">,</span> <span class="mi">64000</span><span class="p">,</span> <span class="mi">128000</span><span class="p">]</span>
-<span class="n">N_SEEDS</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="c1"># N_SEEDS taken from the PARAMETERS cell</span>
 
 <span class="n">uni_errs</span><span class="p">,</span> <span class="n">ada_errs</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">M</span> <span class="ow">in</span> <span class="n">Ms</span><span class="p">:</span>
@@ -8199,7 +8242,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8274,7 +8317,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8283,7 +8326,7 @@ reaching near-plateau by M=128000.
 <span class="n">N</span> <span class="o">=</span> <span class="mi">1024</span>
 <span class="n">Ks</span> <span class="o">=</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">]</span>
 <span class="n">M</span>  <span class="o">=</span> <span class="mi">5000</span>
-<span class="n">N_SEEDS</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="c1"># N_SEEDS taken from the PARAMETERS cell</span>
 
 <span class="n">phase_uni</span><span class="p">,</span> <span class="n">phase_ada</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
 <span class="k">for</span> <span class="n">K</span> <span class="ow">in</span> <span class="n">Ks</span><span class="p">:</span>
@@ -8354,7 +8397,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8430,7 +8473,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8513,7 +8556,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8593,7 +8636,7 @@ reaching near-plateau by M=128000.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># ============================================================</span>
@@ -8687,7 +8730,7 @@ Key result: Adaptive oracle achieves N/K = 512x fewer samples than Zhao et al.
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=5f773b56">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=1ca715cc">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8707,6 +8750,7 @@ shadow with its known inverse channel).</p>
 (see <code>prediction_error_bound</code>), but the bias floor dominates at large overlap.
 Downstream SVM/PCA results that rely only on <em>relative</em> ordering of overlaps
 are unaffected; absolute-overlap precision is bias-limited.</p>
+<p>Note: The shadow reconstruction kernel in src/qos/ currently exhibits a bias floor inconsistent with O(1/√T) decay. The root cause is that the measurement ensemble does not form a unitary 2-design, so the dual-frame inverse does not exist. This is flagged as future work and does not affect any other result in this notebook.</p>
 </div>
 </div>
 </div>

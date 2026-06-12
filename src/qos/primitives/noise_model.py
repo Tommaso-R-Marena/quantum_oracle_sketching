@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 
 import jax
@@ -173,8 +174,7 @@ def crossover_sample_count(
     depth = max(1, int(circuit_depth))
     shrink = (1.0 - 4.0 * eta / 3.0) ** num_qubits
     base_floor = max(0.0, 1.0 - shrink)
-    eps_noise = min(0.999, base_floor * (1.0 + jnp.log(depth)))
-    eps_noise = float(eps_noise)
+    eps_noise = min(0.999, base_floor * (1.0 + float(math.log(depth))))
     budget = epsilon_target - eps_noise
     if budget <= 0:
         return 1

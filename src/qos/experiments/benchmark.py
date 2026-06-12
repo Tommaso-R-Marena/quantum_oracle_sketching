@@ -6,7 +6,6 @@ sample-complexity scaling laws.
 
 from __future__ import annotations
 
-import sys
 from collections.abc import Callable, Sequence
 from functools import partial
 
@@ -101,7 +100,7 @@ def _unit_normalize(v: jax.Array) -> jax.Array:
 
 
 def benchmark_random_vector(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     unit_num_samples: int,
     repetition: int = 10,
@@ -145,7 +144,7 @@ def benchmark_random_vector(
 
 
 def benchmark_random_flat_vector(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     unit_num_samples: int,
     repetition: int = 10,
@@ -169,7 +168,7 @@ def benchmark_random_flat_vector(
 
 
 def benchmark_random_boolean_function(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     unit_num_samples: int,
     repetition: int = 10,
@@ -192,7 +191,7 @@ def benchmark_random_boolean_function(
 
 
 def benchmark_random_sparse_matrix_element(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     nnz: int,
     unit_num_samples: int,
@@ -218,7 +217,7 @@ def benchmark_random_sparse_matrix_element(
 
 
 def benchmark_random_sparse_matrix_row_index(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     dim: int,
     unit_num_samples: int,
     repetition: int = 10,
@@ -245,7 +244,8 @@ def benchmark_random_sparse_matrix_row_index(
                 target_oracle = target_oracle.at[i, j, col_idx].set(1.0)
                 err_max = max(
                     err_max,
-                    float(jnp.sqrt(jnp.sum(jnp.abs(oracle_sketch[i, j] - target_oracle[i, j]) ** 2))),
+                    float(
+                        jnp.sqrt(jnp.sum(jnp.abs(oracle_sketch[i, j] - target_oracle[i, j]) ** 2))),
                 )
         errors.append(err_max)
 
@@ -258,7 +258,7 @@ def benchmark_random_sparse_matrix_row_index(
 
 
 def run_benchmark_sweep(
-    key: random.PRNGKeyArray,
+    key: jax.Array,
     benchmark_fn: Callable[..., dict[str, float]],
     dim_list: Sequence[int],
     unit_num_samples_list: Sequence[int],
@@ -395,7 +395,10 @@ def plot_benchmark_results(
 
     fit_handles = None
     if fit is not None:
-        label_str = rf"Fit: $M = {fit['C']:.1f} {dim_fit_label}^{{{fit['alpha']:.2f}}}/\epsilon^{{{fit['beta']:.2f}}}$"
+        label_str = (
+            rf"Fit: $M = {fit['C']:.1f} {dim_fit_label}"
+            rf"^{{{fit['alpha']:.2f}}}/\epsilon^{{{fit['beta']:.2f}}}$"
+        )
         rmse_str = rf"RMS rel. err.: ${fit['rmse'] * 100:.1f}\%$"
         fit_handles = [
             Line2D([], [], color="grey", linestyle="-", label=label_str),
@@ -422,6 +425,7 @@ def plot_benchmark_results(
 
 
 def main() -> None:
+    """CLI entry point: run the full benchmark sweep and write results."""
     key = random.PRNGKey(42)
     repetition = 10
 
