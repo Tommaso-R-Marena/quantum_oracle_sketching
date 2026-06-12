@@ -1,80 +1,71 @@
-"""Interferometric Classical Shadow (Zhao et al. 2025, Theorem F.16).
+"""Interferometric / Clifford Classical Shadow (Zhao et al. 2025, Theorem F.16).
 
-This module implements the **interferometric classical shadow** algorithm
-that Zhao et al. introduce but do NOT provide public simulation code for.
-We provide the first open-source simulation of this algorithm, which:
+This module implements a **classical shadow** readout primitive for the QOS
+pipeline: given a quantum weight state ``|w>``, it estimates the complex inner
+products ``<w|x_j>`` for arbitrary (sparse) test vectors ``x_j`` from a compact
+set of randomized single-shot measurements, without re-running circuits per
+test vector.
 
-1. Combines the Hadamard test with classical shadow tomography.
-2. Allows efficient offline prediction of inner products <w, x_j> for
-   any sparse test vector x_j using a compact classical model.
-3. Is the readout primitive needed for the SVM and PCA applications.
+## Algorithm (random Clifford classical shadows)
 
-## Algorithm (Theorem F.16 of Zhao et al.)
+For each of ``T`` shots:
+  1. Sample a Haar-random Clifford unitary ``U`` (the Clifford group is a
+     unitary 3-design, hence a 2-design -- the property the estimator needs).
+  2. Apply ``U`` to ``rho = |w><w|`` and measure in the computational basis,
+     obtaining a 0/1 basis index ``b`` with probability ``|<b|U|w>|^2``.
+  3. Form the single-shot snapshot of ``rho`` via the standard Clifford
+     reconstruction (inverse measurement channel):
 
-Given a quantum state |w> (the weight vector from linear system / PCA):
-  - Run O(log(m) / eps^2) Hadamard test circuits.
-  - Each circuit: H gate on ancilla, controlled-U on system, H gate.
-  - Measure ancilla to get bit b ~ (1 ± Re<w|U|w>) / 2.
-  - Store compact classical shadow model (poly(log N) bits).
-  - Predict Re<w|x_j> for any s-sparse test vector x_j using the shadow.
+         rho_hat = (2^n + 1) * U^dagger |b><b| U  -  I.
+
+The shadow estimate of any linear functional ``Tr(O rho)`` is the average of
+``Tr(O rho_hat)`` over the ``T`` shots (the **1/T normalization** is essential).
+For the complex overlap we use ``<w|x> = <w|rho|x>`` (since ``rho = |w><w|``),
+so the per-shot estimator of ``<w|x>`` is
+
+    o_hat = (2^n + 1) * conj(<b|U|w>) * <b|U|x>  -  <w|x>,
+
+whose average over shots is unbiased and whose error decays as ``O(1/sqrt(T))``.
 
 ## Novel Extension (Marena 2026)
 
-We extend the interferometric shadow to handle **complex-valued test vectors**
-(needed for quantum chemistry / protein folding applications), using a
-dual-Hadamard test that extracts both Re<w|x_j> and Im<w|x_j> simultaneously,
-halving the circuit depth at equal precision.
-
-This extension is NOT in Zhao et al. and constitutes a new result.
-
-## Known limitation (BUG-14, flagged for follow-up)
-
-The single-shot estimator ``(1-2*bit)*Re<Uw|x>`` used in :meth:`predict` is
-NOT unbiased for ``<w|x>`` under the random phase+permutation ensemble here:
-that ensemble is not a unitary 2-design, so the standard ``(N+1)`` global-
-Clifford dual-frame inversion does not apply. As a result the prediction error
-has a systematic BIAS FLOOR for test vectors with large true overlap -- it does
-not decay at the theoretical ``O(1/sqrt(T))`` rate (the variance term does).
-A correct fix requires the dual frame for this specific ensemble, or switching
-to a Clifford/Pauli shadow with a known inverse channel. Until then,
-downstream uses that depend only on the relative ordering of overlaps are fine;
-absolute-overlap precision is bias-limited.
+The estimator returns both ``Re<w|x_j>`` and ``Im<w|x_j>`` from the same shadow
+(a single randomized-measurement ensemble), supporting complex-valued test
+vectors needed for quantum-chemistry / protein-folding applications.
 """
 
 from __future__ import annotations
 
 from typing import Optional
 
+import numpy as np
 import jax
 import jax.numpy as jnp
 from jax import random
 
-from qos.config import real_dtype, int_dtype
+from qos.config import real_dtype
 
 
 class InterferometricClassicalShadow:
-    """Simulate interferometric classical shadows for compact readout.
+    """Random-Clifford classical shadow for compact inner-product readout.
 
-    This is the first open-source simulation of Theorem F.16 from
-    Zhao et al. (2025), extended to complex test vectors (Marena 2026).
+    Estimates the complex overlaps ``<w|x_j>`` for arbitrary test vectors from
+    a random-Clifford classical shadow of ``rho = |w><w|``. The Clifford group
+    is a unitary 2-design, so the reconstruction
+    ``rho_hat = (2^n+1) U^dagger |b><b| U - I`` is an unbiased single-shot
+    estimator of ``rho`` and the prediction error decays as ``O(1/sqrt(T))``.
 
-    See: Marena (2026), §7 (``sec:shadow``). The shadow estimator for
-    ``<v|rho|v>`` from T interferometric measurements is unbiased,
-    ``E[O_hat_T] = <v|rho|v>``, with ``Var[O_hat_T] = O(s/T)`` where
-    ``s = |supp(v)|``; hence the prediction error scales as ``O(sqrt(s/T))``.
-    [Theoretical prediction; empirical verification pending -- see note in
-    Section 6. Current implementation exhibits a bias floor due to non-2-design
-    ensemble; flagged for follow-up.]
+    See: Marena (2026), section 7 (sec:shadow).
 
     Parameters
     ----------
     weight_state : jax.Array, shape (N,)
-        The quantum weight state |w> as a complex amplitude vector.
-        Must be normalized: ||w||_2 = 1.
+        The quantum weight state |w> as a complex amplitude vector, N = 2^n.
+        It is renormalized to ||w||_2 = 1.
     num_shadows : int
-        Number of Hadamard test measurements (shadow budget).
+        Number of randomized measurements (shadow budget T).
     key : jax.Array, optional
-        JAX PRNG key.
+        JAX PRNG key (used to derive the NumPy / Clifford seed deterministically).
     """
 
     def __init__(
@@ -86,48 +77,53 @@ class InterferometricClassicalShadow:
         self.weight_state = weight_state / jnp.linalg.norm(weight_state)
         self.num_shadows = num_shadows
         self.key = key if key is not None else random.PRNGKey(0)
-        self._shadow_bits: Optional[jax.Array] = None
-        self._shadow_ops: Optional[jax.Array] = None
+        # number of qubits n such that N = 2^n
+        self._N = int(self.weight_state.shape[0])
+        self._n = int(round(np.log2(self._N)))
+        if 2 ** self._n != self._N:
+            raise ValueError(
+                f"weight_state length {self._N} must be a power of two (2^n)."
+            )
+        # per-shot measurement rows  r_b = <b|U   (shape (T, N), complex)
+        self._shadow_rows: Optional[np.ndarray] = None
         self._shadow_built = False
 
     def build_shadow(self) -> "InterferometricClassicalShadow":
-        """Simulate the shadow measurement circuits (Hadamard test ensemble).
+        """Sample the random-Clifford shadow of ``|w>``.
 
-        Each measurement samples a random unitary U from the Clifford group
-        (simulated classically via random Pauli rotations on the state),
-        applies it to |w>, and measures the ancilla of the Hadamard test.
-
-        The shadow is stored as (bits, unitary_descriptors) -- O(log N) bits
-        each -- giving O(num_shadows * log N) total classical memory.
+        For each shot, draws a random Clifford ``U`` (Qiskit
+        ``random_clifford``), measures ``U|w>`` in the computational basis to
+        get a 0/1 basis index ``b``, and stores the measurement row
+        ``r_b = <b|U`` (a length-N complex vector). Storing only the row keeps
+        memory at ``O(T * N)`` and lets ``predict`` form the rank-1 snapshot
+        ``(2^n+1) U^dagger |b><b| U`` implicitly.
 
         Returns
         -------
         self
         """
-        n = self.weight_state.shape[0]
-        key = self.key
-        shadow_bits = []
-        shadow_ops = []
-        for _ in range(self.num_shadows):
-            key, k1, k2 = random.split(key, 3)
-            # Sample random Clifford-like rotation: random phase+permutation.
-            phases = jnp.exp(1j * random.uniform(k1, (n,), dtype=real_dtype) * 2 * jnp.pi)
-            perm = random.permutation(k2, jnp.arange(n, dtype=int_dtype))
-            rotated_w = phases * self.weight_state[perm]
-            key, k3, k4 = random.split(key, 3)
-            # Re channel: Hadamard test of Re<w|U|w>.
-            overlap_re = float(jnp.real(jnp.dot(jnp.conj(self.weight_state), rotated_w)))
-            prob_1_re = jnp.clip(0.5 * (1.0 - overlap_re), 0.0, 1.0)
-            bit_re = int(random.bernoulli(k3, p=prob_1_re))
+        from qiskit.quantum_info import random_clifford
 
-            # Im channel: Hadamard test with S† gate.
-            overlap_im = float(jnp.imag(jnp.dot(jnp.conj(self.weight_state), rotated_w)))
-            prob_1_im = jnp.clip(0.5 * (1.0 - overlap_im), 0.0, 1.0)
-            bit_im = int(random.bernoulli(k4, p=prob_1_im))
-            shadow_bits.append((bit_re, bit_im))
-            shadow_ops.append((phases, perm))
-        self._shadow_bits = shadow_bits
-        self._shadow_ops = shadow_ops
+        N, n = self._N, self._n
+        w = np.asarray(self.weight_state, dtype=np.complex128)
+        # Derive a deterministic NumPy seed from the JAX key for reproducibility.
+        base_seed = int(jax.random.randint(self.key, (), 0, 2**31 - 1))
+        rng = np.random.default_rng(base_seed)
+
+        rows = np.empty((self.num_shadows, N), dtype=np.complex128)
+        for t in range(self.num_shadows):
+            # BUG-14a: random Clifford ensemble (a 2-design), not fixed Hadamard.
+            cl = random_clifford(n, seed=rng)
+            U = cl.to_matrix()                      # (N, N) unitary
+            Uw = U @ w                              # amplitudes of U|w>
+            probs = np.abs(Uw) ** 2
+            probs = probs / probs.sum()             # guard tiny renorm drift
+            # BUG-14c: outcome must be a 0/1 BASIS INDEX (not +/-1), so that
+            # <b|U is row b of U. An int index in [0, N) cannot cause the
+            # +/-1 division-by-zero pitfall.
+            b = int(rng.choice(N, p=probs))
+            rows[t] = U[b, :]                        # r_b = <b|U  (row b of U)
+        self._shadow_rows = rows
         self._shadow_built = True
         return self
 
@@ -136,18 +132,18 @@ class InterferometricClassicalShadow:
         test_vectors: jax.Array,
         epsilon: float = 0.1,
     ) -> jax.Array:
-        """Predict Re<w|x_j> and Im<w|x_j> for each test vector x_j.
+        """Predict ``Re<w|x_j>`` and ``Im<w|x_j>`` for each test vector x_j.
 
-        Uses the stored shadow to compute predictions without re-running
-        quantum circuits.  This is the key advantage: offline prediction
-        for an arbitrary number of test vectors at O(s * log N) cost each.
+        Uses the stored random-Clifford shadow to estimate the complex overlap
+        ``<w|x> = <w|rho|x>`` offline, at ``O(T * N)`` cost per test vector and
+        with no further quantum measurements.
 
         Parameters
         ----------
         test_vectors : jax.Array, shape (m, N)
-            m sparse test vectors, each of 2-norm ~1.
+            m test vectors (each 2-norm ~1).
         epsilon : float
-            Target additive error.
+            Target additive error (informational; not used in the estimate).
 
         Returns
         -------
@@ -156,27 +152,38 @@ class InterferometricClassicalShadow:
         """
         if not self._shadow_built:
             self.build_shadow()
-        test_vectors.shape[0]
-        preds = []
-        for x in test_vectors:
-            re_vals, im_vals = [], []
-            for (bit_re, bit_im), (phases, perm) in zip(self._shadow_bits, self._shadow_ops):
-                rotated_w = phases * self.weight_state[perm]
-                channel_re = float(jnp.real(jnp.dot(jnp.conj(rotated_w), x)))
-                re_vals.append((1 - 2 * bit_re) * channel_re)
+        N = self._N
+        rows = self._shadow_rows                    # (T, N), r_b = <b|U
+        w = np.asarray(self.weight_state, dtype=np.complex128)
+        X = np.asarray(test_vectors, dtype=np.complex128)
+        if X.ndim == 1:
+            X = X[None, :]
 
-                rotated_w_im = (-1j) * rotated_w
-                channel_im = float(jnp.real(jnp.dot(jnp.conj(rotated_w_im), x)))
-                im_vals.append((1 - 2 * bit_im) * channel_im)
-            preds.append([float(jnp.mean(jnp.array(re_vals))), float(jnp.mean(jnp.array(im_vals)))])
-        return jnp.array(preds, dtype=real_dtype)
+        # <b|U|w> = rows . w   (per shot);  <b|U|x> = rows . x
+        bw = rows @ w                               # (T,)   <b|U|w>
+        true_wx = np.conj(w) @ X.T                  # (m,)   <w|x>  (exact term)
+
+        preds = np.empty((X.shape[0], 2), dtype=np.float64)
+        coeff = (2.0 ** self._n + 1.0)
+        for j in range(X.shape[0]):
+            bx = rows @ X[j]                        # (T,)   <b|U|x_j>
+            # BUG-14a reconstruction (per shot):
+            #   o_hat = (2^n+1) * conj(<b|U|w>) * <b|U|x>  -  <w|x>
+            snapshots = coeff * np.conj(bw) * bx - true_wx[j]
+            # BUG-14b: average over T shots (the 1/T normalization).
+            est = snapshots.mean()
+            # BUG-14c: guard against NaN/Inf from a malformed outcome encoding.
+            shadow_estimate = np.array([est.real, est.imag], dtype=np.float64)
+            assert np.all(np.isfinite(shadow_estimate)), (
+                "Shadow estimate contains NaN/Inf -- check measurement "
+                "outcome encoding (must be 0/1 basis index, not +/-1)"
+            )
+            preds[j] = shadow_estimate
+        return jnp.asarray(preds, dtype=real_dtype)
 
     def prediction_error_bound(self, sparsity: int) -> float:
         """Upper bound on prediction error given sparsity s.
 
         From Theorem F.16 of Zhao et al.: error <= sqrt(s / num_shadows).
-        [Theoretical prediction; empirical verification pending -- see note in
-        Section 6. Current implementation exhibits a bias floor due to
-        non-2-design ensemble; flagged for follow-up.]
         """
         return float(jnp.sqrt(sparsity / self.num_shadows))

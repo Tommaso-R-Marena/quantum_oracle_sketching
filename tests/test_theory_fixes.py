@@ -40,17 +40,16 @@ def test_shadow_error_decays_with_T():
 
     shadow = InterferometricClassicalShadow(w, num_shadows=5000, key=jax.random.PRNGKey(0))
     shadow.build_shadow()
-    full_bits = shadow._shadow_bits
-    full_ops = shadow._shadow_ops
+    # BUG-14 fix: the random-Clifford shadow stores per-shot measurement rows
+    # (<b|U) in `_shadow_rows`; subsample the first T rows to study the T-scaling.
+    full_rows = shadow._shadow_rows
 
     errors = []
     for T in [50, 200, 1000]:
-        shadow._shadow_bits = full_bits[:T]
-        shadow._shadow_ops = full_ops[:T]
+        shadow._shadow_rows = full_rows[:T]
         pred = shadow.predict(x)[0, 0]
         errors.append(abs(float(pred) - gt))
-        shadow._shadow_bits = full_bits
-        shadow._shadow_ops = full_ops
+        shadow._shadow_rows = full_rows
 
     assert errors[1] < errors[0] * 1.1, (
         f"T=200 error {errors[1]:.4f} not < T=50 error {errors[0]:.4f}"
