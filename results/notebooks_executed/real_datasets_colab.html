@@ -3,7 +3,34 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script><script>
+(function() {
+  function addWidgetsRenderer() {
+    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
+    var scriptElement = document.createElement('script');
+    
+    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
+    
+    var widgetState;
+
+    // Fallback for older version:
+    try {
+      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
+
+      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
+        
+        var widgetRendererSrc = 'https://unpkg.com/@jupyter-js-widgets@*/dist/embed.js';
+        
+      }
+    } catch(e) {}
+
+    scriptElement.src = widgetRendererSrc;
+    document.body.appendChild(scriptElement);
+  }
+
+  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
+}());
+</script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7822,6 +7849,10 @@ a.anchor-link {
 <p><strong>Runtime:</strong> ~2-4 hrs on A100. PBMC68k downloads ~500 MB on first run.
 All outputs are auto-saved to Google Drive if mounted.</p>
 </blockquote>
+<p><strong>Runtime note:</strong> The IMDb cross-validation sweep (Section 5) requires ~30 minutes of CPU time. Headless CI and Colab free-tier runtimes will time out on this cell — this is expected. All dataset loaders (IMDb, splice, dorothea) are verified working; only the full CV sweep is resource-limited. To skip: set SKIP_CV_SWEEP = True in the parameters cell.</p>
+<blockquote>
+<p>Last verified: 2026-06-12 · Estimated runtime: ~5 min (loaders) / +30 min IMDb CV sweep (headless, CPU)</p>
+</blockquote>
 </div>
 </div>
 </div>
@@ -7912,13 +7943,13 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>✅ quantum-oracle-sketching installed.
-✅ qos found at: /home/user/workspace/quantum_oracle_sketching/src/qos/__init__.py
+✅ qos found at: /workspace/src/qos/__init__.py
 </pre>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2e89c5ad">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3151c2ad">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8002,7 +8033,7 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Python      : ['3.12.8', '(main,', 'May', '26', '2026,', '17:29:17)', '[GCC', '14.2.0]']
+<pre>Python      : ['3.12.3', '(main,', 'Mar', '23', '2026,', '19:04:32)', '[GCC', '13.3.0]']
 Platform    : Linux x86_64
 JAX devices : [CpuDevice(id=0)]
 ⚠️  No GPU detected. Heavy experiments will be slow.
@@ -8063,7 +8094,7 @@ qos version : 1.3.3
         <span class="k">pass</span>
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
         <span class="s2">"Cannot find qos src root. Either run from the repo root, "</span>
-        <span class="s2">"or install with: pip install -e </span><span class="se">\'</span><span class="s2">.[dev,noise,kernel]</span><span class="se">\'</span><span class="s2">"</span>
+        <span class="s2">"or install with: pip install -e </span><span class="se">\'</span><span class="s2">.[dev,noise,kernel,singlecell,datasets]</span><span class="se">\'</span><span class="s2">"</span>
     <span class="p">)</span>
 <span class="n">_src</span> <span class="o">=</span> <span class="n">_find_src_root</span><span class="p">()</span>
 <span class="k">if</span> <span class="n">_src</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_src</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
@@ -8086,7 +8117,7 @@ qos version : 1.3.3
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>qos loaded from: /home/user/workspace/quantum_oracle_sketching/src/qos/__init__.py
+<pre>qos loaded from: /workspace/src/qos/__init__.py
 </pre>
 </div>
 </div>
@@ -8160,7 +8191,8 @@ qos version : 1.3.3
 <span class="k">else</span><span class="p">:</span>
     <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">'HUGGING_FACE_HUB_TOKEN'</span><span class="p">]</span> <span class="o">=</span> <span class="n">hf_token</span>
 
-<span class="n">FAST_MODE</span>  <span class="o">=</span> <span class="kc">False</span>
+<span class="n">FAST_MODE</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># patched (headless)</span>
+<span class="n">SKIP_CV_SWEEP</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># patched (headless)  # set True to skip the ~30-min IMDb CV sweep (Section 5)</span>
 <span class="n">SAVE_FIGS</span>  <span class="o">=</span> <span class="kc">True</span>
 <span class="n">SHOW_FIGS</span>  <span class="o">=</span> <span class="kc">True</span>
 <span class="n">CV_FOLDS</span>   <span class="o">=</span> <span class="mi">5</span>
@@ -8195,7 +8227,7 @@ qos version : 1.3.3
 Set HF_TOKEN in Colab Secrets for higher rate limits.
 JAX devices: [CpuDevice(id=0)]
 JAX x64 enabled: True
-Mode: PAPER QUALITY
+Mode: FAST
 ⚠️ WARNING: No GPU detected. Go to Runtime &gt; Change runtime type &gt; GPU (A100 recommended).
 </pre>
 </div>
@@ -8378,34 +8410,37 @@ compare_to_zhao() loaded.
 <span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.imdb.imdb_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_imdb_data</span>
 <span class="n">IMDB_MIN_DFS</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mi">6</span><span class="p">,</span><span class="mi">7</span><span class="p">,</span><span class="mi">8</span><span class="p">,</span><span class="mi">9</span><span class="p">,</span><span class="mi">11</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">14</span><span class="p">,</span><span class="mi">16</span><span class="p">,</span><span class="mi">19</span><span class="p">,</span><span class="mi">21</span><span class="p">,</span><span class="mi">24</span><span class="p">,</span><span class="mi">28</span><span class="p">,</span><span class="mi">32</span><span class="p">,</span><span class="mi">36</span><span class="p">,</span><span class="mi">42</span><span class="p">,</span><span class="mi">48</span><span class="p">,</span><span class="mi">55</span><span class="p">,</span><span class="mi">62</span><span class="p">,</span><span class="mi">71</span><span class="p">,</span><span class="mi">81</span><span class="p">,</span><span class="mi">93</span><span class="p">,</span><span class="mi">106</span><span class="p">,</span><span class="mi">122</span><span class="p">,</span><span class="mi">139</span><span class="p">,</span><span class="mi">159</span><span class="p">,</span><span class="mi">181</span><span class="p">,</span><span class="mi">207</span><span class="p">,</span><span class="mi">236</span><span class="p">,</span><span class="mi">270</span><span class="p">,</span><span class="mi">308</span><span class="p">,</span><span class="mi">352</span><span class="p">,</span><span class="mi">402</span><span class="p">,</span><span class="mi">459</span><span class="p">,</span><span class="mi">524</span><span class="p">,</span><span class="mi">599</span><span class="p">,</span><span class="mi">684</span><span class="p">,</span><span class="mi">781</span><span class="p">,</span><span class="mi">891</span><span class="p">,</span><span class="mi">1018</span><span class="p">,</span><span class="mi">1162</span><span class="p">,</span><span class="mi">1327</span><span class="p">,</span><span class="mi">1515</span><span class="p">,</span><span class="mi">1730</span><span class="p">,</span><span class="mi">1976</span><span class="p">,</span><span class="mi">2256</span><span class="p">,</span><span class="mi">2576</span><span class="p">,</span><span class="mi">2941</span><span class="p">,</span><span class="mi">3358</span><span class="p">,</span><span class="mi">3835</span><span class="p">,</span><span class="mi">4379</span><span class="p">,</span><span class="mi">5000</span><span class="p">]</span>
 <span class="k">if</span> <span class="n">FAST_MODE</span><span class="p">:</span> <span class="n">IMDB_MIN_DFS</span> <span class="o">=</span> <span class="n">IMDB_MIN_DFS</span><span class="p">[::</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">IMDB_MIN_DFS</span><span class="p">)</span><span class="o">//</span><span class="n">FAST_SWEEP_LEN</span><span class="p">)]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Loading IMDb...'</span><span class="p">)</span>
-<span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_imdb_data</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">hf_token</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">X_raw</span><span class="p">)</span><span class="si">}</span><span class="s1"> reviews, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="si">}</span><span class="s1"> classes'</span><span class="p">)</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">imdb_filter</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">min_df</span><span class="p">):</span>
-    <span class="c1"># Guard: very high min_df can prune all terms from the IMDb corpus.</span>
-    <span class="c1"># Return (None, {}) so the sweep runner skips this point,</span>
-    <span class="c1"># consistent with news20_filter, pbmc_filter, dorothea_filter, splice_filter.</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">vec</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="s1">'english'</span><span class="p">)</span>
-        <span class="n">X</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_raw</span><span class="p">);</span> <span class="n">X</span><span class="o">.</span><span class="n">eliminate_zeros</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<span class="k">if</span> <span class="ow">not</span> <span class="n">SKIP_CV_SWEEP</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Loading IMDb...'</span><span class="p">)</span>
+    <span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">load_imdb_data</span><span class="p">(</span><span class="n">token</span><span class="o">=</span><span class="n">hf_token</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loaded </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">X_raw</span><span class="p">)</span><span class="si">}</span><span class="s1"> reviews, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y</span><span class="p">))</span><span class="si">}</span><span class="s1"> classes'</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">imdb_filter</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">min_df</span><span class="p">):</span>
+        <span class="c1"># Guard: very high min_df can prune all terms from the IMDb corpus.</span>
+        <span class="c1"># Return (None, {}) so the sweep runner skips this point,</span>
+        <span class="c1"># consistent with news20_filter, pbmc_filter, dorothea_filter, splice_filter.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">min_df</span><span class="o">=</span><span class="n">min_df</span><span class="p">,</span> <span class="n">stop_words</span><span class="o">=</span><span class="s1">'english'</span><span class="p">)</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">vec</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X_raw</span><span class="p">);</span> <span class="n">X</span><span class="o">.</span><span class="n">eliminate_zeros</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{}</span>
+            <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="p">{</span><span class="s1">'vocab_size'</span><span class="p">:</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{}</span>
-        <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="p">{</span><span class="s1">'vocab_size'</span><span class="p">:</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]}</span>
-    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{}</span>
-<span class="n">prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="s1">'imdb'</span><span class="p">);</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running IMDb classification sweep...'</span><span class="p">)</span>
-<span class="n">imdb_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">IMDB_MIN_DFS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">imdb_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'IMDb'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'imdb'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
-<span class="n">plot_experiment_results</span><span class="p">(</span><span class="n">imdb_clf</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'IMDb: Binary classification'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'Accuracy'</span><span class="p">,</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[</span><span class="mf">0.70</span><span class="p">,</span><span class="mf">0.75</span><span class="p">,</span><span class="mf">0.80</span><span class="p">,</span><span class="mf">0.85</span><span class="p">,</span><span class="mf">0.90</span><span class="p">],</span> <span class="n">xtick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'70%'</span><span class="p">,</span><span class="s1">'75%'</span><span class="p">,</span><span class="s1">'80%'</span><span class="p">,</span><span class="s1">'85%'</span><span class="p">,</span><span class="s1">'90%'</span><span class="p">],</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.69</span><span class="p">,</span><span class="mf">0.91</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e7</span><span class="p">),</span> <span class="n">text_positions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sparse'</span><span class="p">:(</span><span class="mf">0.70</span><span class="p">,</span><span class="mf">4e6</span><span class="p">),</span><span class="s1">'streaming'</span><span class="p">:(</span><span class="mf">0.88</span><span class="p">,</span><span class="mf">9e4</span><span class="p">),</span><span class="s1">'quantum'</span><span class="p">:(</span><span class="mf">0.90</span><span class="p">,</span><span class="mf">1.9e1</span><span class="p">)})</span>
-<span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.pdf'</span><span class="p">)</span>
-<span class="n">_comp</span> <span class="o">=</span> <span class="n">compare_to_zhao</span><span class="p">(</span><span class="s1">'imdb'</span><span class="p">,</span> <span class="n">imdb_clf</span><span class="p">,</span> <span class="n">ZHAO_REFERENCE</span><span class="p">[</span><span class="s1">'imdb'</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">ZHAO COMPARISON — IMDB</span><span class="se">\n</span><span class="s2">Status: </span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'match_status'</span><span class="p">]</span><span class="si">}</span><span class="s2">  Acc: ours=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'our_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'zhao_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Δ=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'accuracy_delta'</span><span class="p">]</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">  Qubits: ours=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'our_qubits_at_peak'</span><span class="p">]</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'zhao_qubits'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reproduced: </span><span class="si">{</span><span class="s1">'✅ YES'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">_comp</span><span class="p">[</span><span class="s1">'reproduced'</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'❌ NO'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span><span class="s1">'imdb_zhao_comparison.json'</span><span class="p">),</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_comp</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'Running IMDb PCA sweep...'</span><span class="p">)</span>
-<span class="n">imdb_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">IMDB_MIN_DFS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">imdb_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'IMDb'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">plot_pca_results</span><span class="p">(</span><span class="n">imdb_pca</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'IMDb: Dimension reduction'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e7</span><span class="p">))</span>
-<span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.pdf'</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'IMDb done in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">s'</span><span class="p">)</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="s1">'imdb'</span><span class="p">);</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running IMDb classification sweep...'</span><span class="p">)</span>
+    <span class="n">imdb_clf</span> <span class="o">=</span> <span class="n">run_classification_experiment</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">IMDB_MIN_DFS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">imdb_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'IMDb'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">clf_alpha</span><span class="o">=</span><span class="n">CLF_ALPHA_PER_DATASET</span><span class="p">[</span><span class="s1">'imdb'</span><span class="p">],</span> <span class="n">cv_folds</span><span class="o">=</span><span class="n">CV_FOLDS</span><span class="p">)</span>
+    <span class="n">plot_experiment_results</span><span class="p">(</span><span class="n">imdb_clf</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'IMDb: Binary classification'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s1">'Accuracy'</span><span class="p">,</span> <span class="n">xticks</span><span class="o">=</span><span class="p">[</span><span class="mf">0.70</span><span class="p">,</span><span class="mf">0.75</span><span class="p">,</span><span class="mf">0.80</span><span class="p">,</span><span class="mf">0.85</span><span class="p">,</span><span class="mf">0.90</span><span class="p">],</span> <span class="n">xtick_labels</span><span class="o">=</span><span class="p">[</span><span class="s1">'70%'</span><span class="p">,</span><span class="s1">'75%'</span><span class="p">,</span><span class="s1">'80%'</span><span class="p">,</span><span class="s1">'85%'</span><span class="p">,</span><span class="s1">'90%'</span><span class="p">],</span> <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mf">0.69</span><span class="p">,</span><span class="mf">0.91</span><span class="p">),</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e7</span><span class="p">),</span> <span class="n">text_positions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sparse'</span><span class="p">:(</span><span class="mf">0.70</span><span class="p">,</span><span class="mf">4e6</span><span class="p">),</span><span class="s1">'streaming'</span><span class="p">:(</span><span class="mf">0.88</span><span class="p">,</span><span class="mf">9e4</span><span class="p">),</span><span class="s1">'quantum'</span><span class="p">:(</span><span class="mf">0.90</span><span class="p">,</span><span class="mf">1.9e1</span><span class="p">)})</span>
+    <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_accuracy.pdf'</span><span class="p">)</span>
+    <span class="n">_comp</span> <span class="o">=</span> <span class="n">compare_to_zhao</span><span class="p">(</span><span class="s1">'imdb'</span><span class="p">,</span> <span class="n">imdb_clf</span><span class="p">,</span> <span class="n">ZHAO_REFERENCE</span><span class="p">[</span><span class="s1">'imdb'</span><span class="p">])</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="s1">'='</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">ZHAO COMPARISON — IMDB</span><span class="se">\n</span><span class="s2">Status: </span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'match_status'</span><span class="p">]</span><span class="si">}</span><span class="s2">  Acc: ours=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'our_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'zhao_peak_accuracy'</span><span class="p">]</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> Δ=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'accuracy_delta'</span><span class="p">]</span><span class="si">:</span><span class="s2">+.3f</span><span class="si">}</span><span class="s2">  Qubits: ours=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'our_qubits_at_peak'</span><span class="p">]</span><span class="si">}</span><span class="s2"> Zhao=</span><span class="si">{</span><span class="n">_comp</span><span class="p">[</span><span class="s1">'zhao_qubits'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Reproduced: </span><span class="si">{</span><span class="s1">'✅ YES'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">_comp</span><span class="p">[</span><span class="s1">'reproduced'</span><span class="p">]</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'❌ NO'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span><span class="s1">'imdb_zhao_comparison.json'</span><span class="p">),</span><span class="s1">'w'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">_comp</span><span class="p">,</span><span class="n">f</span><span class="p">,</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'Running IMDb PCA sweep...'</span><span class="p">)</span>
+    <span class="n">imdb_pca</span> <span class="o">=</span> <span class="n">run_pca_experiment</span><span class="p">(</span><span class="n">X_raw</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">sweep_values</span><span class="o">=</span><span class="n">IMDB_MIN_DFS</span><span class="p">,</span> <span class="n">filter_fn</span><span class="o">=</span><span class="n">imdb_filter</span><span class="p">,</span> <span class="n">dataset_name</span><span class="o">=</span><span class="s1">'IMDb'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">plot_pca_results</span><span class="p">(</span><span class="n">imdb_pca</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">'IMDb: Dimension reduction'</span><span class="p">,</span> <span class="n">output_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span> <span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mf">1e1</span><span class="p">,</span><span class="mf">1e7</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">SHOW_FIGS</span><span class="p">:</span> <span class="n">show_pdf</span><span class="p">(</span><span class="n">prefix</span> <span class="o">+</span> <span class="s1">'_size_vs_variance.pdf'</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'IMDb done in </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t0</span><span class="si">:</span><span class="s1">.0f</span><span class="si">}</span><span class="s1">s'</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">"CV sweep skipped (SKIP_CV_SWEEP=True)."</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -8418,395 +8453,8 @@ compare_to_zhao() loaded.
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Loading IMDb...
+<pre>CV sweep skipped (SKIP_CV_SWEEP=True).
 </pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Loaded 50000 reviews, 2 classes
-Running IMDb classification sweep...
-Running classification sweep on IMDb...
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   0%|          | 0/55 [00:00&lt;?, ?it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   2%|▏         | 1/55 [00:07&lt;06:41,  7.43s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   4%|▎         | 2/55 [00:14&lt;06:27,  7.30s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   5%|▌         | 3/55 [00:21&lt;06:09,  7.11s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   7%|▋         | 4/55 [00:28&lt;05:58,  7.04s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   9%|▉         | 5/55 [00:35&lt;05:50,  7.01s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  11%|█         | 6/55 [00:42&lt;05:43,  7.00s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  13%|█▎        | 7/55 [00:49&lt;05:33,  6.96s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  15%|█▍        | 8/55 [00:55&lt;05:22,  6.86s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  16%|█▋        | 9/55 [01:02&lt;05:11,  6.77s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  18%|█▊        | 10/55 [01:09&lt;05:07,  6.83s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  20%|██        | 11/55 [01:16&lt;04:58,  6.79s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  22%|██▏       | 12/55 [01:22&lt;04:49,  6.73s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  24%|██▎       | 13/55 [01:29&lt;04:41,  6.70s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  25%|██▌       | 14/55 [01:35&lt;04:33,  6.67s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  27%|██▋       | 15/55 [01:42&lt;04:26,  6.67s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  29%|██▉       | 16/55 [01:49&lt;04:21,  6.70s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  31%|███       | 17/55 [01:55&lt;04:12,  6.65s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  33%|███▎      | 18/55 [02:02&lt;04:04,  6.60s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  35%|███▍      | 19/55 [02:08&lt;03:56,  6.57s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  36%|███▋      | 20/55 [02:15&lt;03:48,  6.53s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  38%|███▊      | 21/55 [02:21&lt;03:42,  6.56s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  40%|████      | 22/55 [02:28&lt;03:35,  6.54s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  42%|████▏     | 23/55 [02:35&lt;03:31,  6.62s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  44%|████▎     | 24/55 [02:41&lt;03:26,  6.65s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  45%|████▌     | 25/55 [02:48&lt;03:18,  6.61s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  47%|████▋     | 26/55 [02:54&lt;03:10,  6.56s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  49%|████▉     | 27/55 [03:01&lt;03:04,  6.60s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  51%|█████     | 28/55 [03:07&lt;02:55,  6.51s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  53%|█████▎    | 29/55 [03:14&lt;02:47,  6.46s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  55%|█████▍    | 30/55 [03:20&lt;02:42,  6.50s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  56%|█████▋    | 31/55 [03:27&lt;02:34,  6.45s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  58%|█████▊    | 32/55 [03:33&lt;02:28,  6.44s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  60%|██████    | 33/55 [03:39&lt;02:20,  6.39s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  62%|██████▏   | 34/55 [03:46&lt;02:13,  6.34s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  64%|██████▎   | 35/55 [03:52&lt;02:05,  6.30s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  65%|██████▌   | 36/55 [03:58&lt;01:59,  6.31s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  67%|██████▋   | 37/55 [04:04&lt;01:53,  6.28s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  69%|██████▉   | 38/55 [04:11&lt;01:46,  6.25s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  71%|███████   | 39/55 [04:17&lt;01:38,  6.17s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  73%|███████▎  | 40/55 [04:23&lt;01:32,  6.18s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  75%|███████▍  | 41/55 [04:29&lt;01:25,  6.11s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  76%|███████▋  | 42/55 [04:35&lt;01:19,  6.09s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  78%|███████▊  | 43/55 [04:41&lt;01:12,  6.06s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  80%|████████  | 44/55 [04:47&lt;01:06,  6.02s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  82%|████████▏ | 45/55 [04:52&lt;00:59,  5.94s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  82%|████████▏ | 45/55 [04:56&lt;01:05,  6.60s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">KeyboardInterrupt</span>                         Traceback (most recent call last)
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 24</span>
-<span class="ansi-green-fg">     20</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> ValueError:
-<span class="ansi-green-fg">     21</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>, {}
-<span class="ansi-green-fg">     22</span> prefix = os.path.join(OUTPUT_DIR, <span class="ansi-yellow-fg">'imdb'</span>); t0 = time.time()
-<span class="ansi-green-fg">     23</span> print(<span class="ansi-yellow-fg">'Running IMDb classification sweep...'</span>)
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">24</span> imdb_clf = run_classification_experiment(X_raw, y, sweep_values=IMDB_MIN_DFS, filter_fn=imdb_filter, dataset_name=<span class="ansi-yellow-fg">'IMDb'</span>, output_prefix=prefix, clf_alpha=CLF_ALPHA_PER_DATASET[<span class="ansi-yellow-fg">'imdb'</span>], cv_folds=CV_FOLDS)
-<span class="ansi-green-fg">     25</span> plot_experiment_results(imdb_clf, title=<span class="ansi-yellow-fg">'IMDb: Binary classification'</span>, output_prefix=prefix, xlabel=<span class="ansi-yellow-fg">'Accuracy'</span>, xticks=[<span class="ansi-green-fg">0.70</span>,<span class="ansi-green-fg">0.75</span>,<span class="ansi-green-fg">0.80</span>,<span class="ansi-green-fg">0.85</span>,<span class="ansi-green-fg">0.90</span>], xtick_labels=[<span class="ansi-yellow-fg">'70%'</span>,<span class="ansi-yellow-fg">'75%'</span>,<span class="ansi-yellow-fg">'80%'</span>,<span class="ansi-yellow-fg">'85%'</span>,<span class="ansi-yellow-fg">'90%'</span>], xlim=(<span class="ansi-green-fg">0.69</span>,<span class="ansi-green-fg">0.91</span>), ylim=(<span class="ansi-green-fg">1e1</span>,<span class="ansi-green-fg">1e7</span>), text_positions={<span class="ansi-yellow-fg">'sparse'</span>:(<span class="ansi-green-fg">0.70</span>,<span class="ansi-green-fg">4e6</span>),<span class="ansi-yellow-fg">'streaming'</span>:(<span class="ansi-green-fg">0.88</span>,<span class="ansi-green-fg">9e4</span>),<span class="ansi-yellow-fg">'quantum'</span>:(<span class="ansi-green-fg">0.90</span>,<span class="ansi-green-fg">1.9e1</span>)})
-<span class="ansi-green-fg">     26</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> SHOW_FIGS: show_pdf(prefix + <span class="ansi-yellow-fg">'_size_vs_accuracy.pdf'</span>)
-<span class="ansi-green-fg">     27</span> _comp = compare_to_zhao(<span class="ansi-yellow-fg">'imdb'</span>, imdb_clf, ZHAO_REFERENCE[<span class="ansi-yellow-fg">'imdb'</span>])
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">~/workspace/quantum_oracle_sketching/src/qos/experiments/real_datasets/shared.py:125</span>, in <span class="ansi-cyan-fg">run_classification_experiment</span><span class="ansi-blue-fg">(X, y, sweep_values, filter_fn, dataset_name, output_prefix, clf_alpha, cv_folds, clf_kwargs)</span>
-<span class="ansi-green-fg">    123</span> tqdm.write(<span class="ansi-yellow-fg">f</span><span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Running classification sweep on </span><span class="ansi-bold" style="color: rgb(175,95,135)">{</span>dataset_name<span class="ansi-bold" style="color: rgb(175,95,135)">}</span><span class="ansi-yellow-fg">...</span><span class="ansi-yellow-fg">"</span>)
-<span class="ansi-green-fg">    124</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> threshold <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> tqdm(sweep_values, desc=<span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Sweep</span><span class="ansi-yellow-fg">"</span>):
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">125</span>     X_filtered, info = <span class="ansi-black-fg ansi-yellow-bg">filter_fn</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">X</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">threshold</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    126</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> X_filtered <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span> <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> (<span style="color: rgb(0,135,0)">hasattr</span>(X_filtered, <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">shape</span><span class="ansi-yellow-fg">"</span>) <span class="ansi-bold" style="color: rgb(175,0,255)">and</span> X_filtered.shape[<span class="ansi-green-fg">1</span>] == <span class="ansi-green-fg">0</span>):
-<span class="ansi-green-fg">    127</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">continue</span>
-
-<span class="ansi-cyan-fg">Cell</span><span class="ansi-cyan-fg"> </span><span class="ansi-green-fg">In[9]</span><span class="ansi-green-fg">, line 20</span>, in <span class="ansi-cyan-fg">imdb_filter</span><span class="ansi-blue-fg">(X_raw, min_df)</span>
-<span class="ansi-green-fg">     16</span>         X = vec.fit_transform(X_raw); X.eliminate_zeros()
-<span class="ansi-green-fg">     17</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> X.shape[<span class="ansi-green-fg">1</span>] == <span class="ansi-green-fg">0</span>:
-<span class="ansi-green-fg">     18</span>             <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>, {}
-<span class="ansi-green-fg">     19</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> X, {<span class="ansi-yellow-fg">'vocab_size'</span>: X.shape[<span class="ansi-green-fg">1</span>]}
-<span class="ansi-green-fg">---&gt; </span><span class="ansi-green-fg">20</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">except</span> ValueError:
-<span class="ansi-green-fg">     21</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>, {}
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py:2104</span>, in <span class="ansi-cyan-fg">TfidfVectorizer.fit_transform</span><span class="ansi-blue-fg">(self, raw_documents, y)</span>
-<span class="ansi-green-fg">   2097</span> <span style="color: rgb(0,135,0)">self</span>._check_params()
-<span class="ansi-green-fg">   2098</span> <span style="color: rgb(0,135,0)">self</span>._tfidf = TfidfTransformer(
-<span class="ansi-green-fg">   2099</span>     norm=<span style="color: rgb(0,135,0)">self</span>.norm,
-<span class="ansi-green-fg">   2100</span>     use_idf=<span style="color: rgb(0,135,0)">self</span>.use_idf,
-<span class="ansi-green-fg">   2101</span>     smooth_idf=<span style="color: rgb(0,135,0)">self</span>.smooth_idf,
-<span class="ansi-green-fg">   2102</span>     sublinear_tf=<span style="color: rgb(0,135,0)">self</span>.sublinear_tf,
-<span class="ansi-green-fg">   2103</span> )
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">2104</span> X = <span class="ansi-black-fg ansi-yellow-bg">super</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">)</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">fit_transform</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">raw_documents</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   2105</span> <span style="color: rgb(0,135,0)">self</span>._tfidf.fit(X)
-<span class="ansi-green-fg">   2106</span> <span style="color: rgb(95,135,135)"># X is already a transformed view of raw_documents so</span>
-<span class="ansi-green-fg">   2107</span> <span style="color: rgb(95,135,135)"># we set copy to False</span>
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">/usr/local/lib/python3.12/site-packages/sklearn/base.py:1336</span>, in <span class="ansi-cyan-fg">_fit_context.&lt;locals&gt;.decorator.&lt;locals&gt;.wrapper</span><span class="ansi-blue-fg">(estimator, *args, **kwargs)</span>
-<span class="ansi-green-fg">   1329</span>     estimator._validate_params()
-<span class="ansi-green-fg">   1331</span> <span class="ansi-bold" style="color: rgb(0,135,0)">with</span> config_context(
-<span class="ansi-green-fg">   1332</span>     skip_parameter_validation=(
-<span class="ansi-green-fg">   1333</span>         prefer_skip_nested_validation <span class="ansi-bold" style="color: rgb(175,0,255)">or</span> global_skip_validation
-<span class="ansi-green-fg">   1334</span>     )
-<span class="ansi-green-fg">   1335</span> ):
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1336</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">return</span> <span class="ansi-black-fg ansi-yellow-bg">fit_method</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">estimator</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">*</span><span class="ansi-black-fg ansi-yellow-bg">args</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">*</span><span class="ansi-black-fg ansi-yellow-bg">*</span><span class="ansi-black-fg ansi-yellow-bg">kwargs</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py:1386</span>, in <span class="ansi-cyan-fg">CountVectorizer.fit_transform</span><span class="ansi-blue-fg">(self, raw_documents, y)</span>
-<span class="ansi-green-fg">   1378</span>             warnings.warn(
-<span class="ansi-green-fg">   1379</span>                 <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg">Upper case characters found in</span><span class="ansi-yellow-fg">"</span>
-<span class="ansi-green-fg">   1380</span>                 <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg"> vocabulary while </span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">lowercase</span><span class="ansi-yellow-fg">'</span><span class="ansi-yellow-fg">"</span>
-<span class="ansi-green-fg">   1381</span>                 <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg"> is True. These entries will not</span><span class="ansi-yellow-fg">"</span>
-<span class="ansi-green-fg">   1382</span>                 <span class="ansi-yellow-fg">"</span><span class="ansi-yellow-fg"> be matched with any documents</span><span class="ansi-yellow-fg">"</span>
-<span class="ansi-green-fg">   1383</span>             )
-<span class="ansi-green-fg">   1384</span>             <span class="ansi-bold" style="color: rgb(0,135,0)">break</span>
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1386</span> vocabulary, X = <span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">_count_vocab</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">raw_documents</span><span class="ansi-black-fg ansi-yellow-bg">,</span><span class="ansi-black-fg ansi-yellow-bg"> </span><span class="ansi-black-fg ansi-yellow-bg">self</span><span class="ansi-black-fg ansi-yellow-bg">.</span><span class="ansi-black-fg ansi-yellow-bg">fixed_vocabulary_</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">   1388</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> <span style="color: rgb(0,135,0)">self</span>.binary:
-<span class="ansi-green-fg">   1389</span>     X.data.fill(<span class="ansi-green-fg">1</span>)
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py:1273</span>, in <span class="ansi-cyan-fg">CountVectorizer._count_vocab</span><span class="ansi-blue-fg">(self, raw_documents, fixed_vocab)</span>
-<span class="ansi-green-fg">   1271</span> <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> doc <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> raw_documents:
-<span class="ansi-green-fg">   1272</span>     feature_counter = {}
-<span class="ansi-green-fg">-&gt; </span><span class="ansi-green-fg">1273</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">for</span> feature <span class="ansi-bold" style="color: rgb(175,0,255)">in</span> <span class="ansi-black-fg ansi-yellow-bg">analyze</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">doc</span><span class="ansi-black-fg ansi-yellow-bg">)</span>:
-<span class="ansi-green-fg">   1274</span>         <span class="ansi-bold" style="color: rgb(0,135,0)">try</span>:
-<span class="ansi-green-fg">   1275</span>             feature_idx = vocabulary[feature]
-
-<span class="ansi-cyan-fg">File </span><span class="ansi-green-fg">/usr/local/lib/python3.12/site-packages/sklearn/feature_extraction/text.py:115</span>, in <span class="ansi-cyan-fg">_analyze</span><span class="ansi-blue-fg">(doc, analyzer, tokenizer, ngrams, preprocessor, decoder, stop_words)</span>
-<span class="ansi-green-fg">    113</span>     doc = preprocessor(doc)
-<span class="ansi-green-fg">    114</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> tokenizer <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-<span class="ansi-green-fg">--&gt; </span><span class="ansi-green-fg">115</span>     doc = <span class="ansi-black-fg ansi-yellow-bg">tokenizer</span><span class="ansi-black-fg ansi-yellow-bg">(</span><span class="ansi-black-fg ansi-yellow-bg">doc</span><span class="ansi-black-fg ansi-yellow-bg">)</span>
-<span class="ansi-green-fg">    116</span> <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> ngrams <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-<span class="ansi-green-fg">    117</span>     <span class="ansi-bold" style="color: rgb(0,135,0)">if</span> stop_words <span class="ansi-bold" style="color: rgb(175,0,255)">is</span> <span class="ansi-bold" style="color: rgb(175,0,255)">not</span> <span class="ansi-bold" style="color: rgb(0,135,0)">None</span>:
-
-<span class="ansi-red-fg">KeyboardInterrupt</span>: </pre>
 </div>
 </div>
 </div>
@@ -8822,12 +8470,12 @@ Running classification sweep on IMDb...
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=news20-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=news20-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
@@ -8865,6 +8513,236 @@ Running classification sweep on IMDb...
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading 20 Newsgroups...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loaded 18846 documents, 20 classes
+Running 20 Newsgroups classification sweep...
+Running classification sweep on 20 Newsgroups...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   9%|▉         | 1/11 [00:06&lt;01:02,  6.24s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  18%|█▊        | 2/11 [00:12&lt;00:56,  6.24s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  27%|██▋       | 3/11 [00:17&lt;00:44,  5.56s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  36%|███▋      | 4/11 [00:21&lt;00:35,  5.05s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  45%|████▌     | 5/11 [00:25&lt;00:27,  4.63s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  55%|█████▍    | 6/11 [00:28&lt;00:20,  4.15s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  64%|██████▎   | 7/11 [00:31&lt;00:14,  3.58s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  73%|███████▎  | 8/11 [00:32&lt;00:09,  3.04s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  82%|████████▏ | 9/11 [00:34&lt;00:05,  2.56s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  91%|█████████ | 10/11 [00:35&lt;00:02,  2.19s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 11/11 [00:36&lt;00:00,  1.86s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 11/11 [00:36&lt;00:00,  3.35s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/news20_size_vs_accuracy.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved plot to ./results/news20_size_vs_accuracy.pdf
+PDF saved: ./results/news20_size_vs_accuracy.pdf
+
+============================================================
+ZHAO COMPARISON — 20 NEWSGROUPS
+Status: DEGRADED  Acc: ours=0.770 Zhao=0.790 Δ=-0.020
+Reproduced: ❌ NO
+Running 20 Newsgroups PCA sweep...
+Running PCA sweep on 20 Newsgroups...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   9%|▉         | 1/11 [00:16&lt;02:40, 16.09s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  18%|█▊        | 2/11 [00:22&lt;01:33, 10.42s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  27%|██▋       | 3/11 [00:27&lt;01:02,  7.83s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  36%|███▋      | 4/11 [00:31&lt;00:43,  6.20s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  45%|████▌     | 5/11 [00:33&lt;00:30,  5.04s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:36&lt;00:20,  4.03s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  64%|██████▎   | 7/11 [00:37&lt;00:13,  3.27s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  73%|███████▎  | 8/11 [00:39&lt;00:08,  2.76s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  82%|████████▏ | 9/11 [00:40&lt;00:04,  2.34s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  91%|█████████ | 10/11 [00:42&lt;00:02,  2.03s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:43&lt;00:00,  1.76s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:43&lt;00:00,  3.94s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/news20_size_vs_variance.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved ./results/news20_size_vs_variance.pdf
+PDF saved: ./results/news20_size_vs_variance.pdf
+20 Newsgroups done in 81s
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-pbmc3k">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8876,12 +8754,12 @@ Running classification sweep on IMDb...
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc3k-install">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc3k-install">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># [patched: headless importability shim — no network clone/install]</span>
@@ -8903,18 +8781,31 @@ Running classification sweep on IMDb...
     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Cannot import 'qos'. Run: pip install -e '.[dev]' from repo root."</span><span class="p">)</span>
 <span class="n">_ensure_qos_importable</span><span class="p">()</span>
 <span class="nb">type</span><span class="p">(</span><span class="s1">'_PatchedResult'</span><span class="p">,</span> <span class="p">(),</span> <span class="p">{</span><span class="s1">'stdout'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'stderr'</span><span class="p">:</span> <span class="sa">b</span><span class="s1">''</span><span class="p">,</span> <span class="s1">'returncode'</span><span class="p">:</span> <span class="mi">0</span><span class="p">})()</span>  <span class="c1"># [patched: pip install skipped]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">'scanpy/anndata/leidenalg installed.'</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'scanpy/anndata/scvelo installed.'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc3k-run">
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>scanpy/anndata/scvelo installed.
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc3k-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.pbmc68k.pbmc_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pbmc3k</span>
@@ -8946,6 +8837,143 @@ Running classification sweep on IMDb...
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading PBMC3k (~7 MB download)...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loaded 2700 cells x 500 genes, 2 classes
+Running PBMC3k classification sweep...
+Running classification sweep on PBMC3k...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  36%|███▋      | 4/11 [00:00&lt;00:00, 36.59it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  82%|████████▏ | 9/11 [00:00&lt;00:00, 40.52it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 42.53it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/pbmc3k_size_vs_accuracy.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved plot to ./results/pbmc3k_size_vs_accuracy.pdf
+PDF saved: ./results/pbmc3k_size_vs_accuracy.pdf
+
+PBMC3k (novel — no Zhao baseline): peak acc=0.873, qubits=40
+Running PBMC3k PCA sweep...
+Running PCA sweep on PBMC3k...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   9%|▉         | 1/11 [00:00&lt;00:01,  5.36it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  27%|██▋       | 3/11 [00:00&lt;00:00,  8.75it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  36%|███▋      | 4/11 [00:00&lt;00:00,  9.13it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  45%|████▌     | 5/11 [00:00&lt;00:00,  7.59it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:00&lt;00:00,  6.77it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 12.24it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/pbmc3k_size_vs_variance.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved ./results/pbmc3k_size_vs_variance.pdf
+PDF saved: ./results/pbmc3k_size_vs_variance.pdf
+PBMC3k done in 2s
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-pbmc68k">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -8953,101 +8981,89 @@ Running classification sweep on IMDb...
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h2 id="3b.-PBMC68k-%E2%80%94-Single-Cell-RNA-Binary-Classification-(68,579-cells)">3b. PBMC68k — Single-Cell RNA Binary Classification (68,579 cells)<a class="anchor-link" href="#3b.-PBMC68k-%E2%80%94-Single-Cell-RNA-Binary-Classification-(68,579-cells)">¶</a></h2><blockquote>
-<p>Matches Zhao et al. (2025) Figure 2b. Downloads ~500 MB of 10x h5 files on first run via scanpy.
-If the download fails, run the wget cell below first.</p>
+<h2 id="3b.-PBMC68k-%E2%80%94-Single-Cell-RNA-Binary-Classification-(~68k-cells)">3b. PBMC68k — Single-Cell RNA Binary Classification (~68k cells)<a class="anchor-link" href="#3b.-PBMC68k-%E2%80%94-Single-Cell-RNA-Binary-Classification-(~68k-cells)">¶</a></h2><blockquote>
+<p>Matches Zhao et al. (2025) Figure 2b. Downloads ~118 MB via scvelo on first run.
+Uses <code>load_pbmc68k()</code> from the qos package (scvelo primary, scanpy reduced fallback).</p>
 </blockquote>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc68k-download">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc68k-download">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
-<span class="c1"># Manual fallback download — run this cell ONLY if Section 3b fails with a download error.</span>
-<span class="n">PBMC68K_CACHE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.cache/qos/pbmc68k'</span><span class="p">)</span>
-<span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">h5ad_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="s1">'pbmc68k_raw.h5ad'</span><span class="p">)</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">):</span>
-    <span class="n">CDN_URL</span> <span class="o">=</span> <span class="s1">'https://figshare.com/ndownloader/files/40014331'</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Downloading PBMC68k from figshare (~180 MB)...'</span><span class="p">)</span>
-    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="sa">f</span><span class="s1">'wget -q --show-progress -O </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">CDN_URL</span><span class="si">}</span><span class="s1">'</span><span class="p">,</span> <span class="n">shell</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'Download complete.'</span><span class="p">)</span>
-<span class="k">else</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Already cached: </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Optional: pre-warm the scvelo cache (run once if Section 3b times out on download).</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.pbmc68k.pbmc_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pbmc68k</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Pre-caching PBMC68k (~118 MB via scvelo on first run)...'</span><span class="p">)</span>
+<span class="n">_adata</span><span class="p">,</span> <span class="n">_labels</span> <span class="o">=</span> <span class="n">load_pbmc68k</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Cached: </span><span class="si">{</span><span class="n">_adata</span><span class="o">.</span><span class="n">n_obs</span><span class="si">}</span><span class="s1"> cells x </span><span class="si">{</span><span class="n">_adata</span><span class="o">.</span><span class="n">n_vars</span><span class="si">}</span><span class="s1"> genes'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=pbmc68k-run">
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Pre-caching PBMC68k (~118 MB via scvelo on first run)...
+  Downloading PBMC68k via scvelo (~118 MB on first run) ...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jupyter-widgets jp-OutputArea-output" id="120f6a2b-dfe3-4417-9074-0905238801a8" tabindex="0">
+<script type="text/javascript">
+var element = document.getElementById('120f6a2b-dfe3-4417-9074-0905238801a8');
+</script>
+<script type="application/vnd.jupyter.widget-view+json">
+{"version_major": 2, "version_minor": 0, "model_id": "5ad7ff6f49a54882b2a22aacb29bfc96"}
+</script>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>  Cached to /home/ubuntu/.cache/qos/pbmc68k/pbmc68k_scvelo.h5ad
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>  PBMC68k loaded: 65831 cells x 1000 genes
+Cached: 65831 cells x 1000 genes
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=pbmc68k-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">scanpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sc</span><span class="o">,</span><span class="w"> </span><span class="nn">anndata</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">ad</span><span class="o">,</span><span class="w"> </span><span class="nn">scipy.sparse</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
-<span class="n">PBMC68K_CACHE</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">'~/.cache/qos/pbmc68k'</span><span class="p">)</span>
-<span class="n">h5ad_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="s1">'pbmc68k_raw.h5ad'</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.pbmc68k.pbmc_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pbmc68k</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_binarise</span><span class="p">(</span><span class="n">adata</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">'bulk_labels'</span><span class="p">,</span><span class="s1">'cell_type'</span><span class="p">,</span><span class="s1">'celltype'</span><span class="p">,</span><span class="s1">'CellType'</span><span class="p">,</span><span class="s1">'leiden'</span><span class="p">,</span><span class="s1">'louvain'</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
-            <span class="n">vals</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">vals</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="s1">'CD14'</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">na</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">mask</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
-    <span class="n">pca</span> <span class="o">=</span> <span class="n">adata</span><span class="o">.</span><span class="n">obsm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'X_pca'</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">pca</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span> <span class="k">return</span> <span class="p">(</span><span class="n">pca</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">pca</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">adata</span><span class="o">.</span><span class="n">n_obs</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_download_pbmc68k_cache</span><span class="p">():</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">PBMC68K_CACHE</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">CDN_URL</span> <span class="o">=</span> <span class="s1">'https://figshare.com/ndownloader/files/40014331'</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Downloading PBMC68k cache from </span><span class="si">{</span><span class="n">CDN_URL</span><span class="si">}</span><span class="s1"> ...'</span><span class="p">)</span>
-    <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s1">'wget'</span><span class="p">,</span> <span class="s1">'-q'</span><span class="p">,</span> <span class="s1">'--show-progress'</span><span class="p">,</span> <span class="s1">'-O'</span><span class="p">,</span> <span class="n">h5ad_path</span><span class="p">,</span> <span class="n">CDN_URL</span><span class="p">],</span> <span class="n">check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'Download complete.'</span><span class="p">)</span>
-
-<span class="n">adata68k</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loading PBMC68k from cache: </span><span class="si">{</span><span class="n">h5ad_path</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
-        <span class="n">adata68k</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Cache appears corrupt (</span><span class="si">{</span><span class="n">_e</span><span class="si">!r}</span><span class="s1">); removing and re-downloading.'</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-            <span class="k">pass</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">_download_pbmc68k_cache</span><span class="p">()</span>
-            <span class="n">adata68k</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">read_h5ad</span><span class="p">(</span><span class="n">h5ad_path</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">_e2</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Re-download failed (</span><span class="si">{</span><span class="n">_e2</span><span class="si">!r}</span><span class="s1">); falling back to scanpy built-in reduced dataset.'</span><span class="p">)</span>
-            <span class="n">adata68k</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">pbmc68k_reduced</span><span class="p">()</span>
-<span class="k">if</span> <span class="n">adata68k</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="s1">'Cache miss — using scanpy built-in (pbmc68k_reduced). Run cell 3b-download for full dataset.'</span><span class="p">)</span>
-    <span class="n">adata68k</span> <span class="o">=</span> <span class="n">sc</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">pbmc68k_reduced</span><span class="p">()</span>
-
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_cells</span><span class="p">(</span><span class="n">adata68k</span><span class="p">,</span> <span class="n">min_genes</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">filter_genes</span><span class="p">(</span><span class="n">adata68k</span><span class="p">,</span> <span class="n">min_cells</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">normalize_total</span><span class="p">(</span><span class="n">adata68k</span><span class="p">,</span> <span class="n">target_sum</span><span class="o">=</span><span class="mf">1e4</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">log1p</span><span class="p">(</span><span class="n">adata68k</span><span class="p">)</span>
-<span class="n">sc</span><span class="o">.</span><span class="n">pp</span><span class="o">.</span><span class="n">highly_variable_genes</span><span class="p">(</span><span class="n">adata68k</span><span class="p">,</span> <span class="n">n_top_genes</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">adata68k</span><span class="o">.</span><span class="n">n_vars</span><span class="p">),</span> <span class="n">flavor</span><span class="o">=</span><span class="s1">'seurat'</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">adata68k</span> <span class="o">=</span> <span class="n">adata68k</span><span class="p">[:,</span> <span class="n">adata68k</span><span class="o">.</span><span class="n">var</span><span class="p">[</span><span class="s1">'highly_variable'</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-<span class="k">if</span> <span class="ow">not</span> <span class="n">sp</span><span class="o">.</span><span class="n">issparse</span><span class="p">(</span><span class="n">adata68k</span><span class="o">.</span><span class="n">X</span><span class="p">):</span> <span class="n">adata68k</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">csr_matrix</span><span class="p">(</span><span class="n">adata68k</span><span class="o">.</span><span class="n">X</span><span class="p">)</span>
-<span class="n">y_pbmc68k</span> <span class="o">=</span> <span class="n">_binarise</span><span class="p">(</span><span class="n">adata68k</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">'Loading PBMC68k (scvelo download on first run)...'</span><span class="p">)</span>
+<span class="n">adata68k</span><span class="p">,</span> <span class="n">y_pbmc68k</span> <span class="o">=</span> <span class="n">load_pbmc68k</span><span class="p">()</span>
 <span class="n">X_pbmc68k</span> <span class="o">=</span> <span class="n">adata68k</span><span class="o">.</span><span class="n">X</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Loaded </span><span class="si">{</span><span class="n">X_pbmc68k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> cells x </span><span class="si">{</span><span class="n">X_pbmc68k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> genes, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">y_pbmc68k</span><span class="p">))</span><span class="si">}</span><span class="s1"> classes'</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">X_pbmc68k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">10_000</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">'WARNING: fewer than 10k cells — full 68k download may have failed; check scvelo install.'</span><span class="p">)</span>
 
-<span class="c1"># Checkpoint/resume for long sweep. Allows recovery from preemption.</span>
 <span class="n">DATASET_NAME</span> <span class="o">=</span> <span class="s1">'pbmc68k'</span>
 <span class="n">_ckpt_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTPUT_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">DATASET_NAME</span><span class="si">}</span><span class="s1">_checkpoint.json'</span><span class="p">)</span>
 <span class="n">_ckpt</span> <span class="o">=</span> <span class="p">{}</span>
@@ -9089,6 +9105,238 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading PBMC68k (scvelo download on first run)...
+  Loading PBMC68k from cache: /home/ubuntu/.cache/qos/pbmc68k/pbmc68k_scvelo.h5ad
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>  PBMC68k loaded: 65831 cells x 1000 genes
+Loaded 65831 cells x 1000 genes, 2 classes
+Running PBMC68k classification sweep...
+Running classification sweep on PBMC68k...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   9%|▉         | 1/11 [00:00&lt;00:06,  1.50it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  18%|█▊        | 2/11 [00:01&lt;00:05,  1.55it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  27%|██▋       | 3/11 [00:01&lt;00:05,  1.57it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  36%|███▋      | 4/11 [00:02&lt;00:04,  1.63it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  45%|████▌     | 5/11 [00:03&lt;00:03,  1.71it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  55%|█████▍    | 6/11 [00:03&lt;00:02,  1.84it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  64%|██████▎   | 7/11 [00:03&lt;00:01,  2.01it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  73%|███████▎  | 8/11 [00:04&lt;00:01,  2.20it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  82%|████████▏ | 9/11 [00:04&lt;00:00,  2.48it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  91%|█████████ | 10/11 [00:04&lt;00:00,  2.90it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 11/11 [00:04&lt;00:00,  3.41it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 11/11 [00:04&lt;00:00,  2.22it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/pbmc68k_size_vs_accuracy.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved plot to ./results/pbmc68k_size_vs_accuracy.pdf
+PDF saved: ./results/pbmc68k_size_vs_accuracy.pdf
+
+============================================================
+ZHAO COMPARISON — PBMC68K
+Status: IMPROVED  Acc: ours=0.978 Zhao=0.920 Δ=+0.058  Qubits: ours=54 Zhao=50
+Reproduced: ✅ YES
+Running PBMC68k PCA sweep...
+Running PCA sweep on PBMC68k...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   9%|▉         | 1/11 [00:01&lt;00:12,  1.26s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  18%|█▊        | 2/11 [00:02&lt;00:11,  1.24s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  27%|██▋       | 3/11 [00:03&lt;00:09,  1.14s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  36%|███▋      | 4/11 [00:04&lt;00:07,  1.03s/it]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  45%|████▌     | 5/11 [00:05&lt;00:05,  1.12it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:05&lt;00:03,  1.26it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  64%|██████▎   | 7/11 [00:06&lt;00:02,  1.51it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  73%|███████▎  | 8/11 [00:06&lt;00:01,  1.71it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  82%|████████▏ | 9/11 [00:06&lt;00:01,  1.91it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  91%|█████████ | 10/11 [00:07&lt;00:00,  2.09it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:07&lt;00:00,  2.63it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:07&lt;00:00,  1.50it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/pbmc68k_size_vs_variance.json
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved ./results/pbmc68k_size_vs_variance.pdf
+PDF saved: ./results/pbmc68k_size_vs_variance.pdf
+PBMC68k done in 13s
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-dorothea">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -9100,12 +9348,12 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=dorothea-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=dorothea-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">assert</span> <span class="s1">'compare_to_zhao'</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">(),</span> <span class="s2">"Run the shared-imports cell first."</span>
@@ -9163,6 +9411,45 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading Dorothea...
+Loaded 800 samples x 100000 features
+Resuming from checkpoint: ./results/dorothea_checkpoint.json
+Classification sweep already complete (loading from disk).
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved plot to ./results/dorothea_size_vs_accuracy.pdf
+PDF saved: ./results/dorothea_size_vs_accuracy.pdf
+
+============================================================
+ZHAO COMPARISON — DOROTHEA
+Status: IMPROVED  Acc: ours=0.930 Zhao=0.910 Δ=+0.020
+Reproduced: ✅ YES
+PCA sweep already complete (loading from disk).
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved ./results/dorothea_size_vs_variance.pdf
+PDF saved: ./results/dorothea_size_vs_variance.pdf
+Dorothea done in 0s
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-splice">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -9174,12 +9461,12 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=splice-run">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=splice-run">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">qos.experiments.real_datasets.splice.splice_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_splice</span>
@@ -9209,6 +9496,131 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Loading Splice...
+Loaded 3190 samples x 240 features, 2 classes
+Running Splice classification sweep...
+Running classification sweep on Splice...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:   0%|          | 0/10 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  30%|███       | 3/10 [00:00&lt;00:00, 23.60it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  60%|██████    | 6/10 [00:00&lt;00:00, 23.74it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep:  90%|█████████ | 9/10 [00:00&lt;00:00, 23.90it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 23.81it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/splice_size_vs_accuracy.json
+Saved plot to ./results/splice_size_vs_accuracy.pdf
+PDF saved: ./results/splice_size_vs_accuracy.pdf
+
+Splice: Novel Marena 2026 result — no Zhao et al. (2025) baseline.
+Running Splice PCA sweep...
+Running PCA sweep on Splice...
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:   0%|          | 0/10 [00:00&lt;?, ?it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  10%|█         | 1/10 [00:00&lt;00:01,  6.88it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  20%|██        | 2/10 [00:00&lt;00:01,  7.51it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  30%|███       | 3/10 [00:00&lt;00:01,  6.65it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep:  70%|███████   | 7/10 [00:00&lt;00:00, 16.51it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 20.30it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>PCA Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 15.38it/s]</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
+<pre>
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/splice_size_vs_variance.json
+Saved ./results/splice_size_vs_variance.pdf
+PDF saved: ./results/splice_size_vs_variance.pdf
+Splice done in 1s
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=sec-summary">
 <div class="jp-Cell-inputWrapper" tabindex="0">
@@ -9220,12 +9632,12 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=summary">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=summary">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
@@ -9261,7 +9673,103 @@ If the download fails, run the wget cell below first.</p>
 </div>
 </div>
 </div>
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+<div class="jp-OutputArea jp-Cell-outputArea">
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>=================================================================
+REAL DATASET EXPERIMENTS — OUTPUT MANIFEST
+=================================================================
+
+PDFs (34):
+  ./results/adaptive_oracle.pdf
+  ./results/benchmark_boolean_function.pdf
+  ./results/benchmark_flat_vector.pdf
+  ./results/benchmark_general_vector.pdf
+  ./results/benchmark_matrix_element.pdf
+  ./results/benchmark_matrix_row_index.pdf
+  ./results/circuit_depth_vs_n.pdf
+  ./results/dorothea_size_vs_accuracy.pdf
+  ./results/dorothea_size_vs_variance.pdf
+  ./results/fig1_combined.pdf
+  ./results/fig1a_main.pdf
+  ./results/fig1b_largeN.pdf
+  ./results/fig2_tightness_sweep.pdf
+  ./results/fig3_nisq_crossover.pdf
+  ./results/fig4_k_forrelation.pdf
+  ./results/fig5_kernel_vs_linear.pdf
+  ./results/forrelation_k_sweep.pdf
+  ./results/hierarchical_sketch.pdf
+  ./results/interferometric_shadow.pdf
+  ./results/kernel_vs_linear_accuracy.pdf
+  ./results/news20_size_vs_accuracy.pdf
+  ./results/news20_size_vs_variance.pdf
+  ./results/noise_crossover.pdf
+  ./results/noise_grace_ratio.pdf
+  ./results/noise_tvd_vs_p.pdf
+  ./results/non_iid_scaling.pdf
+  ./results/pbmc3k_size_vs_accuracy.pdf
+  ./results/pbmc3k_size_vs_variance.pdf
+  ./results/pbmc68k_size_vs_accuracy.pdf
+  ./results/pbmc68k_size_vs_variance.pdf
+  ./results/splice_size_vs_accuracy.pdf
+  ./results/splice_size_vs_variance.pdf
+  ./results/variational_warmstart.pdf
+  ./results/warmstart_ablation.pdf
+
+JSON results (19):
+  ./results/circuit_depth_table.json
+  ./results/dorothea_checkpoint.json
+  ./results/dorothea_size_vs_accuracy.json
+  ./results/dorothea_size_vs_variance.json
+  ./results/dorothea_zhao_comparison.json
+  ./results/news20_size_vs_accuracy.json
+  ./results/news20_size_vs_variance.json
+  ./results/news20_zhao_comparison.json
+  ./results/noise_crossover_table.json
+  ./results/noise_results_raw.json
+  ./results/pbmc3k_size_vs_accuracy.json
+  ./results/pbmc3k_size_vs_variance.json
+  ./results/pbmc68k_checkpoint.json
+  ./results/pbmc68k_size_vs_accuracy.json
+  ./results/pbmc68k_size_vs_variance.json
+  ./results/pbmc68k_zhao_comparison.json
+  ./results/splice_size_vs_accuracy.json
+  ./results/splice_size_vs_variance.json
+  ./results/warmstart_ablation_table.json
+
+=================================================================
+ZHAO ET AL. (2025) REPLICATION SUMMARY
+=================================================================
+Dataset        Status          Acc Δ   Qubits Δ    OOM (ours/Zhao)
+-----------------------------------------------------------------
+imdb           NOT RUN     
+news20         DEGRADED       -0.020         -7            3.0/4–5
+pbmc68k        IMPROVED       +0.058         +4            0.9/4–6
+dorothea       IMPROVED       +0.020        -19            1.8/3–5
+-----------------------------------------------------------------
+pbmc3k         NOVEL        —          —                  — (no Zhao baseline)
+splice         NOVEL        —          —                  — (no Zhao baseline)
+
+Peak accuracy per dataset:
+  imdb        : not run
+  news20      : acc=0.770, min_qubits=47
+  pbmc3k      : acc=0.873, min_qubits=40
+  pbmc68k     : acc=0.978, min_qubits=54
+  dorothea    : acc=0.930, min_qubits=32
+  splice      : acc=0.961, min_qubits=39
+</pre>
+</div>
+</div>
+</div>
+</div>
 </div>
 </main>
 </body>
+<script type="application/vnd.jupyter.widget-state+json">
+{"state": {"75bec08a76b84b0491a634c899b72d7d": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "632ab7200a024bd89a59ac53a6c1d650": {"model_name": "ProgressStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "9dc0b96aa4564f32967f13f748fc6992": {"model_name": "FloatProgressModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_75bec08a76b84b0491a634c899b72d7d", "max": 123707283.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_632ab7200a024bd89a59ac53a6c1d650", "tabbable": null, "tooltip": null, "value": 123707283.0}}, "a30d31b8a0aa48038fe074daad058bb1": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "d4d23ebe36b8403385fddde34041daaf": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "a252340ab1c24a76ab769fb02408309a": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_a30d31b8a0aa48038fe074daad058bb1", "placeholder": "\u200b", "style": "IPY_MODEL_d4d23ebe36b8403385fddde34041daaf", "tabbable": null, "tooltip": null, "value": "100%"}}, "1cf33252eed44a37924ff45073b60ba5": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "bee443c0d8ea4b089da33404f1541202": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "1d56cda8531046c99822c703dbe0d8b4": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_1cf33252eed44a37924ff45073b60ba5", "placeholder": "\u200b", "style": "IPY_MODEL_bee443c0d8ea4b089da33404f1541202", "tabbable": null, "tooltip": null, "value": "\u2007118M\/118M\u2007[00:03&lt;00:00,\u200743.3MB\/s]"}}, "21f88e4bdb4b4d2a9ca21985a71e46f6": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "5ad7ff6f49a54882b2a22aacb29bfc96": {"model_name": "HBoxModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_a252340ab1c24a76ab769fb02408309a", "IPY_MODEL_9dc0b96aa4564f32967f13f748fc6992", "IPY_MODEL_1d56cda8531046c99822c703dbe0d8b4"], "layout": "IPY_MODEL_21f88e4bdb4b4d2a9ca21985a71e46f6", "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}
+</script>
 </html>

@@ -62,6 +62,14 @@ hardware = [
 datasets = [
     "pdf2image>=1.16",
     "Pillow>=9.0",
+    "datasets>=2.14",
+    "huggingface_hub>=0.20",
+]
+singlecell = [
+    "scanpy>=1.10",
+    "anndata>=0.10",
+    "python-igraph>=0.11",
+    "leidenalg>=0.10",
 ]
 dev = [
     "pytest>=8.0.0",
