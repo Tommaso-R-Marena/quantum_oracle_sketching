@@ -1,0 +1,11 @@
+\begin{tabular}{lll}
+\toprule
+Claim & Script & Key finding \\
+\midrule
+TVD convergence & \texttt{verify_tvd_convergence.py} & $TVD \propto M^{-1/2}$ \\
+Sample complexity & \texttt{verify_sample_complexity.py} & $M^\star \propto N$ (cold) \\
+Warmstart ablation & \texttt{verify_warmstart_ablation.py} & $\approx 12\times$ speedup (K-sparse) \\
+Noise robustness & \texttt{verify_noise_robustness.py} & TVD monotone in $\eta$ \\
+Circuit depth & \texttt{verify_circuit_depth.py} & Finite-depth crossover \\
+\bottomrule
+\end{tabular}

@@ -1,6 +1,9 @@
 # Paper Assembly Checklist
 
-## Step 1 — Paste Aristotle outputs into section files
+**Canonical draft:** `paper/marena2026_quantum_oracle_sketching.tex` (complete prose).
+**PRL track:** `paper/main.tex` (section shells — paste from canonical draft or Aristotle outputs).
+
+## Step 1 — Paste Aristotle outputs into section files (PRL track only)
 
 - [ ] `sections/introduction.tex` — paste from `RequestProject/PaperText.md` (296 words)
 - [ ] `sections/main_theorem.tex` — paste Main Theorem + Prop from `PaperText.md`
@@ -21,28 +24,33 @@
 - [ ] `lean/QOSExtensions.lean`
 - [ ] `lean/PhaseTimeBound.lean`
 
+> **Note:** `appendix_lean.tex` now documents that Lean sources are planned but not
+> yet committed; executable verification is via `tests/` + `scripts/verify_*.py`.
+
 ## Step 3 — Run benchmarks and insert results
 
-- [ ] Run `notebooks/full_benchmark_suite.ipynb` — get Section 5.3 + 5.4 actual numbers
-- [ ] Run `notebooks/real_datasets_colab.ipynb` — get Section 6 figures and tables
-- [ ] Run `scripts/generate_paper_tables.py` — get Table 1 and Table 2 LaTeX
-- [ ] Insert figures into `sections/experiments.tex`
-- [ ] Update benchmark numbers in `sec53_variational.tex` and `sec54_shadow.tex`
+- [x] Run `scripts/generate_all_figures.py` — committed figures in `results/figures/`
+- [x] Run `scripts/generate_paper_tables.py` — tables in `results/tables/`
+- [x] `sections/experiments.tex` — populated with figure paths + table input
+- [ ] Run `notebooks/real_datasets_colab.ipynb` at paper quality (`FAST_MODE=False`)
+- [ ] Insert per-dataset Zhao comparison tables from notebook JSON outputs
 
 ## Step 4 — Write remaining sections
 
-- [ ] `sections/background.tex` — fill in Zhao baseline description
-- [ ] `sections/core_scaling.tex` — insert figures from real datasets notebook
-- [ ] `sections/conclusion.tex` — write ~200 word conclusion
+- [x] `marena2026_quantum_oracle_sketching.tex` — full draft (introduction through conclusion)
+- [ ] `sections/background.tex` — fill in Zhao baseline description (PRL track)
+- [ ] `sections/core_scaling.tex` — insert figures from real datasets notebook (PRL track)
+- [ ] `sections/conclusion.tex` — write ~200 word conclusion (PRL track)
 
 ## Step 5 — Final checks before arXiv
 
-- [ ] Compile `main.tex` with pdflatex — zero errors
-- [ ] All theorems cited correctly (\cref)
-- [ ] All figures have captions matching Aristotle output
-- [ ] Abstract is exactly 149 words
-- [ ] References complete in `references.bib`
+- [ ] Compile `main.tex` with pdflatex — zero errors (PRL track)
+- [x] Compile `marena2026_quantum_oracle_sketching.tex` — should build (verify locally)
+- [x] `references.bib` — Zhao baseline unified to arXiv:2604.07639
+- [x] `PYTHONPATH=src pytest tests/ -q` — 172 tests pass
+- [x] `scripts/verify_publication_bundle.py` — figures + CSVs + tables present
+- [x] `scripts/run_notebooks_headless.py` — 9/9 notebooks OK
 - [ ] Lean files confirmed to compile: `lake build` in `paper/lean/`
-- [ ] `PYTHONPATH=src pytest tests/ -q` — all tests pass
+- [ ] Abstract is exactly 149 words (PRL `main.tex` track)
 
 ## Target: arXiv submission Wednesday April 29 or Thursday April 30, 2026

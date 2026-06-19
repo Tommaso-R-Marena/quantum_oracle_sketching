@@ -22,19 +22,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Two-step install (base + extras)
+      - name: Install package and extras
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          # Step 1: package + dev extras
-          pip install -e ".[dev]"
-          # Step 2: noise + kernel extras (kept separate so a single-extra
-          # dependency resolver error does not mask the base install)
-          pip install -e ".[dev,noise,kernel]"
-
-      - name: Verify optional extras installable
-        run: |
-          pip install -e ".[hardware]" --dry-run
-          pip install -e ".[datasets]" --dry-run
+          pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 
       - name: Run full test suite
         run: |
@@ -44,8 +35,14 @@ jobs:
             --junitxml=test-output/junit-${{ matrix.python-version }}.xml \
             2>&1 | tee test-output/pytest-${{ matrix.python-version }}.txt
 
-      - name: Regenerate figures
-        run: python scripts/generate_all_figures.py
+      - name: Regenerate figures and paper tables
+        run: |
+          PYTHONPATH=src python scripts/generate_all_figures.py
+          PYTHONPATH=src python scripts/verify_publication_bundle.py
+
+      - name: Headless notebook smoke test (Python 3.11 only)
+        if: matrix.python-version == '3.11'
+        run: PYTHONPATH=src python scripts/run_notebooks_headless.py
 
       - name: Upload test artifacts
         if: always()

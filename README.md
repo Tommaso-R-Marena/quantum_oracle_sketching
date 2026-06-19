@@ -10,7 +10,7 @@
 [![JAX](https://img.shields.io/badge/JAX-compatible-green.svg)](https://jax.readthedocs.io)
 [![CI](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml/badge.svg)](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![v1.3.3](https://img.shields.io/badge/version-1.3.3-informational)](CHANGELOG.md)
+[![v1.3.4](https://img.shields.io/badge/version-1.3.4-informational)](CHANGELOG.md)
 
 This repository implements **Quantum Oracle Sketching (QOS)** and introduces four novel theoretical extensions (Marena 2026) that surpass the baseline of Zhao et al. (2025/2026) in sample complexity, circuit depth, and robustness.
 
@@ -24,7 +24,7 @@ This repository implements **Quantum Oracle Sketching (QOS)** and introduces fou
 # 1. Clone and install
 git clone https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git
 cd quantum_oracle_sketching
-pip install -e ".[dev,noise,kernel]"
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 
 # 2. Reproduce Figure 4 (warmstart ablation, fast mode)
 python -m qos.experiments.benchmark --dataset splice --fast
@@ -88,7 +88,7 @@ cd quantum_oracle_sketching
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 # optional: noise + kernel extensions
-pip install -e ".[dev,noise,kernel]"
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 # hardware (IBM QPU) and real-dataset extras
 pip install -e ".[hardware,datasets]"
 ```
@@ -287,12 +287,12 @@ The setup cell in each notebook auto-detects the environment and ensures
 Colab-only cells (pip install, Drive mount, `/content/` paths, IBM token
 prompts, `google.colab` imports/magics).
 
-**Headless status: 7 of 9 notebooks run with zero cell errors.** The two
-optional-dependency notebooks need extras:
+**Headless status: 9/9 notebooks run with zero cell errors** (as of 2026-06-19).
+Optional extras for full Colab parity:
 
 ```bash
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 pip install -e ".[hardware]"   # notebooks/hardware_ibm_colab.ipynb (qiskit-ibm-runtime)
-pip install -e ".[datasets]"   # notebooks/real_datasets_colab.ipynb (pdf2image, Pillow)
 ```
 
 ## IBM Quantum Hardware Validation

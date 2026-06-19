@@ -20,6 +20,7 @@ SCRIPTS = [
     "scripts/verify_warmstart_ablation.py",
     "scripts/verify_noise_robustness.py",
     "scripts/verify_circuit_depth.py",
+    "scripts/generate_paper_tables.py",
 ]
 
 

@@ -36,14 +36,18 @@ mathematically-checking test. Other possible states (none occur below) would be
 |---|---|---|---|
 | Adaptive vs uniform sample complexity, sub-linear M*(N) | `scripts/verify_sample_complexity.py` | `results/raw_data/sample_complexity.csv`, `results/figures/sample_complexity.{png,pdf}` | log-log slope of M* vs N ≈ 0.94 < 1 (sub-linear) ✅ |
 | TVD convergence vs budget M | `scripts/verify_tvd_convergence.py` | `results/raw_data/tvd_convergence.csv`, `results/figures/tvd_convergence.{png,pdf}` | TVD decreases with M ✅ |
-| Warmstart speedup (M_cold/M_warm) | `scripts/verify_warmstart_ablation.py` | `results/raw_data/warmstart_ablation_{iterations,summary}.csv` | mean speedup ≈ 12.7× ≥ 5× ✅ |
+| Warmstart speedup (M_cold/M_warm) | `scripts/verify_warmstart_ablation.py` | `results/raw_data/warmstart_ablation_{iterations,summary}.csv`, `results/tables/table_warmstart_ablation.tex` | mean speedup ≈ 12.7× ≥ 5× ✅ |
 | Hierarchical circuit-depth / sample crossover | `scripts/verify_circuit_depth.py` | `results/raw_data/circuit_depth.csv`, `results/figures/circuit_depth.{png,pdf}` | crossover exists at finite depth/N ✅ |
 | Noise robustness (TVD vs depolarizing rate η) | `scripts/verify_noise_robustness.py` | `results/raw_data/noise_robustness.csv`, `results/figures/noise_robustness.{png,pdf}` | TVD monotonically non-decreasing in η ✅ |
 
 ## Notes
-- **No unresolved gaps:** every row above is covered (✅). Every paper
-  theorem/algorithm/equation has executable code and at least one
-  mathematically-checking test.
+- **Paper assembly status:** `paper/marena2026_quantum_oracle_sketching.tex` is the
+  canonical prose draft; `paper/main.tex` (PRL track) still has section shells.
+  Committed figure/table artifacts live under `results/figures/` and
+  `results/tables/`; regenerate via `scripts/generate_all_figures.py`.
+- **Formal verification:** Lean 4 sources are documented in `paper/lean/README.md`
+  but not yet committed; executable contracts are in `tests/` (see
+  `paper/sections/appendix_lean.tex`).
 - Docstrings on the public functions/classes above cite the corresponding
   paper section/theorem/equation (`See: Marena (2026), §X, …`).
 - The interferometric-shadow `Var=O(s/T)` claim is checked via the empirical

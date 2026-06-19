@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "quantum-oracle-sketching"
-version = "1.3.3"
+version = "1.3.4"
 description = "Quantum Oracle Sketching: exponential quantum advantage in processing massive classical data"
 readme = "README.md"
 license = {text = "MIT"}
