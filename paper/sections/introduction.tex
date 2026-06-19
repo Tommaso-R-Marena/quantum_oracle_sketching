@@ -1,14 +1,38 @@
 % ============================================================
 % SECTION 1: INTRODUCTION
-% Source: RequestProject/PaperText.md (296-word introduction)
-% TODO: paste introduction text from PaperText.md here
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
 \section{Introduction}
 \label{sec:introduction}
 
-% TODO: paste from RequestProject/PaperText.md
-% The introduction should:
-%   - Cite Zhao et al. (2025) as baseline
-%   - State all four contributions with resource counts
-%   - Quote the Main Theorem
-%   - End with classical lower bound preservation claim
+The problem of constructing efficient quantum oracles from classical queries sits at the heart of quantum advantage arguments.  A phase oracle $U_f$ for a Boolean function $f:\{0,1\}^n\to\{0,1\}$ encodes $f$ as a phase: $U_f|x\rangle = e^{i\pi f(x)}|x\rangle$.  Direct implementation requires exponential circuit depth in general; approximating $U_f$ via linear measurements of $f$, however, is feasible in polynomial time under sparsity assumptions.
+
+\Zhao\ introduced a framework that builds an approximation to the oracle diagonal using $M = O(NQ^2)$ samples.  Their approach, which we term the \emph{uniform oracle sketch}, is information-theoretically tight when $f$ is uniformly dense.  However, for the structured functions that appear in quantum chemistry, combinatorial optimization, and signal processing---functions that are $K$-sparse, Fourier-concentrated, or hierarchically structured---the $O(N)$ dependence represents a fundamental bottleneck.
+
+This paper addresses that bottleneck.  We ask: \emph{if we know or can estimate that $f$ has support of size $K \ll N$, can we build the oracle in $O(K)$ rather than $O(N)$ samples?}  The answer is yes, and the same intuition extends to query complexity (yielding $Q^{2-1/k}$ instead of $Q^2$) and to Fourier-sparse priors.
+
+\subsection{Our Contributions}
+
+Let $\eps > 0$ be a target approximation error, $N = 2^n$ the domain size, $K = |\supp(f)|$ the support size, $K_F$ the number of dominant Fourier modes, $Q$ the number of linear queries, and $k \geq 1$ the number of hierarchical levels.
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Method} & \textbf{Sample complexity} & \textbf{Improvement} \\
+\midrule
+\Zhao\ (2026) & $O(NQ^2/\eps^2)$ & $1\times$ \\
+\textbf{Adaptive sparse oracle} \textbf{[Thm.~\ref{thm:adaptive}]} & $O(KQ^2/\eps^2)$ & $N/K$ \\
+\textbf{Hierarchical sketch} \textbf{[Thm.~\ref{thm:hier}]} & $O(NQ^{2-1/k}/\eps^2)$ & $Q^{1/k}$ \\
+\textbf{Variational warmstart} \textbf{[Thm.~\ref{thm:var}]} & $O(K_F Q^2/\eps^2)$ & $N/K_F$ \\
+\textbf{Combined} \textbf{[Cor.~\ref{cor:combined}]} & $O(K_F Q^{2-1/k}/\eps^2)$ & $(N/K_F)\cdot Q^{1/k}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Related Work}
+
+The classical shadows framework of Huang, Kueng, and Preskill~\cite{huang2020} provides efficient state tomography using random measurements.  Chen et al.~\cite{chen2023} extended this to interferometric shadows, capturing off-diagonal correlations.  Our interferometric shadow construction (Section~\ref{sec:shadow}) provides the first open-source simulation of this protocol and demonstrates its compatibility with oracle sketching.
+
+Importance sampling in quantum contexts appears in the VQE literature~\cite{wecker2015,rubin2018} and in Pauli shadow tomography.  Our use of pilot-phase importance weights is, to our knowledge, new in the oracle sketching context.
+
+Hierarchical quantum algorithms appear in amplitude estimation~\cite{brassard2002} and quantum walk search~\cite{ambainis2007}.  The composition principle in Theorem~\ref{thm:hier} is structurally analogous to the recursive query reduction in Aaronson--Ambainis~\cite{aaronson2018}, though our setting is classical query composition.

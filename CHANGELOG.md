@@ -29,7 +29,11 @@ Publication bundle and scientific-rigor pass.
 - **`paper/sections/experiments.tex`** — populated with committed figure paths.
 - **CI** — installs `singlecell,datasets`, runs publication bundle check + headless
   notebooks (3.11).
-- **Headless notebooks: 9/9 PASS** (updated README/CHANGELOG claims).
+- **Headless notebooks: 10/10 PASS** (updated README/CHANGELOG claims).
+- **`notebooks/00_publication_figures.ipynb`** — one-button Colab reproduction of the
+  committed publication bundle (< 1 min CPU).
+- **PRL `paper/main.tex` merge** — all `paper/sections/*.tex` populated from
+  `marena2026_quantum_oracle_sketching.tex`; PRL abstract, macros, and cite keys fixed.
 
 ---
 

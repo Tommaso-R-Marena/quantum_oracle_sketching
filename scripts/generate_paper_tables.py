@@ -82,6 +82,10 @@ def table_empirical_summary() -> None:
         ("Circuit depth", "verify_circuit_depth.py", "Finite-depth crossover"),
     ]
     lines = [
+        r"\begin{table}[t]",
+        r"\centering",
+        r"\caption{Empirical summary of publication-bundle claims.}",
+        r"\label{tab:empirical-summary}",
         r"\begin{tabular}{lll}",
         r"\toprule",
         r"Claim & Script & Key finding \\",
@@ -89,7 +93,7 @@ def table_empirical_summary() -> None:
     ]
     for claim, script, finding in claims:
         lines.append(f"{claim} & \\texttt{{{script}}} & {finding} \\\\")
-    lines += [r"\bottomrule", r"\end{tabular}"]
+    lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
     _write(OUT_DIR / "table_empirical_summary.tex", "\n".join(lines) + "\n")
 
 

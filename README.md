@@ -3,6 +3,7 @@
 **Extending quantum advantage in processing massive classical data**
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb)
+[![Publication Figures](https://img.shields.io/badge/Colab-Publication%20Figures-blue?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/00_publication_figures.ipynb)
 [![Real Datasets](https://img.shields.io/badge/Colab-Real%20Datasets-orange?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/real_datasets_colab.ipynb)
 [![IBM Hardware](https://img.shields.io/badge/Colab-IBM%20Hardware-purple?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/hardware_ibm_colab.ipynb)
 [![Paper](https://img.shields.io/badge/arXiv-2604.07639-B31B1B.svg)](https://arxiv.org/abs/2604.07639)
@@ -34,6 +35,7 @@ Or run everything in Colab (no install needed):
 
 | Notebook | What it runs | Runtime |
 |---|---|---|
+| [📓 Publication Figures](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/00_publication_figures.ipynb) | All 4 paper figures + LaTeX tables | **< 1 min** (CPU) |
 | [📓 Demo](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb) | All four contribution figures | ~15 min (T4) |
 | [📓 Real Datasets](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/real_datasets_colab.ipynb) | IMDb, News20, PBMC3k, PBMC68k, Dorothea, Splice | ~2–4 hr (A100) |
 | [📓 IBM Hardware](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/hardware_ibm_colab.ipynb) | QOS oracle on real QPU + ZNE | ~3 min QPU time |
@@ -265,7 +267,7 @@ PYTHONPATH=src python scripts/generate_all_figures.py
 | `verify_noise_robustness.py` | TVD vs. depolarizing η | `noise_robustness.{csv,png,pdf}` |
 | `verify_circuit_depth.py` | M\* vs. circuit depth at fixed η | `circuit_depth.{csv,png,pdf}` |
 
-Run all 9 notebooks headlessly (pip-install, Colab-drive, `/content/...`,
+Run all 10 notebooks headlessly (pip-install, Colab-drive, `/content/...`,
 and IBM-token cells are patched automatically; the hardware notebook
 falls back to the local AerSimulator path):
 
@@ -287,7 +289,7 @@ The setup cell in each notebook auto-detects the environment and ensures
 Colab-only cells (pip install, Drive mount, `/content/` paths, IBM token
 prompts, `google.colab` imports/magics).
 
-**Headless status: 9/9 notebooks run with zero cell errors** (as of 2026-06-19).
+**Headless status: 10/10 notebooks run with zero cell errors** (as of 2026-06-19).
 Optional extras for full Colab parity:
 
 ```bash

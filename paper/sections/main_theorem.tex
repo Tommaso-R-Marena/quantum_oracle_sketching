@@ -1,35 +1,31 @@
 % ============================================================
-% SECTION 3: MAIN THEOREM
-% Source: RequestProject/QOSExtensions.lean + PaperText.md
-% TODO: paste Main Theorem and Classical Lower Bound Preservation
-% from PaperText.md introduction section
+% SECTION 3: MAIN RESULTS (combined bound)
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
 \section{Main Results}
 \label{sec:main}
 
-\begin{theorem}[Extended QOS Resource Profile]
-\label{thm:main}
-% TODO: paste Theorem 1 statement from PaperText.md
-% Should state:
-%   (1) Qubit count with variational warmstart K_F reduction
-%   (2) Sample complexity O(K*Q^2 + N) adaptive, O(k*N*Q^{2/k}) hierarchical
-%   (3) Circuit depth halved by dual-Hadamard shadow
-%   (4) Oracle approximation error epsilon achieved
-%   (5) Exponential separation from classical preserved
-\end{theorem}
+The four contributions of Sections~\ref{sec:adaptive}--\ref{sec:shadow} compose into a single resource profile.  We summarize the combined sample-complexity bound and its classical lower-bound preservation.
 
-\begin{proof}
-% Assembles four lemmas from QOSExtensions.lean:
-%   adaptive_sample_le, hierarchical_factor_le,
-%   warmstart_qubit_le, shadow_depth_le
-% All machine-verified in Lean 4 (see Appendix~\ref{app:lean}).
-\end{proof}
+\begin{corollary}[Combined bound]\label{cor:combined}
+Combining Theorems~\ref{thm:adaptive}, \ref{thm:hier}, and \ref{thm:var}, for a $K_F$-Fourier-sparse function with $K$-sparse Boolean support:
+\[
+  M_{\mathrm{total}} = O\!\left(\frac{K_F\cdot Q^{2-1/k}}{\eps^2}\right),
+\]
+an improvement of $(N/K_F)\cdot Q^{1/k}$ over the \Zhao\ baseline.
+\end{corollary}
 
-\begin{proposition}[Classical Lower Bound Preservation]
-\label{prop:lb}
-% TODO: paste from PaperText.md
-% Addresses three sub-arguments:
-%   (a) adaptive/hierarchical reduce quantum cost, classical hardness unchanged
-%   (b) variational warmstart makes quantum strictly more accurate
-%   (c) shadow extension preserves same output, same classical comm. lower bound
+\noindent\textbf{Concrete example.}  Set $N=2^{20}$ ($\approx 10^6$), $K_F=64$, $Q=100$, $k=3$:
+\begin{align*}
+  \text{\Zhao:} \quad & M = N\cdot Q^2 = 2^{20}\cdot 10^4 = 1.05\times 10^{10},\\
+  \text{Combined:} \quad & M = K_F\cdot Q^{2-1/3} = 64\cdot 10^{5.33} = 1.37\times 10^5.\\
+  \text{Improvement:} \quad & \frac{N}{K_F}\cdot Q^{1/3} = 16{,}384\times 4.64 = 76{,}019\times.
+\end{align*}
+
+\begin{proposition}[Classical lower bound preservation]\label{prop:lb}
+The adaptive and hierarchical reductions lower the \emph{quantum} oracle-construction cost without weakening the classical communication lower bounds of \Zhao.  Variational warmstart can improve quantum approximation accuracy on Fourier-sparse inputs without changing the output model.  The interferometric shadow extension estimates the same observables with unchanged classical hardness.
 \end{proposition}
+
+\begin{proof}[Proof sketch]
+Adaptive and hierarchical methods replace uniform sampling with importance-weighted or residual-targeted sampling; they do not grant additional classical query power.  Warmstart preconditions the signal in Fourier space before sketching; classical lower bounds on streaming or sparse access remain.  Shadow estimators are unbiased for $\langle v|\rho|v\rangle$ with variance $O(s/T)$; the classical communication model is unchanged.
+\end{proof}

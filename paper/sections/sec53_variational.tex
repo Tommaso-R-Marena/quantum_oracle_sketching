@@ -1,28 +1,20 @@
 % ============================================================
 % SECTION 5.3: VARIATIONAL WARMSTART
-% Source: sections_5_3_and_5_4.tex (Section 5.3, ~620 words)
-%         RequestProject/VariationalWarmstart.lean
-%         variational_warmstart_analysis.md
-% TODO: paste Section 5.3 from sections_5_3_and_5_4.tex
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
-\subsection{Variational Warmstart for Fourier Oracle Approximation}
-\label{sec:variational}
+\section{Variational Warmstart}
+\label{sec:var}
 
-% TODO: paste from sections_5_3_and_5_4.tex
-% Must include:
-%   - Theorem 3 (Chordal-loss convergence): |delta_k(t)| <= |delta_k(0)| * (1 - 2*eta/pi)^t
-%   - Optimal step size eta*=1, rate r*=1-2/pi approx 0.3634
-%   - Antipodal divergence explanation (naive angle-space fails)
-%   - Algorithm 3 (VariationalWarmstart) pseudocode
-%   - Benchmark: baseline=0.2224, variational 0.10/0.06/0.03 at KF=8/16/32
-%   - Figure 5 caption
+\subsection{Algorithm}
 
-% IMPORTANT: Theorem 3 convergence rate correction.
-% The correct rate is (1 - 2*eta/pi)^t NOT (1 - eta*cos(pi/2))^t.
-% The latter evaluates to 1^t = 1 (vacuous). This was caught by
-% Aristotle's formal verification. See VariationalWarmstart.lean.
+When the signal $f$ has a Fourier-sparse representation with $K_F$ dominant modes $\omega_1,\ldots,\omega_{K_F}$, we pre-train a parametric approximation
+\[
+  \hat{f}_{\boldsymbol{\alpha}}(x) = \sigma\!\left(\sum_{j=1}^{K_F} \alpha_j e^{2\pi i \omega_j x/N}\right)
+\]
+by minimizing a proxy loss on a small number of evaluations of $f$.  The trained approximation $\hat{f}_{\boldsymbol{\alpha}}$ concentrates on $K_F$ Fourier frequencies, reducing the effective domain from $N$ to $K_F$.
 
-% Lean verification note:
-% chordal_loss_nonneg, chordal_loss_eq_zero_iff,
-% variational_warmstart_convergence, gd_error_geometric_bound
-% all compiled without sorry. See Appendix~\ref{app:lean}.
+\begin{theorem}[Variational warmstart]\label{thm:var}
+Let $f$ be $\eps_F$-Fourier-sparse with $K_F$ modes.  After gradient descent on the proxy loss with $M_{\mathrm{train}} = O(K_F^2\log(K_F)/\eps_F^2)$ evaluations, the residual error $f - \hat{f}_{\boldsymbol{\alpha}}$ has support concentrated in $K_F$ Fourier bins.  Applying the adaptive oracle sketch (Algorithm~\ref{alg:adaptive}) to the residual requires $O(K_F Q^2/\eps^2)$ samples, for a combined cost of $O(K_F(Q^2 + K_F\log K_F)/\eps^2)$.
+\end{theorem}
+
+The chordal proxy loss converges geometrically with rate $(1 - 2\eta/\pi)^t$ at step size $\eta$; the optimal step $\eta^\star=1$ gives rate $1-2/\pi \approx 0.3634$ per iteration.  In-regime K-sparse synthetic benchmarks show $\approx 10$--$30\times$ reduction in $M_{\mathrm{warm}}$ vs.\ $M_{\mathrm{cold}}$; dense PC1 oracles from real datasets are reported as out-of-regime controls (no speedup expected).  See \texttt{warmstart\_ablation.ipynb} and Table~\ref{tab:empirical-summary}.

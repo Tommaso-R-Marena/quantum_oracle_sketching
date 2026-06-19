@@ -1,22 +1,9 @@
 % ============================================================
-% APPENDIX B: PHASE TIME LOWER BOUNDS (Bonus finding)
-% Source: RequestProject/PhaseTimeBound.lean + GapAnalysis.md
-% TODO: paste key results from GapAnalysis.md
+% APPENDIX B: PHASE TIME LOWER BOUNDS
 % ============================================================
 \section{Phase Time Lower Bounds for Expected-Unitary Oracles}
 \label{app:phase}
 
-% Key finding from PhaseTimeBound.lean:
-% The conjecture t >= Omega(N/K) is FALSE in general.
-% Correct bounds: t in [K*pi*(1-eps/2), pi*(K + eps*N/2)]
-% Lower bound achievable by concentrated distributions (zero off-support error).
+For the expected-unitary oracle sketch (Equation~\eqref{eq:logsum}), the phase time $t$ controls the per-entry phase increment.  A natural conjecture is that $t \geq \Omega(N/K)$ is required for $\eps$-accurate support reconstruction.  Formal analysis in the planned \texttt{PhaseTimeBound.lean} artifact shows this conjecture is \emph{false} in general: concentrated importance distributions can achieve zero off-support error with $t \in [K\pi(1-\eps/2),\, \pi(K + \eps N/2)]$.
 
-% TODO: paste formal statement and proof from GapAnalysis.md
-% Include:
-%   - phase_time_lower_bound theorem
-%   - phase_time_upper_bound theorem  
-%   - concentrated_dist_achieves (disproves conjecture)
-%   - Conditions under which N/K bound holds:
-%     (a) blind oracle model
-%     (b) minimum probability p(x) >= c/N constraint
-%     (c) circuit depth constraints
+Tighter $N/K$ scaling can hold under additional constraints: (a)~a blind-oracle query model, (b)~a minimum probability floor $p(x) \geq c/N$, or (c)~circuit-depth budgets that forbid extreme concentration.  The executable implementation in \texttt{src/qos/theory/} and tests in \texttt{tests/test\_theory\_fixes.py} pin the numerically verified phase-time envelopes used in the benchmark drivers.

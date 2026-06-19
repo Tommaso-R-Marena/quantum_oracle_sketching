@@ -1,24 +1,34 @@
 % ============================================================
 % SECTION 2: BACKGROUND
-% Covers Zhao et al. (2025) QOS construction and baseline results
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
 \section{Background: Quantum Oracle Sketching}
 \label{sec:background}
 
-\subsection{Problem Setting}
-% TODO: define N-dimensional classical data, streaming model,
-% machine size definition (Equations A1--A3)
+\subsection{Expected-Unitary Oracle Sketching (\Zhao)}
 
-\subsection{Zhao et al.\ Baseline}
-% TODO: state Zhao et al. Theorem 1 resource counts:
-%   - Logical qubits: S_QOS = 2*ceil(log2(N+2D)) + ceil(log2(s+1)) + 4  (Eq. A3)
-%   - Sample complexity: O(N*Q^2) for rank-Q oracle
-%   - Classical lower bounds: Omega(N_nnz) sparse, Omega(D) streaming (Eqs. A1, A2)
+Let $f: [N] \to \{0,1\}$ be a Boolean function.  \Zhao\ construct an approximation to the oracle diagonal $d_f = (e^{i\pi f(x)})_{x\in[N]}$ via the following expected-unitary formula.
 
-\subsection{Machine Size Definitions}
-% Equations A1, A2, A3 from Zhao et al. (2025) Appendix A
+Fix a probability distribution $p$ over $[N]$ and a \emph{phase time} $t > 0$.  Define the log-sum approximation
+\begin{equation}\label{eq:logsum}
+  \hat{d}_M(x) \;=\; \exp\!\left(M \cdot \log\!\left(1 + p(x)\cdot \bigl(e^{it/(M\cdot p(x))\cdot f(x)} - 1\bigr)\right)\right),
+\end{equation}
+where $M$ is the number of samples.  For $p = \text{Uniform}([N])$ and $t = \pi N$, one has $p(x)\cdot t = \pi$ for all $x$, so $\hat{d}_M(x) \to e^{i\pi f(x)}$ as $M\to\infty$.  The approximation error satisfies
+\begin{equation}\label{eq:zhao_bound}
+  \max_{x: f(x)=1} \bigl|\hat{d}_M(x) - e^{i\pi}\bigr| \;\leq\; C\sqrt{N/M}
+\end{equation}
+for a universal constant $C$.  Combined with $Q$ linear queries of the form $\langle a_j, d_f\rangle$, the total sample cost is $O(NQ^2/\eps^2)$.
+
+\subsection{Notation}
+
+We write $[N] = \{0,1,\ldots,N-1\}$.  For a vector $v\in\C^N$, $\|v\|_\infty = \max_x |v_x|$.  We write $\supp(f) = \{x: f(x)=1\}$, $K = |\supp(f)|$, and $\bar{K} = N - K$.  All probabilities are over the randomness of the pilot sampling step.
+
+\subsection{Machine Size Definitions (\Zhao)}
+
+For replication of the Zhao et al.\ dataset benchmarks (Section~\ref{sec:core}), we use the machine-size definitions from their Appendix~A:
 \begin{align}
   S_{c,\text{sparse}},\, S_{\text{QRAM}} &\geq N_{\text{nnz}} \label{eq:A1} \\
   S_{c,\text{streaming}} &\geq D \label{eq:A2} \\
   S_{\text{QOS}}^{\text{LS-SVM}} &= 2\ceil{\log_2(N+2D)} + \ceil{\log_2(s+1)} + 4 \label{eq:A3}
 \end{align}
+implemented in \texttt{compute\_space\_metrics()} and verified at notebook startup via \texttt{\_verify\_zhao\_equations()}.

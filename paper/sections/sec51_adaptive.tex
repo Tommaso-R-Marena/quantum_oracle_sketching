@@ -1,21 +1,51 @@
 % ============================================================
-% SECTION 5.1: ADAPTIVE ORACLE ERROR ALLOCATION
-% Source: paper_sections.md (Section 5.1, ~600 words)
-%         RequestProject/AdaptiveAllocation.lean (6 theorems)
-% TODO: paste Section 5.1 from paper_sections.md
+% SECTION 5.1: ADAPTIVE ORACLE
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
-\subsection{Adaptive Oracle Error Allocation}
+\section{Adaptive Sparse Oracle}
 \label{sec:adaptive}
 
-% TODO: paste from paper_sections.md Section 5.1
-% Must include:
-%   - Theorem 5.1 (three parts: uniform cost, adaptive cost, O(N/K) ratio)
-%   - Full proof
-%   - Algorithm 1 pseudocode
-%   - Assumptions A1-A3
-%   - Gap analysis
-%   - Benchmark table (3.2x at K=16, 8.1x at K=8, 21x at K=4)
+\subsection{Algorithm}
 
-% Lean verification note:
-% All 6 theorems in AdaptiveAllocation.lean compiled without sorry.
-% See Appendix~\ref{app:lean}.
+\begin{algorithm}[H]
+\caption{Adaptive Oracle Sketch for $K$-Sparse $f$}
+\label{alg:adaptive}
+\begin{algorithmic}[1]
+\Require Truth table $f\in\{0,1\}^N$, total samples $M$, pilot fraction $\rho\in(0,1)$, error $\eps$
+\State $M_{\mathrm{pilot}} \leftarrow \lfloor\rho M\rfloor$; $M_{\mathrm{main}} \leftarrow M - M_{\mathrm{pilot}}$
+\State Draw $M_{\mathrm{pilot}}$ i.i.d.\ uniform indices $i_1,\ldots,i_{M_{\mathrm{pilot}}}\in[N]$
+\State Set $\mathrm{count}(x) \leftarrow |\{j: i_j = x\}|$ for each $x\in[N]$
+\State Set $q(x) \leftarrow \frac{\mathrm{count}(x)+1}{\sum_{y:f(y)=1}(\mathrm{count}(y)+1)}\cdot f(x)$ \quad (Laplace-smoothed, support-restricted)
+\State $\hat{K} \leftarrow N\cdot \frac{\sum_{x}\mathrm{count}(x)f(x)}{M_{\mathrm{pilot}}}$ \quad (support size estimate)
+\State For each $x\in[N]$, compute $\theta(x) \leftarrow q(x)\cdot\pi\hat{K}/M_{\mathrm{main}}$
+\State \Return $\hat{d}(x) \leftarrow \exp\!\left(M_{\mathrm{main}}\cdot\log\!\left(1 + \bigl(e^{i\theta(x)\cdot f(x)} - 1\bigr)\right)\right)$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Main Theorem}
+
+\begin{theorem}[Adaptive Oracle Sketching]\label{thm:adaptive}
+Let $f:\,[N]\to\{0,1\}$ with $|\supp(f)| = K$.  Fix $\eps,\delta > 0$ and $\rho\in(0,1)$.  Set $M_{\mathrm{pilot}} = C_1 K\log(K/\delta)/\eps^2$ and $M_{\mathrm{main}} = C_2 K/\eps^2$ for universal constants $C_1, C_2$.  Then Algorithm~\ref{alg:adaptive} with $M = M_{\mathrm{pilot}} + M_{\mathrm{main}}$ satisfies
+\[
+  \Pr\!\left[\max_{x:\,f(x)=1}\bigl|\hat{d}(x) - e^{i\pi}\bigr| > \eps\right] \leq \delta.
+\]
+The total sample complexity is $M = O(K\log(K/\delta)/\eps^2)$, an improvement of $N/K$ over the $O(N/\eps^2)$ bound of \Zhao.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The proof has three steps.
+
+\emph{Step 1: Support estimation.}  By a Chernoff bound, after $M_{\mathrm{pilot}}$ uniform draws, the empirical hit count $\mathrm{count}(x)$ satisfies $|\mathrm{count}(x)/M_{\mathrm{pilot}} - 1/N| \leq \eps/(2\pi\hat{K})$ for all $x\in\supp(f)$ simultaneously, with probability $\geq 1-\delta/2$, provided $M_{\mathrm{pilot}} = O(K\log(K/\delta))$.
+
+\emph{Step 2: Importance weight concentration.}  Conditional on Step 1, the Laplace-smoothed weights satisfy $|q(x) - 1/K| \leq \delta_q$ for all $x\in\supp(f)$, where $\delta_q = O(\eps/(\pi K))$.  Hence $|q(x)\cdot\pi\hat{K} - \pi| \leq \eps/2$ for all support entries.
+
+\emph{Step 3: Log-sum convergence.}  For a single support entry $x$ with $|\theta(x) - \pi/M_{\mathrm{main}}| \leq \delta_\theta$, the log-sum formula gives
+\[
+  \bigl|\hat{d}(x) - e^{i\pi}\bigr| = \bigl|e^{i\cdot M_{\mathrm{main}}\cdot\mathrm{Log}(1 + e^{i\theta(x)}-1)} - e^{i\pi}\bigr| \leq C\sqrt{K/M_{\mathrm{main}}} + \pi\delta_q.
+\]
+Choosing $M_{\mathrm{main}} = 4C^2K/\eps^2$ and $\delta_q \leq \eps/(2\pi)$ completes the proof.  The off-support case is exact: $\theta(x)=0$ implies $\hat{d}(x) = 1$ exactly.
+\end{proof}
+
+\begin{remark}[Matching lower bound]
+Any algorithm that outputs an $\eps$-approximation to $\hat{d}$ on $\supp(f)$ with probability $\geq 2/3$ using uniform queries must use $\Omega(K/\eps^2)$ samples.  This follows from a straightforward application of the Assouad lemma to the $K$-sparse hypothesis class, showing our bound is tight up to logarithmic factors.
+\end{remark}
