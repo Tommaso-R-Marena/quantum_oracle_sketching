@@ -90,6 +90,9 @@ def test_binarise_labels_finds_cd14_in_bulk_labels():
     np.testing.assert_array_equal(labels, [1, 0, 1])
 
 
+@pytest.mark.filterwarnings(
+    "ignore:scvelo PBMC68k download failed:UserWarning"
+)
 def test_load_pbmc68k_reduced_fallback_runs_without_nan():
   """Smoke test: reduced fallback must not re-normalize into NaNs."""
   pytest.importorskip("scanpy")

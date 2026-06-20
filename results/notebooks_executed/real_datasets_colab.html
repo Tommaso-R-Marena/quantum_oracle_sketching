@@ -3,34 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script><script>
-(function() {
-  function addWidgetsRenderer() {
-    var mimeElement = document.querySelector('script[type="application/vnd.jupyter.widget-view+json"]');
-    var scriptElement = document.createElement('script');
-    
-    var widgetRendererSrc = 'https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-amd.js';
-    
-    var widgetState;
-
-    // Fallback for older version:
-    try {
-      widgetState = mimeElement && JSON.parse(mimeElement.innerHTML);
-
-      if (widgetState && (widgetState.version_major < 2 || !widgetState.version_major)) {
-        
-        var widgetRendererSrc = 'https://unpkg.com/@jupyter-js-widgets@*/dist/embed.js';
-        
-      }
-    } catch(e) {}
-
-    scriptElement.src = widgetRendererSrc;
-    document.body.appendChild(scriptElement);
-  }
-
-  document.addEventListener('DOMContentLoaded', addWidgetsRenderer);
-}());
-</script>
+<title>Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <style type="text/css">
     pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -7949,7 +7922,7 @@ All outputs are auto-saved to Google Drive if mounted.</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=3151c2ad">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=b67ed8d5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8542,73 +8515,73 @@ Running classification sweep on 20 Newsgroups...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   9%|▉         | 1/11 [00:06&lt;01:02,  6.24s/it]</pre>
+<pre>Sweep:   9%|▉         | 1/11 [00:06&lt;01:06,  6.68s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  18%|█▊        | 2/11 [00:12&lt;00:56,  6.24s/it]</pre>
+<pre>Sweep:  18%|█▊        | 2/11 [00:12&lt;00:56,  6.33s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  27%|██▋       | 3/11 [00:17&lt;00:44,  5.56s/it]</pre>
+<pre>Sweep:  27%|██▋       | 3/11 [00:17&lt;00:46,  5.82s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  36%|███▋      | 4/11 [00:21&lt;00:35,  5.05s/it]</pre>
+<pre>Sweep:  36%|███▋      | 4/11 [00:22&lt;00:36,  5.27s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  45%|████▌     | 5/11 [00:25&lt;00:27,  4.63s/it]</pre>
+<pre>Sweep:  45%|████▌     | 5/11 [00:26&lt;00:28,  4.83s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  55%|█████▍    | 6/11 [00:28&lt;00:20,  4.15s/it]</pre>
+<pre>Sweep:  55%|█████▍    | 6/11 [00:29&lt;00:21,  4.29s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  64%|██████▎   | 7/11 [00:31&lt;00:14,  3.58s/it]</pre>
+<pre>Sweep:  64%|██████▎   | 7/11 [00:32&lt;00:14,  3.68s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  73%|███████▎  | 8/11 [00:32&lt;00:09,  3.04s/it]</pre>
+<pre>Sweep:  73%|███████▎  | 8/11 [00:33&lt;00:09,  3.09s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  82%|████████▏ | 9/11 [00:34&lt;00:05,  2.56s/it]</pre>
+<pre>Sweep:  82%|████████▏ | 9/11 [00:35&lt;00:05,  2.59s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  91%|█████████ | 10/11 [00:35&lt;00:02,  2.19s/it]</pre>
+<pre>Sweep:  91%|█████████ | 10/11 [00:36&lt;00:02,  2.20s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 11/11 [00:36&lt;00:00,  1.86s/it]</pre>
+<pre>Sweep: 100%|██████████| 11/11 [00:37&lt;00:00,  1.86s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 11/11 [00:36&lt;00:00,  3.35s/it]</pre>
+<pre>Sweep: 100%|██████████| 11/11 [00:37&lt;00:00,  3.44s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8649,73 +8622,73 @@ Running PCA sweep on 20 Newsgroups...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:   9%|▉         | 1/11 [00:16&lt;02:40, 16.09s/it]</pre>
+<pre>PCA Sweep:   9%|▉         | 1/11 [00:19&lt;03:12, 19.29s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  18%|█▊        | 2/11 [00:22&lt;01:33, 10.42s/it]</pre>
+<pre>PCA Sweep:  18%|█▊        | 2/11 [00:25&lt;01:45, 11.74s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  27%|██▋       | 3/11 [00:27&lt;01:02,  7.83s/it]</pre>
+<pre>PCA Sweep:  27%|██▋       | 3/11 [00:31&lt;01:11,  8.88s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  36%|███▋      | 4/11 [00:31&lt;00:43,  6.20s/it]</pre>
+<pre>PCA Sweep:  36%|███▋      | 4/11 [00:34&lt;00:47,  6.83s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  45%|████▌     | 5/11 [00:33&lt;00:30,  5.04s/it]</pre>
+<pre>PCA Sweep:  45%|████▌     | 5/11 [00:37&lt;00:31,  5.32s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:36&lt;00:20,  4.03s/it]</pre>
+<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:39&lt;00:21,  4.27s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  64%|██████▎   | 7/11 [00:37&lt;00:13,  3.27s/it]</pre>
+<pre>PCA Sweep:  64%|██████▎   | 7/11 [00:41&lt;00:13,  3.42s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  73%|███████▎  | 8/11 [00:39&lt;00:08,  2.76s/it]</pre>
+<pre>PCA Sweep:  73%|███████▎  | 8/11 [00:43&lt;00:08,  2.84s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  82%|████████▏ | 9/11 [00:40&lt;00:04,  2.34s/it]</pre>
+<pre>PCA Sweep:  82%|████████▏ | 9/11 [00:44&lt;00:04,  2.46s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  91%|█████████ | 10/11 [00:42&lt;00:02,  2.03s/it]</pre>
+<pre>PCA Sweep:  91%|█████████ | 10/11 [00:46&lt;00:02,  2.17s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 11/11 [00:43&lt;00:00,  1.76s/it]</pre>
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:47&lt;00:00,  1.86s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 11/11 [00:43&lt;00:00,  3.94s/it]</pre>
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:47&lt;00:00,  4.31s/it]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8737,7 +8710,7 @@ Running PCA sweep on 20 Newsgroups...
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Saved ./results/news20_size_vs_variance.pdf
 PDF saved: ./results/news20_size_vs_variance.pdf
-20 Newsgroups done in 81s
+20 Newsgroups done in 86s
 </pre>
 </div>
 </div>
@@ -8866,19 +8839,19 @@ Running classification sweep on PBMC3k...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  36%|███▋      | 4/11 [00:00&lt;00:00, 36.59it/s]</pre>
+<pre>Sweep:  36%|███▋      | 4/11 [00:00&lt;00:00, 36.01it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  82%|████████▏ | 9/11 [00:00&lt;00:00, 40.52it/s]</pre>
+<pre>Sweep:  73%|███████▎  | 8/11 [00:00&lt;00:00, 37.98it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 42.53it/s]</pre>
+<pre>Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 41.56it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8916,37 +8889,20 @@ Running PCA sweep on PBMC3k...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:   9%|▉         | 1/11 [00:00&lt;00:01,  5.36it/s]</pre>
+<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:00&lt;00:00, 55.45it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  27%|██▋       | 3/11 [00:00&lt;00:00,  8.75it/s]</pre>
+<pre>PCA Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 71.33it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  36%|███▋      | 4/11 [00:00&lt;00:00,  9.13it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  45%|████▌     | 5/11 [00:00&lt;00:00,  7.59it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:00&lt;00:00,  6.77it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 11/11 [00:00&lt;00:00, 12.24it/s]</pre>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved raw data to ./results/pbmc3k_size_vs_variance.json
+</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -8959,16 +8915,9 @@ Running PCA sweep on PBMC3k...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Saved raw data to ./results/pbmc3k_size_vs_variance.json
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Saved ./results/pbmc3k_size_vs_variance.pdf
 PDF saved: ./results/pbmc3k_size_vs_variance.pdf
-PBMC3k done in 2s
+PBMC3k done in 1s
 </pre>
 </div>
 </div>
@@ -9014,25 +8963,7 @@ Uses <code>load_pbmc68k()</code> from the qos package (scvelo primary, scanpy re
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Pre-caching PBMC68k (~118 MB via scvelo on first run)...
-  Downloading PBMC68k via scvelo (~118 MB on first run) ...
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jupyter-widgets jp-OutputArea-output" id="120f6a2b-dfe3-4417-9074-0905238801a8" tabindex="0">
-<script type="text/javascript">
-var element = document.getElementById('120f6a2b-dfe3-4417-9074-0905238801a8');
-</script>
-<script type="application/vnd.jupyter.widget-view+json">
-{"version_major": 2, "version_minor": 0, "model_id": "5ad7ff6f49a54882b2a22aacb29bfc96"}
-</script>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>  Cached to /home/ubuntu/.cache/qos/pbmc68k/pbmc68k_scvelo.h5ad
+  Loading PBMC68k from cache: /home/ubuntu/.cache/qos/pbmc68k/pbmc68k_scvelo.h5ad
 </pre>
 </div>
 </div>
@@ -9122,100 +9053,8 @@ Cached: 65831 cells x 1000 genes
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>  PBMC68k loaded: 65831 cells x 1000 genes
 Loaded 65831 cells x 1000 genes, 2 classes
-Running PBMC68k classification sweep...
-Running classification sweep on PBMC68k...
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:   9%|▉         | 1/11 [00:00&lt;00:06,  1.50it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  18%|█▊        | 2/11 [00:01&lt;00:05,  1.55it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  27%|██▋       | 3/11 [00:01&lt;00:05,  1.57it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  36%|███▋      | 4/11 [00:02&lt;00:04,  1.63it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  45%|████▌     | 5/11 [00:03&lt;00:03,  1.71it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  55%|█████▍    | 6/11 [00:03&lt;00:02,  1.84it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  64%|██████▎   | 7/11 [00:03&lt;00:01,  2.01it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  73%|███████▎  | 8/11 [00:04&lt;00:01,  2.20it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  82%|████████▏ | 9/11 [00:04&lt;00:00,  2.48it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  91%|█████████ | 10/11 [00:04&lt;00:00,  2.90it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 11/11 [00:04&lt;00:00,  3.41it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 11/11 [00:04&lt;00:00,  2.22it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Saved raw data to ./results/pbmc68k_size_vs_accuracy.json
+Resuming from checkpoint: ./results/pbmc68k_checkpoint.json
+Classification sweep already complete (loading from disk).
 </pre>
 </div>
 </div>
@@ -9229,100 +9068,7 @@ PDF saved: ./results/pbmc68k_size_vs_accuracy.pdf
 ZHAO COMPARISON — PBMC68K
 Status: IMPROVED  Acc: ours=0.978 Zhao=0.920 Δ=+0.058  Qubits: ours=54 Zhao=50
 Reproduced: ✅ YES
-Running PBMC68k PCA sweep...
-Running PCA sweep on PBMC68k...
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:   0%|          | 0/11 [00:00&lt;?, ?it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:   9%|▉         | 1/11 [00:01&lt;00:12,  1.26s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  18%|█▊        | 2/11 [00:02&lt;00:11,  1.24s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  27%|██▋       | 3/11 [00:03&lt;00:09,  1.14s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  36%|███▋      | 4/11 [00:04&lt;00:07,  1.03s/it]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  45%|████▌     | 5/11 [00:05&lt;00:05,  1.12it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  55%|█████▍    | 6/11 [00:05&lt;00:03,  1.26it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  64%|██████▎   | 7/11 [00:06&lt;00:02,  1.51it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  73%|███████▎  | 8/11 [00:06&lt;00:01,  1.71it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  82%|████████▏ | 9/11 [00:06&lt;00:01,  1.91it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  91%|█████████ | 10/11 [00:07&lt;00:00,  2.09it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 11/11 [00:07&lt;00:00,  2.63it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 11/11 [00:07&lt;00:00,  1.50it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Saved raw data to ./results/pbmc68k_size_vs_variance.json
+PCA sweep already complete (loading from disk).
 </pre>
 </div>
 </div>
@@ -9331,7 +9077,7 @@ Running PCA sweep on PBMC68k...
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Saved ./results/pbmc68k_size_vs_variance.pdf
 PDF saved: ./results/pbmc68k_size_vs_variance.pdf
-PBMC68k done in 13s
+PBMC68k done in 0s
 </pre>
 </div>
 </div>
@@ -9444,7 +9190,7 @@ PCA sweep already complete (loading from disk).
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Saved ./results/dorothea_size_vs_variance.pdf
 PDF saved: ./results/dorothea_size_vs_variance.pdf
-Dorothea done in 0s
+Dorothea done in 1s
 </pre>
 </div>
 </div>
@@ -9519,25 +9265,25 @@ Running classification sweep on Splice...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  30%|███       | 3/10 [00:00&lt;00:00, 23.60it/s]</pre>
+<pre>Sweep:  30%|███       | 3/10 [00:00&lt;00:00, 21.72it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  60%|██████    | 6/10 [00:00&lt;00:00, 23.74it/s]</pre>
+<pre>Sweep:  60%|██████    | 6/10 [00:00&lt;00:00, 22.53it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep:  90%|█████████ | 9/10 [00:00&lt;00:00, 23.90it/s]</pre>
+<pre>Sweep:  90%|█████████ | 9/10 [00:00&lt;00:00, 22.54it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 23.81it/s]</pre>
+<pre>Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 22.51it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -9569,37 +9315,13 @@ Running PCA sweep on Splice...
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  10%|█         | 1/10 [00:00&lt;00:01,  6.88it/s]</pre>
+<pre>PCA Sweep:  70%|███████   | 7/10 [00:00&lt;00:00, 32.97it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  20%|██        | 2/10 [00:00&lt;00:01,  7.51it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  30%|███       | 3/10 [00:00&lt;00:01,  6.65it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep:  70%|███████   | 7/10 [00:00&lt;00:00, 16.51it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 20.30it/s]</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="application/vnd.jupyter.stderr" tabindex="0">
-<pre>PCA Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 15.38it/s]</pre>
+<pre>PCA Sweep: 100%|██████████| 10/10 [00:00&lt;00:00, 21.10it/s]</pre>
 </div>
 </div>
 <div class="jp-OutputArea-child">
@@ -9613,7 +9335,13 @@ Running PCA sweep on Splice...
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>Saved raw data to ./results/splice_size_vs_variance.json
-Saved ./results/splice_size_vs_variance.pdf
+</pre>
+</div>
+</div>
+<div class="jp-OutputArea-child">
+<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
+<pre>Saved ./results/splice_size_vs_variance.pdf
 PDF saved: ./results/splice_size_vs_variance.pdf
 Splice done in 1s
 </pre>
@@ -9720,7 +9448,7 @@ PDFs (34):
   ./results/variational_warmstart.pdf
   ./results/warmstart_ablation.pdf
 
-JSON results (19):
+JSON results (20):
   ./results/circuit_depth_table.json
   ./results/dorothea_checkpoint.json
   ./results/dorothea_size_vs_accuracy.json
@@ -9739,6 +9467,7 @@ JSON results (19):
   ./results/pbmc68k_zhao_comparison.json
   ./results/splice_size_vs_accuracy.json
   ./results/splice_size_vs_variance.json
+  ./results/warmstart_ablation_in_regime.json
   ./results/warmstart_ablation_table.json
 
 =================================================================
@@ -9769,7 +9498,4 @@ Peak accuracy per dataset:
 </div>
 </main>
 </body>
-<script type="application/vnd.jupyter.widget-state+json">
-{"state": {"75bec08a76b84b0491a634c899b72d7d": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "632ab7200a024bd89a59ac53a6c1d650": {"model_name": "ProgressStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "9dc0b96aa4564f32967f13f748fc6992": {"model_name": "FloatProgressModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_75bec08a76b84b0491a634c899b72d7d", "max": 123707283.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_632ab7200a024bd89a59ac53a6c1d650", "tabbable": null, "tooltip": null, "value": 123707283.0}}, "a30d31b8a0aa48038fe074daad058bb1": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "d4d23ebe36b8403385fddde34041daaf": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "a252340ab1c24a76ab769fb02408309a": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_a30d31b8a0aa48038fe074daad058bb1", "placeholder": "\u200b", "style": "IPY_MODEL_d4d23ebe36b8403385fddde34041daaf", "tabbable": null, "tooltip": null, "value": "100%"}}, "1cf33252eed44a37924ff45073b60ba5": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "bee443c0d8ea4b089da33404f1541202": {"model_name": "HTMLStyleModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "1d56cda8531046c99822c703dbe0d8b4": {"model_name": "HTMLModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_1cf33252eed44a37924ff45073b60ba5", "placeholder": "\u200b", "style": "IPY_MODEL_bee443c0d8ea4b089da33404f1541202", "tabbable": null, "tooltip": null, "value": "\u2007118M\/118M\u2007[00:03&lt;00:00,\u200743.3MB\/s]"}}, "21f88e4bdb4b4d2a9ca21985a71e46f6": {"model_name": "LayoutModel", "model_module": "@jupyter-widgets\/base", "model_module_version": "2.0.0", "state": {"_model_module": "@jupyter-widgets\/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets\/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "5ad7ff6f49a54882b2a22aacb29bfc96": {"model_name": "HBoxModel", "model_module": "@jupyter-widgets\/controls", "model_module_version": "2.0.0", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets\/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets\/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_a252340ab1c24a76ab769fb02408309a", "IPY_MODEL_9dc0b96aa4564f32967f13f748fc6992", "IPY_MODEL_1d56cda8531046c99822c703dbe0d8b4"], "layout": "IPY_MODEL_21f88e4bdb4b4d2a9ca21985a71e46f6", "tabbable": null, "tooltip": null}}}, "version_major": 2, "version_minor": 0}
-</script>
 </html>
