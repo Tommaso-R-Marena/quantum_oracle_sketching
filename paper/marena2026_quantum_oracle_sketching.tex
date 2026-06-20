@@ -44,7 +44,7 @@
 \maketitle
 
 \begin{abstract}
-We present three improvements to the quantum oracle sketching framework of Zhao et\ al.\ (2025).  Their construction of a phase-oracle diagonal $U_f: |x\rangle\mapsto e^{i\pi f(x)}|x\rangle$ via expected-unitary methods requires $O(NQ^2)$ samples, where $N$ is the domain size and $Q$ is the number of linear queries.  For sparse Boolean functions with $K$-element support and for Fourier-sparse signal priors, we show this cost is not necessary.
+We present three improvements to the quantum oracle sketching framework of Zhao et\ al.\ (2026).  Their construction of a phase-oracle diagonal $U_f: |x\rangle\mapsto e^{i\pi f(x)}|x\rangle$ via expected-unitary methods requires $O(NQ^2)$ samples, where $N$ is the domain size and $Q$ is the number of linear queries.  For sparse Boolean functions with $K$-element support and for Fourier-sparse signal priors, we show this cost is not necessary.
 
 \textbf{(1) Adaptive sparse oracle.}  A two-phase importance-sampling scheme reduces the cost to $O(KQ^2)$, an $N/K$ factor improvement.  The pilot phase estimates the support distribution in $O(K)$ samples; the main phase applies the expected-unitary construction with importance weights.  We prove a sharp concentration bound showing the error on $\supp(f)$ is $O(\sqrt{K/M_{\mathrm{main}}})$, matching the information-theoretic lower bound up to constants.
 
@@ -59,7 +59,7 @@ All constructions are implemented and verified in open-source JAX code.  The com
 
 The problem of constructing efficient quantum oracles from classical queries sits at the heart of quantum advantage arguments.  A phase oracle $U_f$ for a Boolean function $f:\{0,1\}^n\to\{0,1\}$ encodes $f$ as a phase: $U_f|x\rangle = e^{i\pi f(x)}|x\rangle$.  Direct implementation requires exponential circuit depth in general; approximating $U_f$ via linear measurements of $f$, however, is feasible in polynomial time under sparsity assumptions.
 
-Zhao, Iosue, Bharti, Deshpande, and Wilde (2025) introduced a beautiful expected-unitary construction that builds an approximation to the oracle diagonal using $M = O(NQ^2)$ samples.  Their approach, which we term the \emph{uniform oracle sketch}, is information-theoretically tight when $f$ is uniformly dense.  However, for the structured functions that appear in quantum chemistry, combinatorial optimization, and signal processing---functions that are $K$-sparse, Fourier-concentrated, or hierarchically structured---the $O(N)$ dependence represents a fundamental bottleneck.
+Zhao, Zlokapa, Neven, Babbush, Preskill, McClean, and Huang (2026) introduced a framework that builds an approximation to the oracle diagonal using $M = O(NQ^2)$ samples.  Their approach, which we term the \emph{uniform oracle sketch}, is information-theoretically tight when $f$ is uniformly dense.  However, for the structured functions that appear in quantum chemistry, combinatorial optimization, and signal processing---functions that are $K$-sparse, Fourier-concentrated, or hierarchically structured---the $O(N)$ dependence represents a fundamental bottleneck.
 
 This paper addresses that bottleneck.  We ask a simple question: \emph{if we know or can estimate that $f$ has support of size $K \ll N$, can we build the oracle in $O(K)$ rather than $O(N)$ samples?}  The answer is yes, and the same intuition extends to query complexity (yielding $Q^{2-1/k}$ instead of $Q^2$) and to Fourier-sparse priors.
 
@@ -72,7 +72,7 @@ Let $\eps > 0$ be a target approximation error, $N = 2^n$ the domain size, $K = 
 \toprule
 \textbf{Method} & \textbf{Sample complexity} & \textbf{Improvement} \\
 \midrule
-Zhao et al.\ (2025) & $O(NQ^2/\eps^2)$ & $1\times$ \\
+Zhao et al.\ (2026) & $O(NQ^2/\eps^2)$ & $1\times$ \\
 \textbf{Adaptive sparse oracle} \textbf{[Thm.~\ref{thm:adaptive}]} & $O(KQ^2/\eps^2)$ & $N/K$ \\
 \textbf{Hierarchical sketch} \textbf{[Thm.~\ref{thm:hier}]} & $O(NQ^{2-1/k}/\eps^2)$ & $Q^{1/k}$ \\
 \textbf{Variational warmstart} \textbf{[Thm.~\ref{thm:var}]} & $O(K_F Q^2/\eps^2)$ & $N/K_F$ \\
@@ -91,7 +91,7 @@ Hierarchical quantum algorithms appear in amplitude estimation (Brassard et al.\
 
 \section{Background}\label{sec:background}
 
-\subsection{Expected-Unitary Oracle Sketching (Zhao et al.\ 2025)}
+\subsection{Expected-Unitary Oracle Sketching (Zhao et al.\ 2026)}
 
 Let $f: [N] \to \{0,1\}$ be a Boolean function.  Zhao et al.\ construct an approximation to the oracle diagonal $d_f = (e^{i\pi f(x)})_{x\in[N]}$ via the following expected-unitary formula.
 
@@ -275,7 +275,7 @@ All code, proofs, and the companion Colab notebook are available at
 \bibliographystyle{abbrvnat}
 \begin{thebibliography}{99}
 
-\bibitem{zhao2025} A.\ Zhao, J.\ T.\ Iosue, K.\ Bharti, A.\ Deshpande, and M.\ M.\ Wilde. \emph{Quantum oracle sketching}. arXiv:2501.07286, 2025.
+\bibitem{zhao2026exponential} H.\ Zhao, A.\ Zlokapa, H.\ Neven, R.\ Babbush, J.\ Preskill, J.\ R.\ McClean, and H.-Y.\ Huang. \emph{Exponential quantum advantage in processing massive classical data}. arXiv:2604.07639, 2026.
 
 \bibitem{huang2020} H.-Y.\ Huang, R.\ Kueng, and J.\ Preskill. Predicting many properties of a quantum system from very few measurements. \emph{Nature Physics}, 16:1050--1057, 2020.
 

@@ -26,6 +26,11 @@
 % ============================================================
 % CUSTOM COMMANDS
 % ============================================================
+\DeclareMathOperator{\supp}{supp}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
 \newcommand{\ket}[1]{\left|#1\right\rangle}
 \newcommand{\bra}[1]{\left\langle#1\right|}
 \newcommand{\brakett}[2]{\left\langle#1\middle|#2\right\rangle}
@@ -37,79 +42,43 @@
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\Var}{\operatorname{Var}}
 \newcommand{\QOS}{\textsc{QOS}}
-\newcommand{\Zhao}{Zhao et al.~\cite{zhao2025}}
+\newcommand{\Zhao}{Zhao et al.~\cite{zhao2026exponential}}
 
 % ============================================================
 % DOCUMENT
 % ============================================================
 \begin{document}
 
-\title{Quantum Oracle Sketching: Extensions and Formal Verification}
+\title{Adaptive Quantum Oracle Sketching with Sublinear Sample Complexity}
 
 \author{Tommaso R. Marena}
-\affiliation{Department of Physics, The Catholic University of America, Washington, DC 20064}
+\affiliation{Department of Mathematics and Statistics, The Catholic University of America, Washington, DC 20064}
 \email{marena@cua.edu}
 
 \date{\today}
 
-% ============================================================
-% ABSTRACT — paste content from PaperText.md (149 words)
-% ============================================================
 \begin{abstract}
-% TODO: paste abstract from RequestProject/PaperText.md
+We present three improvements to the quantum oracle sketching framework of Zhao et al.\ (2026), which constructs a phase-oracle diagonal at cost $O(NQ^2)$ for domain size $N$ and $Q$ linear queries.  For $K$-sparse Boolean functions and Fourier-sparse signals with $K_F$ dominant modes, this cost is not necessary.  (1)~Adaptive importance sampling reduces cost to $O(KQ^2)$, improving by $N/K$ with matching lower bounds.  (2)~$k$-level hierarchical composition yields $O(NQ^{2-1/k})$ query dependence.  (3)~Variational warmstart lowers effective dimension to $K_F$.  Combined, samples scale as $O(K_F Q^{2-1/k})$, a $76{,}000$-fold reduction at $N=2^{20}$, $K_F=64$, $Q=100$, $k=3$.  Open-source JAX implementations, proofs, and companion Colab notebooks validate all four contributions.
 \end{abstract}
 
 \maketitle
 
-% ============================================================
-% SECTION 1: INTRODUCTION
-% ============================================================
 \input{sections/introduction}
-
-% ============================================================
-% SECTION 2: BACKGROUND
-% ============================================================
 \input{sections/background}
-
-% ============================================================
-% SECTION 3: MAIN THEOREM
-% ============================================================
 \input{sections/main_theorem}
-
-% ============================================================
-% SECTION 4: CORE QOS SCALING (Zhao et al. replication)
-% ============================================================
 \input{sections/core_scaling}
-
-% ============================================================
-% SECTION 5: NOVEL CONTRIBUTIONS
-% ============================================================
 \input{sections/sec51_adaptive}
 \input{sections/sec52_hierarchical}
 \input{sections/sec53_variational}
 \input{sections/sec54_shadow}
-
-% ============================================================
-% SECTION 6: EXPERIMENTS
-% ============================================================
 \input{sections/experiments}
-
-% ============================================================
-% SECTION 7: CONCLUSION
-% ============================================================
 \input{sections/conclusion}
 
-% ============================================================
-% APPENDICES
-% ============================================================
 \appendix
 \input{sections/appendix_lean}
 \input{sections/appendix_phase_time}
 \input{sections/appendix_datasets}
 
-% ============================================================
-% BIBLIOGRAPHY
-% ============================================================
 \bibliography{references}
 
 \end{document}

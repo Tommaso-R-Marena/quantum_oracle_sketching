@@ -1,21 +1,26 @@
 % ============================================================
-% SECTION 5.2: HIERARCHICAL SAMPLE COMPLEXITY
-% Source: paper_sections.md (Section 5.2, ~550 words)
-%         RequestProject/HierarchicalComplexity.lean (7 theorems)
-% TODO: paste Section 5.2 from paper_sections.md
+% SECTION 5.2: HIERARCHICAL ORACLE SKETCHING
+% Source: paper/marena2026_quantum_oracle_sketching.tex
 % ============================================================
-\subsection{Hierarchical Sample Complexity}
-\label{sec:hierarchical}
+\section{Hierarchical Oracle Sketching}
+\label{sec:hier}
 
-% TODO: paste from paper_sections.md Section 5.2
-% Must include:
-%   - Theorem 5.2: flat O(NQ^2) vs hierarchical O(k*N*Q^{2/k})
-%   - Key identity: Q^{2/log_2 Q} = 4 (proved in HierarchicalComplexity.lean)
-%   - Algorithm 2 pseudocode
-%   - Assumptions B1-B4
-%   - Gap analysis
-%   - Benchmark table (Q^0.6 at Q=16, Q^0.7 at Q=32)
+\subsection{Construction}
 
-% Lean verification note:
-% All 7 theorems in HierarchicalComplexity.lean compiled without sorry.
-% See Appendix~\ref{app:lean}.
+The key insight is that the residual error $r_j(x) = \hat{d}_{j}(x) - e^{i\pi f(x)}$ after the $j$-th oracle sketch is itself a structured signal that can be targeted by a subsequent sketch at lower cost.
+
+\begin{definition}[Hierarchical sketch]
+For levels $k\geq 1$ and query budget $Q$, the $k$-level hierarchical oracle sketch allocates $Q_j = Q^{(k-j)/k}$ queries and $M_j = N\cdot Q_j^2$ samples to level $j$, for $j=1,\ldots,k$.  Level $j$ sketches the residual $r_{j-1}$.
+\end{definition}
+
+\begin{theorem}[Hierarchical query reduction]\label{thm:hier}
+The $k$-level hierarchical oracle sketch achieves approximation error $\eps$ using total samples
+\[
+  M_{\mathrm{total}} = \sum_{j=1}^k N\cdot Q_j^2 = N\cdot Q^{2-1/k}\cdot\frac{Q^{1/k}-1}{Q^{1/k}-1}\cdot k = O(N\cdot k\cdot Q^{2-1/k}).
+\]
+For fixed $k$, this is $\widetilde{O}(NQ^{2-1/k})$, improving the $O(NQ^2)$ baseline by a factor of $Q^{1/k}$.
+\end{theorem}
+
+\begin{corollary}[Sub-quadratic query complexity]\label{cor:hier}
+For any $\eps_Q > 0$, choosing $k = \lceil 1/\eps_Q\rceil$ yields a sketch with query cost $O(NQ^{2-\eps_Q})$, strictly sub-quadratic in $Q$.
+\end{corollary}

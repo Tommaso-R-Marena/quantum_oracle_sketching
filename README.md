@@ -3,6 +3,7 @@
 **Extending quantum advantage in processing massive classical data**
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb)
+[![Publication Figures](https://img.shields.io/badge/Colab-Publication%20Figures-blue?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/00_publication_figures.ipynb)
 [![Real Datasets](https://img.shields.io/badge/Colab-Real%20Datasets-orange?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/real_datasets_colab.ipynb)
 [![IBM Hardware](https://img.shields.io/badge/Colab-IBM%20Hardware-purple?logo=googlecolab)](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/hardware_ibm_colab.ipynb)
 [![Paper](https://img.shields.io/badge/arXiv-2604.07639-B31B1B.svg)](https://arxiv.org/abs/2604.07639)
@@ -10,7 +11,7 @@
 [![JAX](https://img.shields.io/badge/JAX-compatible-green.svg)](https://jax.readthedocs.io)
 [![CI](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml/badge.svg)](https://github.com/Tommaso-R-Marena/quantum_oracle_sketching/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![v1.3.3](https://img.shields.io/badge/version-1.3.3-informational)](CHANGELOG.md)
+[![v1.3.4](https://img.shields.io/badge/version-1.3.4-informational)](CHANGELOG.md)
 
 This repository implements **Quantum Oracle Sketching (QOS)** and introduces four novel theoretical extensions (Marena 2026) that surpass the baseline of Zhao et al. (2025/2026) in sample complexity, circuit depth, and robustness.
 
@@ -24,7 +25,7 @@ This repository implements **Quantum Oracle Sketching (QOS)** and introduces fou
 # 1. Clone and install
 git clone https://github.com/Tommaso-R-Marena/quantum_oracle_sketching.git
 cd quantum_oracle_sketching
-pip install -e ".[dev,noise,kernel]"
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 
 # 2. Reproduce Figure 4 (warmstart ablation, fast mode)
 python -m qos.experiments.benchmark --dataset splice --fast
@@ -34,6 +35,7 @@ Or run everything in Colab (no install needed):
 
 | Notebook | What it runs | Runtime |
 |---|---|---|
+| [📓 Publication Figures](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/00_publication_figures.ipynb) | All 4 paper figures + LaTeX tables | **< 1 min** (CPU) |
 | [📓 Demo](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/quantum_oracle_sketching_demo.ipynb) | All four contribution figures | ~15 min (T4) |
 | [📓 Real Datasets](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/real_datasets_colab.ipynb) | IMDb, News20, PBMC3k, PBMC68k, Dorothea, Splice | ~2–4 hr (A100) |
 | [📓 IBM Hardware](https://colab.research.google.com/github/Tommaso-R-Marena/quantum_oracle_sketching/blob/main/notebooks/hardware_ibm_colab.ipynb) | QOS oracle on real QPU + ZNE | ~3 min QPU time |
@@ -88,7 +90,7 @@ cd quantum_oracle_sketching
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 # optional: noise + kernel extensions
-pip install -e ".[dev,noise,kernel]"
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 # hardware (IBM QPU) and real-dataset extras
 pip install -e ".[hardware,datasets]"
 ```
@@ -265,7 +267,7 @@ PYTHONPATH=src python scripts/generate_all_figures.py
 | `verify_noise_robustness.py` | TVD vs. depolarizing η | `noise_robustness.{csv,png,pdf}` |
 | `verify_circuit_depth.py` | M\* vs. circuit depth at fixed η | `circuit_depth.{csv,png,pdf}` |
 
-Run all 9 notebooks headlessly (pip-install, Colab-drive, `/content/...`,
+Run all 10 notebooks headlessly (pip-install, Colab-drive, `/content/...`,
 and IBM-token cells are patched automatically; the hardware notebook
 falls back to the local AerSimulator path):
 
@@ -287,12 +289,12 @@ The setup cell in each notebook auto-detects the environment and ensures
 Colab-only cells (pip install, Drive mount, `/content/` paths, IBM token
 prompts, `google.colab` imports/magics).
 
-**Headless status: 7 of 9 notebooks run with zero cell errors.** The two
-optional-dependency notebooks need extras:
+**Headless status: 10/10 notebooks run with zero cell errors** (as of 2026-06-19).
+Optional extras for full Colab parity:
 
 ```bash
+pip install -e ".[dev,noise,kernel,singlecell,datasets]"
 pip install -e ".[hardware]"   # notebooks/hardware_ibm_colab.ipynb (qiskit-ibm-runtime)
-pip install -e ".[datasets]"   # notebooks/real_datasets_colab.ipynb (pdf2image, Pillow)
 ```
 
 ## IBM Quantum Hardware Validation

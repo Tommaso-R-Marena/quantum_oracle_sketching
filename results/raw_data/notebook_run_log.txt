@@ -1,9 +1,10 @@
-01_qos_quickstart.ipynb                     OK      18.7s  patches=1  errors=0
-02_empirical_results.ipynb                  OK      27.4s  patches=2  errors=0
-circuit_depth_scaling.ipynb                 OK       8.0s  patches=3  errors=0
-full_benchmark_suite.ipynb                  OK     137.0s  patches=2  errors=0
-hardware_ibm_colab.ipynb                    OK       4.9s  patches=3  errors=0
-noise_robustness_sweep.ipynb                OK       7.3s  patches=3  errors=0
-quantum_oracle_sketching_demo.ipynb         OK      76.4s  patches=2  errors=0
-real_datasets_colab.ipynb                   FAIL   304.9s  patches=7  errors=1  first_err='\x1b[31mKeyboardInterrupt\x1b[39m: '
-warmstart_ablation.ipynb                    OK     148.5s  patches=3  errors=0
+00_publication_figures.ipynb                OK      18.9s  patches=1  errors=0
+01_qos_quickstart.ipynb                     OK      11.0s  patches=1  errors=0
+02_empirical_results.ipynb                  OK      16.2s  patches=2  errors=0
+circuit_depth_scaling.ipynb                 OK       4.1s  patches=3  errors=0
+full_benchmark_suite.ipynb                  OK      68.7s  patches=2  errors=0
+hardware_ibm_colab.ipynb                    OK       2.8s  patches=3  errors=0
+noise_robustness_sweep.ipynb                OK       4.0s  patches=3  errors=0
+quantum_oracle_sketching_demo.ipynb         OK      39.3s  patches=2  errors=0
+real_datasets_colab.ipynb                   OK     107.4s  patches=7  errors=0
+warmstart_ablation.ipynb                    OK      96.3s  patches=3  errors=0

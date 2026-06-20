@@ -3,17 +3,19 @@
 Provides two loaders:
 
   load_pbmc3k()   -- 2,700 cells, fast, good for development (~seconds)
-  load_pbmc68k()  -- 68,579 cells, full dataset matching Zhao et al. (2025)
-                     Figure 2b; downloads ~500 MB of 10x h5 files on first run
+  load_pbmc68k()  -- ~68k cells, full dataset matching Zhao et al. (2025)
+                     Figure 2b; downloads ~118 MB via scvelo on first run
 
 Both return (adata, labels) where labels are binary:
   1 = CD14+ Monocyte, 0 = all other cell types
 
-Requires: scanpy, anndata, leidenalg  (pip install scanpy anndata leidenalg)
+Requires: scanpy, anndata, scvelo, python-igraph (or leidenalg)
 """
 from __future__ import annotations
 
 import os
+import warnings
+
 import numpy as np
 
 
@@ -33,8 +35,85 @@ def _binarise_labels(adata) -> np.ndarray:
 
 def _ensure_sparse(adata):
     import scipy.sparse as sp
+
     if not sp.issparse(adata.X):
         adata.X = sp.csr_matrix(adata.X)
+    return adata
+
+
+def _adata_is_preprocessed(adata) -> bool:
+    """Return True when ``adata.X`` is already log-normalized or scaled.
+
+    ``pbmc68k_reduced()`` ships with negative entries (``pp.scale`` was applied)
+    and pre-computed ``highly_variable`` flags. Re-running ``normalize_total``
+    + ``log1p`` on that object produces NaNs and breaks HVG selection.
+    """
+    var = getattr(adata, "var", None)
+    if var is not None and hasattr(var, "columns") and "highly_variable" in var.columns:
+        if bool(var["highly_variable"].any()):
+            return True
+    import scipy.sparse as sp
+
+    X = adata.X
+    if sp.issparse(X):
+        sample = X.data[: min(10_000, X.data.size)]
+        if sample.size == 0:
+            return False
+        return float(sample.min()) < 0.0
+    arr = np.asarray(X)
+    if arr.size == 0:
+        return False
+    return float(np.min(arr)) < 0.0
+
+
+def _run_leiden(adata) -> None:
+    """Run Leiden clustering, preferring the fast igraph backend."""
+    import scanpy as sc
+
+    try:
+        sc.tl.leiden(adata, flavor="igraph", directed=False, n_iterations=2)
+    except (ImportError, ValueError, RuntimeError):
+        sc.tl.leiden(adata)
+
+
+def _preprocess_counts(adata, n_top_genes: int, *, min_genes: int = 200) -> object:
+    """Standard count-matrix preprocessing for PBMC loaders."""
+    import scanpy as sc
+
+    if _adata_is_preprocessed(adata):
+        if "highly_variable" in adata.var.columns:
+            adata = adata[:, adata.var["highly_variable"]].copy()
+        return _ensure_sparse(adata)
+
+    sc.pp.filter_cells(adata, min_genes=min_genes)
+    sc.pp.filter_genes(adata, min_cells=3)
+    sc.pp.normalize_total(adata, target_sum=1e4)
+    sc.pp.log1p(adata)
+    sc.pp.highly_variable_genes(
+        adata,
+        n_top_genes=min(n_top_genes, adata.n_vars),
+        flavor="seurat",
+        inplace=True,
+    )
+    adata = adata[:, adata.var["highly_variable"]].copy()
+    return _ensure_sparse(adata)
+
+
+def _load_pbmc68k_scvelo(cache_dir: str):
+    """Download and cache the full ~68k PBMC dataset via scvelo."""
+    import scvelo as scv
+
+    h5ad_path = os.path.join(cache_dir, "pbmc68k_scvelo.h5ad")
+    if os.path.exists(h5ad_path):
+        import anndata as ad
+
+        print(f"  Loading PBMC68k from cache: {h5ad_path}")
+        return ad.read_h5ad(h5ad_path)
+
+    print("  Downloading PBMC68k via scvelo (~118 MB on first run) ...")
+    adata = scv.datasets.pbmc68k()
+    adata.write(h5ad_path)
+    print(f"  Cached to {h5ad_path}")
     return adata
 
 
@@ -54,25 +133,21 @@ def load_pbmc3k(
     try:
         import scanpy as sc
     except ImportError as exc:
-        raise ImportError("pip install scanpy anndata leidenalg") from exc
+        raise ImportError("pip install scanpy anndata python-igraph") from exc
 
     if cache_dir is not None:
         os.makedirs(cache_dir, exist_ok=True)
         sc.settings.datasetdir = cache_dir
 
     adata = sc.datasets.pbmc3k()
-    sc.pp.filter_cells(adata, min_genes=200)
-    sc.pp.filter_genes(adata, min_cells=3)
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(adata, n_top_genes=n_top_genes, flavor="seurat")
-    adata = adata[:, adata.var["highly_variable"]].copy()
-    adata = _ensure_sparse(adata)
+    adata = _preprocess_counts(adata, n_top_genes, min_genes=200)
 
     if "leiden" not in adata.obs.columns:
+        import scanpy as sc
+
         sc.pp.pca(adata, n_comps=10)
         sc.pp.neighbors(adata)
-        sc.tl.leiden(adata)  # requires leidenalg; was louvain (needs unmaintained 'louvain' pkg)
+        _run_leiden(adata)
 
     labels = _binarise_labels(adata)
     return adata, labels
@@ -84,22 +159,13 @@ def load_pbmc68k(
 ) -> tuple[object, np.ndarray]:
     """Return (adata, labels) for the full PBMC68k dataset (~68k cells).
 
-    Uses scanpy's built-in pbmc68k_reduced() for the cell-type labels (which
-    has ``bulk_labels`` with CD14+ Monocyte annotations), then downloads the
-    full fresh 68k raw counts from the 10x Genomics public S3 bucket —
-    no authentication required.
+    Primary source: ``scvelo.datasets.pbmc68k()`` (public, ~118 MB download,
+    cached locally after the first call).  Falls back to scanpy's
+    ``pbmc68k_reduced()`` (700 preprocessed cells) only when scvelo is
+    unavailable — the fallback is flagged in stdout and should not be used
+    for Zhao Figure 2b reproduction.
 
-    Strategy
-    --------
-    The scanpy toy object ``pbmc68k_reduced`` contains 700 pre-selected cells
-    with gold-standard ``bulk_labels``.  We use it solely to build a label
-    mapping (leiden cluster -> cell type), then apply that mapping to the
-    full dataset after clustering.
-
-    Download: ~500 MB of per-cell-type h5 matrices from 10x public S3.
-    Cached locally after first run.
-
-    Matches Zhao et al. (2025) Figure 2b.
+    Matches Zhao et al. (2025) Figure 2b when the scvelo path succeeds.
 
     Returns
     -------
@@ -107,47 +173,36 @@ def load_pbmc68k(
     labels : np.ndarray shape (~68k,), dtype int  [1=CD14+ Mono, 0=other]
     """
     try:
-        import scanpy as sc
+        import scanpy as sc  # noqa: F401
     except ImportError as exc:
-        raise ImportError("pip install scanpy anndata leidenalg") from exc
+        raise ImportError("pip install scanpy anndata scvelo python-igraph") from exc
 
     if cache_dir is None:
         cache_dir = os.path.join(os.path.expanduser("~"), ".cache", "qos", "pbmc68k")
     os.makedirs(cache_dir, exist_ok=True)
-    sc.settings.datasetdir = cache_dir
 
-    print("  Loading PBMC68k via scanpy (downloads ~500 MB on first run) ...")
+    adata = None
     try:
-        adata = sc.datasets.pbmc68k_reduced()
-        if adata.n_obs < 10_000:
-            raise AttributeError("reduced")
-    except AttributeError:
-        pass
+        adata = _load_pbmc68k_scvelo(cache_dir)
+        # scvelo ships a lightly filtered matrix; per-cell gene counts are low.
+        adata = _preprocess_counts(adata, n_top_genes, min_genes=10)
+        labels = _binarise_labels(adata)
+        print(f"  PBMC68k loaded: {adata.n_obs} cells x {adata.n_vars} genes")
+        return adata, labels
+    except Exception as exc:
+        warnings.warn(
+            f"scvelo PBMC68k download failed ({exc!r}); "
+            "falling back to scanpy pbmc68k_reduced (700 cells, dev only).",
+            stacklevel=2,
+        )
 
-    try:
-        adata = sc.datasets.pbmc68k_reduced()
-        if adata.n_obs < 10_000:
-            print(
-                "  WARNING: scanpy returned the 700-cell reduced subset. "
-                "For the full 68k dataset, run:\n"
-                "    sc.datasets.pbmc68k_singleR() or download manually from "
-                "https://cf.10xgenomics.com/samples/cell-exp/1.1.0/pbmc68k/"
-                "pbmc68k_data.tar.gz\n"
-                "  Proceeding with reduced subset for now."
-            )
-    except Exception as e:
-        raise RuntimeError(f"Could not load PBMC68k: {e}") from e
+    import scanpy as sc
 
-    sc.pp.filter_cells(adata, min_genes=50)
-    sc.pp.filter_genes(adata, min_cells=3)
-    sc.pp.normalize_total(adata, target_sum=1e4)
-    sc.pp.log1p(adata)
-    sc.pp.highly_variable_genes(
-        adata, n_top_genes=min(n_top_genes, adata.n_vars),
-        flavor="seurat", inplace=True
-    )
-    adata = adata[:, adata.var["highly_variable"]].copy()
-    adata = _ensure_sparse(adata)
-
+    adata = sc.datasets.pbmc68k_reduced()
+    adata = _preprocess_counts(adata, n_top_genes, min_genes=1)
     labels = _binarise_labels(adata)
+    print(
+        f"  WARNING: using pbmc68k_reduced subset only "
+        f"({adata.n_obs} cells). Install scvelo for the full 68k dataset."
+    )
     return adata, labels

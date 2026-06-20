@@ -7914,7 +7914,7 @@ Results are reproducible: circuits are fixed by <code>SEED</code>.</p>
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>✅ quantum-oracle-sketching installed.
-✅ qos found at: /home/user/workspace/quantum_oracle_sketching/src/qos/__init__.py
+✅ qos found at: /workspace/src/qos/__init__.py
 </pre>
 </div>
 </div>
@@ -7955,7 +7955,7 @@ Results are reproducible: circuits are fixed by <code>SEED</code>.</p>
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Python      : ['3.12.8', '(main,', 'May', '26', '2026,', '17:29:17)', '[GCC', '14.2.0]']
+<pre>Python      : ['3.12.3', '(main,', 'Mar', '23', '2026,', '19:04:32)', '[GCC', '13.3.0]']
 Platform    : Linux x86_64
 JAX devices : [CpuDevice(id=0)]
 ⚠️  No GPU detected. Heavy experiments will be slow.
@@ -7968,7 +7968,7 @@ qos version : 1.3.3
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a2f4b632">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=88755230">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8000,7 +8000,7 @@ qos version : 1.3.3
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=4c60c0a6">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=9b96c86f">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8211,7 +8211,8 @@ shots                   : 300
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>No usable IBM service; hardware cells will be skipped.
+<pre>qiskit_ibm_runtime not installed. Hardware cells will be skipped.
+To enable: pip install qiskit-ibm-runtime
 </pre>
 </div>
 </div>
@@ -8552,15 +8553,9 @@ n=4: depth=4, gates=OrderedDict({'h': 8, 'measure': 4, 'diagonal': 1}), ideal_H(
 <div class="jp-OutputArea-child">
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>⚠️  FakeKyotoV2 unavailable (cannot import name 'FakeKyotoV2' from 'qiskit_ibm_runtime.fake_provider' (/usr/local/lib/python3.12/site-packages/qiskit_ibm_runtime/fake_provider/__init__.py)); using generic AerSimulator.
+<pre>qiskit_ibm_runtime unavailable; using generic AerSimulator.
 n=3 Aer(noisy): TVD=0.0467
-</pre>
-</div>
-</div>
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>n=4 Aer(noisy): TVD=0.0975
+n=4 Aer(noisy): TVD=0.0975
 </pre>
 </div>
 </div>

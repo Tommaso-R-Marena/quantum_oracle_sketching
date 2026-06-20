@@ -5,6 +5,38 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.3.4] — 2026-06-19
+
+Publication bundle and scientific-rigor pass.
+
+### Added
+- **`singlecell` optional extra** (`scanpy`, `anndata`, `python-igraph`, `leidenalg`).
+- **`scripts/generate_paper_tables.py`** — LaTeX tables from committed CSVs.
+- **`scripts/verify_publication_bundle.py`** — CI gate for figures/CSVs/tables.
+- **`tests/test_pbmc_utils.py`** — guards against PBMC68k double-preprocessing NaNs.
+- **Committed figure artifacts** under `results/figures/` (8 PNG+PDF files).
+- **LaTeX tables** under `results/tables/` (`table_warmstart_ablation.tex`, etc.).
+
+### Fixed
+- **`load_pbmc68k()`** — full ~68k download via `scvelo` with safe preprocessing;
+  removed broken figshare URL from `real_datasets_colab.ipynb`.
+- **`warmstart_ablation.ipynb`** — in-regime (K-sparse) vs out-of-regime (real PC1)
+  reporting; paper LaTeX table uses in-regime only.
+- **Bibliography** — unified Zhao baseline to arXiv:2604.07639 across
+  `references.bib`, `marena2026_quantum_oracle_sketching.tex`, README, CITATION.cff.
+- **`appendix_lean.tex`** — honest status: Lean proofs documented but not yet
+  committed; tests/scripts are the executable verification layer.
+- **`paper/sections/experiments.tex`** — populated with committed figure paths.
+- **CI** — installs `singlecell,datasets`, runs publication bundle check + headless
+  notebooks (3.11).
+- **Headless notebooks: 10/10 PASS** (updated README/CHANGELOG claims).
+- **`notebooks/00_publication_figures.ipynb`** — one-button Colab reproduction of the
+  committed publication bundle (< 1 min CPU).
+- **PRL `paper/main.tex` merge** — all `paper/sections/*.tex` populated from
+  `marena2026_quantum_oracle_sketching.tex`; PRL abstract, macros, and cite keys fixed.
+
+---
+
 ## [1.3.3] — 2026-05-28
 
 Publication-readiness sweep, second pass (2026-05-28).
